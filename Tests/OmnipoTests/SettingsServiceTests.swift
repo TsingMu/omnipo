@@ -8,7 +8,6 @@ final class SettingsServiceTests: XCTestCase {
 
         XCTAssertTrue(service.readBool(forKey: .launchDashboardAtStart))
         XCTAssertFalse(service.readBool(forKey: .reopenLastDestination))
-        XCTAssertEqual(service.readDouble(forKey: .preferredSidebarWidth), 220)
         XCTAssertEqual(service.readString(forKey: .lastOpenedDestinationKey), "dashboard")
     }
 
@@ -17,13 +16,22 @@ final class SettingsServiceTests: XCTestCase {
 
         service.write(false, forKey: .launchDashboardAtStart)
         service.write(true, forKey: .reopenLastDestination)
-        service.write(280.5, forKey: .preferredSidebarWidth)
         service.write("cleaner", forKey: .lastOpenedDestinationKey)
 
         XCTAssertFalse(service.readBool(forKey: .launchDashboardAtStart))
         XCTAssertTrue(service.readBool(forKey: .reopenLastDestination))
-        XCTAssertEqual(service.readDouble(forKey: .preferredSidebarWidth), 280.5)
         XCTAssertEqual(service.readString(forKey: .lastOpenedDestinationKey), "cleaner")
+    }
+
+    func test_writeAndRead_arbitraryDoubleKey() {
+        let arbitraryKey = SettingsKey(
+            "omnipo.tests.arbitrary.\(UUID().uuidString)",
+            default: .double(0)
+        )
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.write(280.5, forKey: arbitraryKey)
+        XCTAssertEqual(service.readDouble(forKey: arbitraryKey), 280.5)
     }
 
     func test_remove_clearsValue() {

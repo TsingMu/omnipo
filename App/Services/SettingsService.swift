@@ -40,11 +40,6 @@ public extension SettingsKey {
         default: .bool(false)
     )
 
-    static let preferredSidebarWidth = SettingsKey(
-        "omnipo.settings.preferredSidebarWidth",
-        default: .double(220)
-    )
-
     static let lastOpenedDestinationKey = SettingsKey(
         "omnipo.settings.lastOpenedDestination",
         default: .string("dashboard")

@@ -6,49 +6,99 @@ final class LoggingServiceTests: XCTestCase {
     func test_sanitize_redactsClipboardContent() {
         let result = PrivacyRedaction.sanitize(context: [
             "clipboardContent": "secret",
-            "stableCode": "I_TEST"
+            "code": "I_TEST"
         ])
 
         XCTAssertEqual(result["clipboardContent"], "<redacted>")
-        XCTAssertEqual(result["stableCode"], "I_TEST")
+        XCTAssertEqual(result["code"], "I_TEST")
     }
 
-    func test_sanitize_redactsUserPaths() {
+    func test_sanitize_redactsUserPathsInAllowedKey() {
         let result = PrivacyRedaction.sanitize(context: [
-            "userPath": "/Users/foo/Documents/secret.txt"
+            "resource": "/Users/foo/Library/thing"
         ])
 
-        XCTAssertEqual(result["userPath"], "<redacted>")
+        XCTAssertEqual(result["resource"], "<redacted-path>")
     }
 
-    func test_sanitize_redactsPathLikeValuesEvenWithUnknownKey() {
+    func test_sanitize_redactsVolumesPaths() {
         let result = PrivacyRedaction.sanitize(context: [
-            "unrelated": "/Users/somebody/Library/thing"
+            "resource": "/Volumes/Backup/secret.pdf"
         ])
-
-        XCTAssertEqual(result["unrelated"], "<redacted-path>")
+        XCTAssertEqual(result["resource"], "<redacted-path>")
     }
 
-    func test_sanitize_preservesSafeContext() {
+    func test_sanitize_redactsTmpPaths() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "resource": "/tmp/private.txt"
+        ])
+        XCTAssertEqual(result["resource"], "<redacted-path>")
+    }
+
+    func test_sanitize_redactsHomeTildePaths() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "resource": "~/Documents/secret"
+        ])
+        XCTAssertEqual(result["resource"], "<redacted-path>")
+    }
+
+    func test_sanitize_redactsFilenameLookingValues() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "resource": "report.pdf"
+        ])
+        XCTAssertEqual(result["resource"], "<redacted-path>")
+    }
+
+    func test_sanitize_redactsUnknownKeyEvenWithSafeValue() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "unrelated": "anything"
+        ])
+        XCTAssertEqual(result["unrelated"], "<redacted>")
+    }
+
+    func test_sanitize_preservesAllowedKeysWithSafeValues() {
         let result = PrivacyRedaction.sanitize(context: [
             "destination": "cleaner",
-            "stage": "scanning"
+            "stage": "scanning",
+            "code": "I_NAV"
         ])
-
         XCTAssertEqual(result["destination"], "cleaner")
         XCTAssertEqual(result["stage"], "scanning")
+        XCTAssertEqual(result["code"], "I_NAV")
+    }
+
+    func test_sanitize_redactsPathLookingValueInAllowedKey() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "destination": "/Users/foo/Library"
+        ])
+        XCTAssertEqual(result["destination"], "<redacted-path>")
     }
 
     func test_sanitize_redactsForbiddenSubstringsInMessage() {
         let result = PrivacyRedaction.sanitize(message: "scanning /Users/foo/Library")
+        XCTAssertEqual(result, "<redacted>")
+    }
 
+    func test_sanitize_redactsTmpInMessage() {
+        let result = PrivacyRedaction.sanitize(message: "wrote /tmp/foo")
+        XCTAssertEqual(result, "<redacted>")
+    }
+
+    func test_sanitize_redactsFilenameInMessage() {
+        let result = PrivacyRedaction.sanitize(message: "loaded report.pdf")
         XCTAssertEqual(result, "<redacted>")
     }
 
     func test_sanitize_preservesSafeMessage() {
         let result = PrivacyRedaction.sanitize(message: "navigation.selected")
-
         XCTAssertEqual(result, "navigation.selected")
+    }
+
+    func test_sanitize_redactsAllForbiddenKeysEvenIfAllowed() {
+        for key in PrivacyRedaction.forbiddenKeys {
+            let result = PrivacyRedaction.sanitize(context: [key: "value"])
+            XCTAssertEqual(result[key], "<redacted>", "expected \(key) to be redacted")
+        }
     }
 
     func test_logEvent_doesNotExposeForbiddenKeys() {

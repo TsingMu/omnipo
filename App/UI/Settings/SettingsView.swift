@@ -5,7 +5,6 @@ struct SettingsView: View {
 
     @State private var launchDashboardAtStart: Bool = false
     @State private var reopenLastDestination: Bool = false
-    @State private var preferredSidebarWidth: Double = 220
 
     var body: some View {
         Form {
@@ -28,26 +27,6 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-
-            Section {
-                Slider(value: $preferredSidebarWidth, in: 200...320) {
-                    Text("侧边栏宽度")
-                } minimumValueLabel: {
-                    Text("窄")
-                } maximumValueLabel: {
-                    Text("宽")
-                }
-                .onChange(of: preferredSidebarWidth) { _, value in
-                    let rounded = (value * 10).rounded() / 10
-                    container.settings.write(rounded, forKey: .preferredSidebarWidth)
-                }
-            } header: {
-                Text("界面")
-            } footer: {
-                Text("偏好仅在本地持久化,无关联账户或上传。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
         .padding()
@@ -55,7 +34,6 @@ struct SettingsView: View {
         .task {
             launchDashboardAtStart = container.settings.readBool(forKey: .launchDashboardAtStart)
             reopenLastDestination = container.settings.readBool(forKey: .reopenLastDestination)
-            preferredSidebarWidth = container.settings.readDouble(forKey: .preferredSidebarWidth)
         }
     }
 }

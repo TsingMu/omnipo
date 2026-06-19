@@ -148,6 +148,46 @@ final class ModelTests: XCTestCase {
         XCTAssertTrue(progress.isTerminal)
     }
 
+    func test_taskProgress_mutatingRejectedForIllegalExternalAssignment() {
+        var progress = TaskProgress(taskKey: "scan", completedUnits: 0, totalUnits: 10)
+        let ok = progress.updateProgress(completed: 5, total: 10)
+        XCTAssertTrue(ok)
+        XCTAssertEqual(progress.completedUnits, 5)
+
+        let rejected = progress.updateProgress(completed: 100, total: 10)
+        XCTAssertFalse(rejected)
+        XCTAssertEqual(progress.completedUnits, 5, "拒绝非法值时不修改状态")
+    }
+
+    func test_taskProgress_markFailedRequiresError() {
+        var progress = TaskProgress(taskKey: "scan", status: .running)
+        let ok = progress.markFailed(.systemFailure(code: "E_TEST"))
+        XCTAssertTrue(ok)
+        XCTAssertEqual(progress.status, .failed)
+        XCTAssertEqual(progress.error, .systemFailure(code: "E_TEST"))
+        XCTAssertTrue(progress.isTerminal)
+    }
+
+    func test_taskProgress_terminalStateIsStable() {
+        var progress = TaskProgress(taskKey: "scan", status: .running)
+        XCTAssertTrue(progress.markCompleted())
+
+        XCTAssertFalse(progress.markFailed(.unknown(code: "x")), "终态后不允许 markFailed")
+        XCTAssertFalse(progress.markCancelled(), "终态后不允许 markCancelled")
+        XCTAssertFalse(progress.updateProgress(completed: 99), "终态后不允许 updateProgress")
+        XCTAssertFalse(progress.markRunning(), "终态后不允许 markRunning")
+
+        XCTAssertEqual(progress.status, .completed, "终态保持稳定")
+    }
+
+    func test_taskProgress_cancelledIsTerminal() {
+        var progress = TaskProgress(taskKey: "scan", status: .running)
+        XCTAssertTrue(progress.markCancelled())
+        XCTAssertTrue(progress.isTerminal)
+        XCTAssertFalse(progress.markCompleted())
+        XCTAssertEqual(progress.status, .cancelled)
+    }
+
     // MARK: - OperationLog
 
     func test_operationLog_carriesSanitizedFields() {

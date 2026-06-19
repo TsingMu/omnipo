@@ -24,8 +24,9 @@ APP_BUNDLE_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION/Omnipo.app"
 APP_EXECUTABLE="$APP_BUNDLE_PATH/Contents/MacOS/Omnipo"
 BUNDLE_ID="com.omnipo.app"
 LOG_SUBSYSTEM="$BUNDLE_ID"
+LOG_BIN="/usr/bin/log"
 
-log() {
+note() {
     printf '[omnipo] %s\n' "$*"
 }
 
@@ -34,13 +35,13 @@ err() {
 }
 
 stop_running() {
-    log "停止在运行的 Omnipo 进程"
+    note "停止在运行的 Omnipo 进程"
     pkill -x Omnipo 2>/dev/null || true
     pkill -f "$APP_BUNDLE_PATH" 2>/dev/null || true
 }
 
 build_app() {
-    log "构建 $CONFIGURATION (DerivedData=$DERIVED_DATA)"
+    note "构建 $CONFIGURATION (DerivedData=$DERIVED_DATA)"
     xcodebuild \
         -project "$PROJECT_FILE" \
         -scheme "$SCHEME" \
@@ -55,7 +56,7 @@ run_app() {
         err "未找到构建产物:$APP_BUNDLE_PATH"
         exit 1
     fi
-    log "启动 $APP_BUNDLE_PATH"
+    note "启动 $APP_BUNDLE_PATH"
     open "$APP_BUNDLE_PATH"
 }
 
@@ -64,25 +65,25 @@ run_app_debug() {
         err "未找到可执行文件:$APP_EXECUTABLE"
         exit 1
     fi
-    log "以调试模式启动并附带 stdout/stderr"
+    note "以调试模式启动并附带 stdout/stderr"
     "$APP_EXECUTABLE"
 }
 
 stream_logs() {
-    log "流式输出 $LOG_SUBSYSTEM 子系统日志(Ctrl+C 退出)"
-    log stream --predicate "subsystem == '$LOG_SUBSYSTEM'" --level debug
+    note "流式输出 $LOG_SUBSYSTEM 子系统日志(Ctrl+C 退出)"
+    "$LOG_BIN" stream --predicate "subsystem == '$LOG_SUBSYSTEM'" --level debug
 }
 
 run_telemetry() {
-    log "查看 Omnipo telemetry(OSLog compact)"
-    log show \
+    note "查看 Omnipo telemetry(OSLog compact)"
+    "$LOG_BIN" show \
         --predicate "subsystem == '$LOG_SUBSYSTEM'" \
         --last 10m \
         --style compact
 }
 
 run_tests() {
-    log "运行 OmnipoTests"
+    note "运行 OmnipoTests"
     xcodebuild \
         -project "$PROJECT_FILE" \
         -scheme "$SCHEME" \

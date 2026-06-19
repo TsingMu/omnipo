@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum AppDestination: String, CaseIterable, Identifiable, Hashable {
+public enum AppDestination: String, CaseIterable, Identifiable, Hashable, Sendable {
     case dashboard
     case launcher
     case clipboard
@@ -10,9 +10,9 @@ enum AppDestination: String, CaseIterable, Identifiable, Hashable {
     case wechatManager
     case systemMonitor
 
-    var id: String { rawValue }
+    public var id: String { rawValue }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .dashboard: return "Dashboard"
         case .launcher: return "Launcher"
@@ -25,7 +25,7 @@ enum AppDestination: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var symbol: String {
+    public var symbol: String {
         switch self {
         case .dashboard: return "square.grid.2x2"
         case .launcher: return "magnifyingglass"

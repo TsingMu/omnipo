@@ -72,4 +72,36 @@ final class SettingsServiceTests: XCTestCase {
 
         XCTAssertNil(UserDefaults.standard.object(forKey: SettingsKey.launchDashboardAtStart.rawValue))
     }
+
+    // MARK: - Launcher Shortcut
+
+    func test_readLauncherShortcut_returnsNilWhenUnset() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        XCTAssertNil(service.readLauncherShortcut())
+    }
+
+    func test_writeAndRead_launcherShortcut_roundTrips() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        let shortcut = KeyboardShortcut(keyCode: 11, modifierFlags: [.command, .shift])
+        service.writeLauncherShortcut(shortcut)
+
+        let restored = service.readLauncherShortcut()
+        XCTAssertEqual(restored, shortcut)
+    }
+
+    func test_readLauncherShortcut_returnsNilForCorruptedModifiers() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        service.write(Double(11), forKey: .launcherShortcutKeyCode)
+        service.write(Double(0), forKey: .launcherShortcutModifiers)
+
+        XCTAssertNil(service.readLauncherShortcut(), "modifiers=0 should not produce a valid shortcut")
+    }
+
+    func test_clearLauncherShortcut_resetsToDefault() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        service.writeLauncherShortcut(KeyboardShortcut(keyCode: 11, modifierFlags: .command))
+        service.clearLauncherShortcut()
+
+        XCTAssertNil(service.readLauncherShortcut())
+    }
 }

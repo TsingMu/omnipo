@@ -16,6 +16,10 @@ struct OmnipoApp: App {
         }
         _container = State(initialValue: container)
         _appState = State(initialValue: AppState(lastOpenedDestination: initialState))
+
+        Task { @MainActor in
+            await container.launcherCoordinator.registerShortcutOnLaunch()
+        }
     }
 
     var body: some Scene {

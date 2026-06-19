@@ -27,6 +27,8 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+
+            ShortcutSettingsSection()
         }
         .formStyle(.grouped)
         .padding()

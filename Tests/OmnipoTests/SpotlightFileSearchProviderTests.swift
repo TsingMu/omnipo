@@ -1,0 +1,145 @@
+import XCTest
+import os
+@testable import Omnipo
+
+private final class FakeFileSearchBackend: FileSearchBackend, @unchecked Sendable {
+    var result: FileSearchBackendResult
+    private(set) var lastQuery: String?
+    private let lock = OSAllocatedUnfairLock<Bool>(initialState: false)
+
+    init(result: FileSearchBackendResult) {
+        self.result = result
+    }
+
+    func search(query: String) async -> FileSearchBackendResult {
+        lock.withLock { _ in }
+        lastQuery = query
+        return result
+    }
+}
+
+final class SpotlightFileSearchProviderTests: XCTestCase {
+
+    private func makeLogger() -> any LoggingService {
+        OSLogLoggingService(subsystem: "com.omnipo.tests.spotlight")
+    }
+
+    func test_shortQuery_skipsBackend() async {
+        let backend = FakeFileSearchBackend(result: .success([]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "a", generation: 1)
+
+        if case .success(let results) = result {
+            XCTAssertTrue(results.isEmpty)
+        } else {
+            XCTFail("expected success empty")
+        }
+        XCTAssertNil(backend.lastQuery, "short query should not invoke backend")
+    }
+
+    func test_emptyQuery_skipsBackend() async {
+        let backend = FakeFileSearchBackend(result: .success([]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "  ", generation: 1)
+
+        if case .success(let results) = result {
+            XCTAssertTrue(results.isEmpty)
+        }
+        XCTAssertNil(backend.lastQuery)
+    }
+
+    func test_backendUnavailable_propagatesAsUnavailable() async {
+        let backend = FakeFileSearchBackend(result: .unavailable(reason: "spotlight-disabled"))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "report", generation: 1)
+
+        if case .unavailable(let reason) = result {
+            XCTAssertEqual(reason, "spotlight-disabled")
+        } else {
+            XCTFail("expected unavailable")
+        }
+    }
+
+    func test_backendSuccess_returnsSearchResults() async {
+        let bookmark = Data([0x01, 0x02, 0x03])
+        let entry = FileEntry(displayName: "report.pdf", bookmark: bookmark, fileExtension: "pdf")
+        let backend = FakeFileSearchBackend(result: .success([entry]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "report", generation: 1)
+
+        guard case .success(let results) = result, let first = results.first else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertEqual(first.title, "report.pdf")
+        XCTAssertEqual(first.kind, .file)
+        if case .fileBookmark(let data) = first.executionPayload {
+            XCTAssertEqual(data, bookmark)
+        } else {
+            XCTFail("expected fileBookmark payload")
+        }
+    }
+
+    func test_maxResults_truncatesLongLists() async {
+        let entries = (0..<200).map { i in
+            FileEntry(displayName: "file\(i)", bookmark: Data([UInt8(truncatingIfNeeded: i)]), fileExtension: "txt")
+        }
+        let backend = FakeFileSearchBackend(result: .success(entries))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger(), maxResults: 10)
+
+        let result = await provider.search(query: "file", generation: 1)
+
+        if case .success(let results) = result {
+            XCTAssertEqual(results.count, 10)
+        } else {
+            XCTFail("expected success")
+        }
+    }
+
+    func test_results_carryIconDescriptorFromFileExtension() async {
+        let entry = FileEntry(displayName: "image.png", bookmark: Data([0x00]), fileExtension: "png")
+        let backend = FakeFileSearchBackend(result: .success([entry]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "image", generation: 1)
+
+        guard case .success(let results) = result, let first = results.first else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertEqual(first.iconDescriptor, .fileType("png"))
+    }
+
+    func test_fileWithoutExtension_usesGenericFileIcon() async {
+        let entry = FileEntry(displayName: "README", bookmark: Data([0x00]), fileExtension: nil)
+        let backend = FakeFileSearchBackend(result: .success([entry]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "readme", generation: 1)
+
+        guard case .success(let results) = result, let first = results.first else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertEqual(first.iconDescriptor, .genericFile)
+    }
+
+    func test_sourceIdentifier_doesNotEmbedPath() async {
+        let entry = FileEntry(displayName: "secret.pdf", bookmark: Data([0xAB, 0xCD]), fileExtension: "pdf")
+        let backend = FakeFileSearchBackend(result: .success([entry]))
+        let provider = SpotlightFileSearchProvider(backend: backend, logger: makeLogger())
+
+        let result = await provider.search(query: "secret", generation: 1)
+
+        guard case .success(let results) = result, let first = results.first else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertFalse(first.sourceIdentifier.contains("/"), "source id must not embed paths")
+        XCTAssertFalse(first.sourceIdentifier.contains("secret"))
+    }
+}

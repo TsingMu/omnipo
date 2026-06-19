@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.openWindow) private var openWindow
     @Environment(DependencyContainer.self) private var container
     @Environment(AppState.self) private var appState
     @State private var selection: AppDestination = .dashboard
@@ -18,12 +19,25 @@ struct RootView: View {
             container.settings.write(newValue.rawValue, forKey: .lastOpenedDestinationKey)
             container.logging.log(.navigation(destination: newValue.rawValue))
         }
+        .onChange(of: container.mainNavigator.pendingDestination) { _, newValue in
+            if let newValue {
+                selection = newValue
+                container.mainNavigator.consumePendingDestination()
+            }
+        }
+        .onChange(of: container.mainNavigator.openWindowRequestId) { _, _ in
+            openWindow(id: "omnipo.main")
+        }
         .task {
             if container.settings.readBool(forKey: .reopenLastDestination) {
                 if let stored = container.settings.readString(forKey: .lastOpenedDestinationKey),
                    let destination = AppDestination(rawValue: stored) {
                     selection = destination
                 }
+            }
+            if let pending = container.mainNavigator.pendingDestination {
+                selection = pending
+                container.mainNavigator.consumePendingDestination()
             }
         }
     }

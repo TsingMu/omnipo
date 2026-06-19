@@ -43,9 +43,8 @@ public final class LauncherStore {
 
         let task = Task { [weak self] in
             guard let self else { return }
-            let batch = await self.service.search(query: newQuery)
-            if Task.isCancelled { return }
-            await MainActor.run {
+            for await batch in self.service.search(query: newQuery) {
+                if Task.isCancelled { return }
                 self.applyBatch(batch, expectedGeneration: capturedGeneration)
             }
         }
@@ -63,6 +62,7 @@ public final class LauncherStore {
     public func cancelAll() {
         currentTask?.cancel()
         currentTask = nil
+        service.cancel()
         inflightGeneration &+= 1
         query = ""
         results = []
@@ -108,7 +108,9 @@ public final class LauncherStore {
             selection = results.first?.id
         }
 
-        if results.isEmpty {
+        if results.isEmpty, !batch.isFinal, batch.failures.isEmpty {
+            state = .loading
+        } else if results.isEmpty {
             if batch.failures.isEmpty {
                 state = .empty
             } else {

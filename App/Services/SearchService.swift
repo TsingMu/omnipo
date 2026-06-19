@@ -5,8 +5,8 @@ import Foundation
 /// 接收查询文本,异步返回一批或多批结果。查询代次用于拒绝过期结果;
 /// 提供者错误被隔离,单个失败不清除其他成功结果。
 public protocol SearchService: AnyObject, Sendable {
-    func search(query: String) async -> SearchBatch
-    func cancel() async
+    func search(query: String) -> AsyncStream<SearchBatch>
+    func cancel()
 }
 
 public protocol SearchProvider: Sendable {

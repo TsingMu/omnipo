@@ -142,4 +142,53 @@ final class SpotlightFileSearchProviderTests: XCTestCase {
         XCTAssertFalse(first.sourceIdentifier.contains("/"), "source id must not embed paths")
         XCTAssertFalse(first.sourceIdentifier.contains("secret"))
     }
+
+    @MainActor
+    func test_backendCancellationStopsMetadataQueryAndCompletesOnce() async {
+        let query = FakeSpotlightMetadataQuery()
+        let backend = SpotlightFileSearchBackend(
+            logger: makeLogger(),
+            timeout: 5,
+            resultLimit: 10,
+            queryFactory: { query }
+        )
+
+        let task = Task {
+            await backend.search(query: "report")
+        }
+        while query.startCount == 0 {
+            await Task.yield()
+        }
+        task.cancel()
+        let result = await task.value
+        NotificationCenter.default.post(name: .NSMetadataQueryDidFinishGathering, object: query)
+
+        XCTAssertEqual(query.stopCount, 1)
+        if case .unavailable(let reason) = result {
+            XCTAssertEqual(reason, "cancelled")
+        } else {
+            XCTFail("expected cancelled result")
+        }
+    }
+}
+
+@MainActor
+private final class FakeSpotlightMetadataQuery: SpotlightMetadataQuery {
+    var predicate: NSPredicate?
+    var searchScopes: [Any] = []
+    var sortDescriptors: [NSSortDescriptor] = []
+    var resultCount: Int { 0 }
+    private(set) var startCount = 0
+    private(set) var stopCount = 0
+
+    func result(at index: Int) -> Any { NSNull() }
+
+    func start() -> Bool {
+        startCount += 1
+        return true
+    }
+
+    func stop() {
+        stopCount += 1
+    }
 }

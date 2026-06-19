@@ -27,6 +27,17 @@ private func makeLogger() -> any LoggingService {
     OSLogLoggingService(subsystem: "com.omnipo.tests.search")
 }
 
+private func collectBatches(
+    from service: any SearchService,
+    query: String
+) async -> [SearchBatch] {
+    var batches: [SearchBatch] = []
+    for await batch in service.search(query: query) {
+        batches.append(batch)
+    }
+    return batches
+}
+
 final class DefaultSearchServiceTests: XCTestCase {
 
     func test_search_combinesResultsFromAllProviders() async {
@@ -58,7 +69,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
         let service = DefaultSearchService(providers: [command, app], logger: makeLogger())
 
-        let batch = await service.search(query: "test")
+        let batch = await collectBatches(from: service, query: "test").last!
 
         XCTAssertEqual(batch.results.count, 2)
         XCTAssertTrue(batch.failures.isEmpty)
@@ -88,7 +99,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
         let service = DefaultSearchService(providers: [good, bad], logger: makeLogger())
 
-        let batch = await service.search(query: "test")
+        let batch = await collectBatches(from: service, query: "test").last!
 
         XCTAssertEqual(batch.results.count, 1, "successful provider results should still appear")
         XCTAssertEqual(batch.failures.count, 1)
@@ -101,7 +112,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
         let service = DefaultSearchService(providers: [unavailable], logger: makeLogger())
 
-        let batch = await service.search(query: "test")
+        let batch = await collectBatches(from: service, query: "test").last!
 
         XCTAssertEqual(batch.failures.count, 1)
         XCTAssertEqual(batch.failures.first?.providerKind, "file")
@@ -111,8 +122,8 @@ final class DefaultSearchServiceTests: XCTestCase {
         let empty = FakeProvider(kind: "command", outcome: .success([]))
         let service = DefaultSearchService(providers: [empty], logger: makeLogger())
 
-        let first = await service.search(query: "a")
-        let second = await service.search(query: "b")
+        let first = await collectBatches(from: service, query: "a").last!
+        let second = await collectBatches(from: service, query: "b").last!
 
         XCTAssertGreaterThan(second.generation, first.generation)
     }
@@ -135,10 +146,67 @@ final class DefaultSearchServiceTests: XCTestCase {
         let service = DefaultSearchService(providers: [slow, slow, slow], logger: makeLogger())
 
         let start = Date()
-        _ = await service.search(query: "x")
+        _ = await collectBatches(from: service, query: "x")
         let elapsed = Date().timeIntervalSince(start)
 
         XCTAssertLessThan(elapsed, 0.12, "should be parallel, total < 3 * delay")
+    }
+
+    func test_search_publishesLocalBatchBeforeDebouncedFiles() async {
+        let localResult = SearchResult(
+            kind: .application,
+            title: "Safari",
+            matchScore: 1,
+            sourceIdentifier: "com.apple.Safari",
+            iconDescriptor: .none,
+            executionPayload: .applicationBundleIdentifier("com.apple.Safari")
+        )
+        let fileResult = SearchResult(
+            kind: .file,
+            title: "Safari Notes",
+            matchScore: 0.3,
+            sourceIdentifier: "file",
+            iconDescriptor: .genericFile,
+            executionPayload: .fileBookmark(Data([1]))
+        )
+        let local = FakeProvider(kind: "application", outcome: .success([localResult]))
+        let file = FakeProvider(kind: "file", outcome: .success([fileResult]), delay: 0.05)
+        let service = DefaultSearchService(
+            providers: [local, file],
+            logger: makeLogger(),
+            fileDebounce: .milliseconds(50)
+        )
+
+        let start = ContinuousClock.now
+        var iterator = service.search(query: "safari").makeAsyncIterator()
+        let first = await iterator.next()
+        let firstElapsed = start.duration(to: .now)
+        let final = await iterator.next()
+
+        XCTAssertEqual(first?.results.map(\.kind), [.application])
+        XCTAssertEqual(first?.isFinal, false)
+        XCTAssertLessThan(firstElapsed, .milliseconds(50))
+        XCTAssertEqual(final?.results.map(\.kind), [.application, .file])
+        XCTAssertEqual(final?.isFinal, true)
+    }
+
+    func test_newQueryCancelsOldFileSearchDuringDebounce() async {
+        let local = FakeProvider(kind: "command", outcome: .success([]))
+        let file = FakeProvider(kind: "file", outcome: .success([]))
+        let service = DefaultSearchService(
+            providers: [local, file],
+            logger: makeLogger(),
+            fileDebounce: .milliseconds(150)
+        )
+
+        let oldConsumer = Task {
+            await collectBatches(from: service, query: "old query")
+        }
+        try? await Task.sleep(for: .milliseconds(20))
+        _ = await collectBatches(from: service, query: "x")
+        _ = await oldConsumer.value
+
+        XCTAssertEqual(file.calls.withLock { $0 }, 0)
     }
 }
 
@@ -259,5 +327,35 @@ final class LauncherStoreTests: XCTestCase {
 
         XCTAssertEqual(store.state, .empty)
         XCTAssertNil(store.selection)
+    }
+
+    func test_fileBatchKeepsSelectionFromLocalBatch() async {
+        let localResults = [sampleResult(id: "alpha"), sampleResult(id: "beta")]
+        let fileResult = SearchResult(
+            kind: .file,
+            title: "alpha.txt",
+            matchScore: 0.3,
+            sourceIdentifier: "file.alpha",
+            iconDescriptor: .genericFile,
+            executionPayload: .fileBookmark(Data([1]))
+        )
+        let service = DefaultSearchService(
+            providers: [
+                FakeProvider(kind: "command", outcome: .success(localResults)),
+                FakeProvider(kind: "file", outcome: .success([fileResult]))
+            ],
+            logger: makeLogger(),
+            fileDebounce: .milliseconds(80)
+        )
+        let store = LauncherStore(service: service)
+
+        store.updateQuery("alpha")
+        try? await Task.sleep(for: .milliseconds(30))
+        store.moveSelection(by: 1)
+        let localSelection = store.selection
+        try? await Task.sleep(for: .milliseconds(100))
+
+        XCTAssertEqual(store.selection, localSelection)
+        XCTAssertEqual(store.results.count, 3)
     }
 }

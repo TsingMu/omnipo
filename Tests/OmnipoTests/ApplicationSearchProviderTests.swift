@@ -15,6 +15,41 @@ private let sampleApps: [AppRecord] = [
 
 final class ApplicationSearchProviderTests: XCTestCase {
 
+    func test_applicationIndex_concurrentRefreshesUseSingleFlight() async {
+        let counter = OSAllocatedUnfairLock<Int>(initialState: 0)
+        let index = ApplicationIndex(discover: {
+            counter.withLock { $0 += 1 }
+            try? await Task.sleep(for: .milliseconds(100))
+            return sampleApps
+        })
+
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<12 {
+                group.addTask {
+                    await index.refresh()
+                }
+            }
+        }
+
+        XCTAssertEqual(counter.withLock { $0 }, 1)
+        let records = await index.currentRecords()
+        XCTAssertEqual(records.count, sampleApps.count)
+    }
+
+    func test_applicationIndex_prewarmMakesSnapshotAvailableWithoutAnotherScan() async {
+        let counter = OSAllocatedUnfairLock<Int>(initialState: 0)
+        let index = ApplicationIndex(discover: {
+            counter.withLock { $0 += 1 }
+            return sampleApps
+        })
+
+        await index.prewarm()
+        let records = await index.currentRecords()
+
+        XCTAssertEqual(records, sampleApps)
+        XCTAssertEqual(counter.withLock { $0 }, 1)
+    }
+
     func test_emptyQuery_returnsEmpty() async {
         let provider = ApplicationSearchProvider(discover: { sampleApps })
         let result = await provider.search(query: "", generation: 1)

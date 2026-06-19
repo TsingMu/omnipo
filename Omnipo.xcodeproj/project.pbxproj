@@ -49,6 +49,7 @@
 		00000000000000000000022D /* CommandSearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000030D /* CommandSearchProvider.swift */; };
 		00000000000000000000022E /* SearchRankerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000030E /* SearchRankerTests.swift */; };
 		00000000000000000000022F /* SystemApplicationDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000030F /* SystemApplicationDiscovery.swift */; };
+		000000000000000000000243 /* ApplicationIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000323 /* ApplicationIndex.swift */; };
 		000000000000000000000230 /* ApplicationSearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000310 /* ApplicationSearchProvider.swift */; };
 		000000000000000000000231 /* ApplicationLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000311 /* ApplicationLauncher.swift */; };
 		000000000000000000000232 /* ApplicationSearchProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000312 /* ApplicationSearchProviderTests.swift */; };
@@ -126,6 +127,7 @@
 		00000000000000000000030D /* CommandSearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSearchProvider.swift; sourceTree = "<group>"; };
 		00000000000000000000030E /* SearchRankerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchRankerTests.swift; sourceTree = "<group>"; };
 		00000000000000000000030F /* SystemApplicationDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemApplicationDiscovery.swift; sourceTree = "<group>"; };
+		000000000000000000000323 /* ApplicationIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationIndex.swift; sourceTree = "<group>"; };
 		000000000000000000000310 /* ApplicationSearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationSearchProvider.swift; sourceTree = "<group>"; };
 		000000000000000000000311 /* ApplicationLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLauncher.swift; sourceTree = "<group>"; };
 		000000000000000000000312 /* ApplicationSearchProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationSearchProviderTests.swift; sourceTree = "<group>"; };
@@ -299,6 +301,7 @@
 		000000000000000000000042 /* AppDiscovery */ = {
 			isa = PBXGroup;
 			children = (
+				000000000000000000000323 /* ApplicationIndex.swift */,
 				00000000000000000000030F /* SystemApplicationDiscovery.swift */,
 			);
 			path = AppDiscovery;
@@ -482,6 +485,7 @@
 				00000000000000000000022C /* SearchRanker.swift in Sources */,
 				00000000000000000000022D /* CommandSearchProvider.swift in Sources */,
 				00000000000000000000022F /* SystemApplicationDiscovery.swift in Sources */,
+				000000000000000000000243 /* ApplicationIndex.swift in Sources */,
 				000000000000000000000230 /* ApplicationSearchProvider.swift in Sources */,
 				000000000000000000000231 /* ApplicationLauncher.swift in Sources */,
 				000000000000000000000233 /* SpotlightFileSearchProvider.swift in Sources */,

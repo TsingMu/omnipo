@@ -1,5 +1,4 @@
 import Foundation
-import os
 
 /// 应用搜索提供者。
 ///
@@ -8,19 +7,14 @@ import os
 public final class ApplicationSearchProvider: SearchProvider {
     public let kind: String = SearchProviderKind.application
 
-    private let discover: @Sendable () async -> [AppRecord]
-    private let cache = OSAllocatedUnfairLock<CacheState>(initialState: CacheState())
-
-    private struct CacheState: Sendable {
-        var records: [AppRecord] = []
-        var lastRefresh: Date = .distantPast
-    }
-
-    /// 60 秒内复用缓存,避免每次输入触发新的扫描。
-    private let cacheTTL: TimeInterval = 60
+    private let index: ApplicationIndex
 
     public init(discover: @escaping @Sendable () async -> [AppRecord]) {
-        self.discover = discover
+        self.index = ApplicationIndex(discover: discover)
+    }
+
+    public init(index: ApplicationIndex) {
+        self.index = index
     }
 
     public func search(query: String, generation: UInt64) async -> SearchProviderResult {
@@ -28,7 +22,7 @@ public final class ApplicationSearchProvider: SearchProvider {
         if trimmed.isEmpty {
             return .success([])
         }
-        let apps = await currentRecords()
+        let apps = await index.currentRecords()
         let matched = apps.compactMap { app -> SearchResult? in
             guard let best = SearchMatcher.bestMatch(query: trimmed, candidates: app.searchCandidates) else {
                 return nil
@@ -47,20 +41,6 @@ public final class ApplicationSearchProvider: SearchProvider {
     }
 
     public func refresh() async {
-        let fresh = await discover()
-        cache.withLock { state in
-            state.records = fresh
-            state.lastRefresh = Date()
-        }
-    }
-
-    private func currentRecords() async -> [AppRecord] {
-        let now = Date()
-        let snapshot = cache.withLock { $0 }
-        if !snapshot.records.isEmpty && now.timeIntervalSince(snapshot.lastRefresh) < cacheTTL {
-            return snapshot.records
-        }
-        await refresh()
-        return cache.withLock { $0.records }
+        await index.refresh()
     }
 }

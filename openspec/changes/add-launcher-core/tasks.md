@@ -203,10 +203,12 @@
   - `SystemApplicationDiscovery` 同时读取 localized/raw Info.plist 名称和可执行文件名；`AppRecord` 保存去重后的搜索别名。
 - [x] 11.6 在应用索引构建阶段预计算别名，并测试 `wechat`、`we cha`、`weixin`、`wx` 和 `微信` 均可命中微信。
   - `ApplicationSearchAliasBuilder` 使用 Foundation 原生 Mandarin-Latin 转换预生成去声调全拼、紧凑全拼和首字母；应用 Provider 与匹配器测试覆盖全部查询形式。
-- [ ] 11.7 在应用启动或 Launcher 首次显示前异步预热应用索引，并以 single-flight 合并并发刷新。
+- [x] 11.7 在应用启动或 Launcher 首次显示前异步预热应用索引，并以 single-flight 合并并发刷新。
+  - `ApplicationIndex` actor 在应用启动时后台预热；空索引查询复用同一刷新任务，过期索引优先返回现有快照并后台刷新；并发刷新测试验证应用目录发现只执行一次。
 - [ ] 11.8 将搜索聚合改为分批发布：命令和应用先返回，Spotlight 文件结果 debounce 后增量合并。
 - [ ] 11.9 将任务取消传播到 Spotlight backend，确保旧 `NSMetadataQuery` 调用 `stop()` 且 continuation 只完成一次。
 - [ ] 11.10 缓存应用 URL 与图标，避免 SwiftUI 结果行重绘时重复同步查询 `NSWorkspace`。
+  - 应用记录索引与快照复用已由 11.7 完成；应用 URL、图标有界缓存及工作区通知失效仍待实现。
 - [ ] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
 - [ ] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。
 - [ ] 11.13 人工验证系统拼音输入法下无需确认候选或切换输入法即可用 `wechat` 搜索微信，并验证候选键盘操作不受影响。

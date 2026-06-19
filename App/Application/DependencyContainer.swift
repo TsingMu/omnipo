@@ -41,9 +41,10 @@ public final class DependencyContainer {
         )
 
         let commandProvider = CommandSearchProvider()
-        let applicationProvider = ApplicationSearchProvider(discover: {
+        let applicationIndex = ApplicationIndex(discover: {
             await SystemApplicationDiscovery.discover()
         })
+        let applicationProvider = ApplicationSearchProvider(index: applicationIndex)
         let fileProvider = SpotlightFileSearchProvider(
             backend: SpotlightFileSearchBackend(logger: logging),
             logger: logging
@@ -62,6 +63,10 @@ public final class DependencyContainer {
             settings: settings,
             logger: logging
         )
+
+        Task(priority: .utility) {
+            await applicationIndex.prewarm()
+        }
 
         return DependencyContainer(
             settings: settings,

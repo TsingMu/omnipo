@@ -1,0 +1,24 @@
+[environment]
+name = "Omnipo Run"
+description = "停止旧实例、构建并启动 Omnipo macOS 应用"
+
+[environment.runner]
+type = "shell"
+command = "bash ./script/build_and_run.sh run"
+working_dir = "${PROJECT_ROOT}"
+
+[environment.actions.debug]
+command = "bash ./script/build_and_run.sh debug"
+description = "构建 Debug 配置并启动应用,启用调试输出"
+
+[environment.actions.logs]
+command = "bash ./script/build_and_run.sh logs"
+description = "使用 Console.app 或 log stream 查看 Omnipo 子系统日志"
+
+[environment.actions.telemetry]
+command = "bash ./script/build_and_run.sh telemetry"
+description = "查看 Instruments 友好的诊断输出"
+
+[environment.actions.verify]
+command = "bash ./script/build_and_run.sh verify"
+description = "运行单元测试并构建,验证 Phase 0 可验收"

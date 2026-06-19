@@ -8,7 +8,7 @@ Omnipo 是一款原生 macOS 管家应用，以本地优先、透明可控和安
 
 项目计划按以下阶段演进：
 
-1. 项目基础与 OpenSpec 初始化。
+1. 项目基础与 OpenSpec 初始化。(✅ 已完成 2026-06-19,规范见 [application-foundation](specs/application-foundation/spec.md),change 归档于 `changes/archive/initialize-project-foundation/`)
 2. Launcher 与 Clippo 集成。
 3. Dashboard 与应用权限审计。
 4. 全局扫描与清理。

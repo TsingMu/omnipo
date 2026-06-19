@@ -7,6 +7,7 @@ import AppKit
 /// 唯一事实来源是 `LauncherStore`,执行通过 closure 委托给协调层。
 struct LauncherPanelView: View {
     @Bindable var store: LauncherStore
+    let applicationResourceCache: ApplicationResourceCache
     let onExecute: (SearchResult) -> Void
     let onHide: () -> Void
 
@@ -117,7 +118,8 @@ struct LauncherPanelView: View {
                 ForEach(store.results) { result in
                     LauncherResultRow(
                         result: result,
-                        isSelected: result.id == store.selection
+                        isSelected: result.id == store.selection,
+                        applicationResourceCache: applicationResourceCache
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -134,6 +136,7 @@ struct LauncherPanelView: View {
 struct LauncherResultRow: View {
     let result: SearchResult
     let isSelected: Bool
+    let applicationResourceCache: ApplicationResourceCache
 
     var body: some View {
         HStack(spacing: 12) {
@@ -168,7 +171,10 @@ struct LauncherResultRow: View {
             Image(systemName: name)
                 .foregroundStyle(.tint)
         case .appBundleIdentifier(let id):
-            AppIconView(bundleIdentifier: id)
+            AppIconView(
+                bundleIdentifier: id,
+                resourceCache: applicationResourceCache
+            )
         case .fileType(let ext):
             Image(systemName: fileTypeSymbol(for: ext))
                 .foregroundStyle(.secondary)
@@ -218,25 +224,25 @@ struct LauncherResultRow: View {
     }
 }
 
-/// 根据 Bundle ID 现取应用图标的轻量包装。
+/// 从共享有界缓存异步取得应用图标，避免在 `body` 重绘期间调用 `NSWorkspace`。
 struct AppIconView: View {
     let bundleIdentifier: String
+    @ObservedObject var resourceCache: ApplicationResourceCache
+    @State private var image: NSImage?
 
     var body: some View {
-        let path = pathForApp
-        let image: NSImage? = path.isEmpty ? nil : NSWorkspace.shared.icon(forFile: path)
-        if let image {
-            Image(nsImage: image)
-                .resizable()
-                .scaledToFit()
-        } else {
-            Image(systemName: "app")
-                .foregroundStyle(.secondary)
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(systemName: "app")
+                    .foregroundStyle(.secondary)
+            }
         }
-    }
-
-    private var pathForApp: String {
-        let urls = NSWorkspace.shared.urlsForApplications(withBundleIdentifier: bundleIdentifier)
-        return urls.first?.path ?? ""
+        .task(id: "\(bundleIdentifier):\(resourceCache.generation)") {
+            image = resourceCache.icon(for: bundleIdentifier)
+        }
     }
 }

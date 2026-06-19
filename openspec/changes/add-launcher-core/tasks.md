@@ -211,8 +211,8 @@
   - `DefaultSearchService` 通过 `AsyncStream<SearchBatch>` 先发布命令与应用批次，再在 150ms debounce 后合并 Spotlight 文件结果；`LauncherStore` 按查询代次持续消费批次并保持稳定选择。
 - [x] 11.9 将任务取消传播到 Spotlight backend，确保旧 `NSMetadataQuery` 调用 `stop()` 且 continuation 只完成一次。
   - 新查询、流终止和面板关闭会取消聚合生产任务；`SpotlightFileSearchBackend` 的取消处理切回 MainActor 显式调用 `NSMetadataQuery.stop()`，完成、超时、取消共用幂等恢复出口。
-- [ ] 11.10 缓存应用 URL 与图标，避免 SwiftUI 结果行重绘时重复同步查询 `NSWorkspace`。
-  - 应用记录索引与快照复用已由 11.7 完成；应用 URL、图标有界缓存及工作区通知失效仍待实现。
+- [x] 11.10 缓存应用 URL 与图标，避免 SwiftUI 结果行重绘时重复同步查询 `NSWorkspace`。
+  - `@MainActor ApplicationResourceCache` 按 Bundle Identifier 使用容量 128 的 LRU 缓存 URL/`NSImage`；结果行在 `.task(id:)` 中请求并响应缓存代次失效，应用执行器复用同一 URL。工作区文件操作和卷挂载变化通知清空缓存并触发 `ApplicationIndex` single-flight 刷新；测试覆盖重复命中、LRU 淘汰与通知失效。
 - [x] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
   - 测试覆盖 Field Editor marked text 状态发布、组合态按键优先、应用别名、分批时序、批次稳定选择、single-flight、debounce 取消与真实 Spotlight query `stop()`。
 - [ ] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。

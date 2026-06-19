@@ -30,8 +30,20 @@ public final class DependencyContainer {
         let shortcut = CarbonShortcutService(logger: logging)
 
         let navigator = MainWindowNavigator()
+        let commandProvider = CommandSearchProvider()
+        let applicationIndex = ApplicationIndex(discover: {
+            await SystemApplicationDiscovery.discover()
+        })
+        let applicationResourceCache = ApplicationResourceCache {
+            Task(priority: .utility) {
+                await applicationIndex.refresh()
+            }
+        }
         let commandExecutor = LauncherCommandExecutor(navigator: navigator)
-        let applicationLauncher = ApplicationLauncher(logger: logging)
+        let applicationLauncher = ApplicationLauncher(
+            logger: logging,
+            resourceCache: applicationResourceCache
+        )
         let fileLauncher = FileLauncher(logger: logging)
         let resultExecutor = DefaultLauncherResultExecutor(
             commandExecutor: commandExecutor,
@@ -39,11 +51,6 @@ public final class DependencyContainer {
             fileLauncher: fileLauncher,
             logger: logging
         )
-
-        let commandProvider = CommandSearchProvider()
-        let applicationIndex = ApplicationIndex(discover: {
-            await SystemApplicationDiscovery.discover()
-        })
         let applicationProvider = ApplicationSearchProvider(index: applicationIndex)
         let fileProvider = SpotlightFileSearchProvider(
             backend: SpotlightFileSearchBackend(logger: logging),
@@ -54,7 +61,10 @@ public final class DependencyContainer {
             logger: logging
         )
         let store = LauncherStore(service: searchService)
-        let panelController = LauncherPanelController(store: store)
+        let panelController = LauncherPanelController(
+            store: store,
+            applicationResourceCache: applicationResourceCache
+        )
         let coordinator = LauncherCoordinator(
             shortcutService: shortcut,
             store: store,

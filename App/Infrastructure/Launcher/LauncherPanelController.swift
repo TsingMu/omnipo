@@ -20,11 +20,16 @@ public protocol LauncherPanelDelegate: AnyObject {
 public final class LauncherPanelController {
     private weak var delegate: LauncherPanelDelegate?
     private let store: LauncherStore
+    private let applicationResourceCache: ApplicationResourceCache
     private var panel: NSPanel?
     nonisolated(unsafe) private var resignObserver: NSObjectProtocol?
 
-    public init(store: LauncherStore) {
+    public init(
+        store: LauncherStore,
+        applicationResourceCache: ApplicationResourceCache
+    ) {
         self.store = store
+        self.applicationResourceCache = applicationResourceCache
     }
 
     public func attach(delegate: LauncherPanelDelegate) {
@@ -82,6 +87,7 @@ public final class LauncherPanelController {
         let hosting = NSHostingView(
             rootView: LauncherPanelView(
                 store: store,
+                applicationResourceCache: applicationResourceCache,
                 onExecute: { [weak self] result in
                     delegate?.launcherPanelDidRequestExecute(result)
                 },

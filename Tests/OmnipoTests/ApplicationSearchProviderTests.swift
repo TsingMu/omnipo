@@ -1,5 +1,6 @@
 import XCTest
 import os
+import AppKit
 @testable import Omnipo
 
 private let sampleApps: [AppRecord] = [
@@ -14,6 +15,68 @@ private let sampleApps: [AppRecord] = [
 ]
 
 final class ApplicationSearchProviderTests: XCTestCase {
+
+    @MainActor
+    func test_applicationResourceCache_reusesURLAndIconUntilWorkspaceChange() {
+        let center = NotificationCenter()
+        let changed = Notification.Name("test.workspace.changed")
+        var urlResolveCount = 0
+        var iconLoadCount = 0
+        var refreshCount = 0
+        let expectedURL = URL(fileURLWithPath: "/Applications/Test.app")
+        let cache = ApplicationResourceCache(
+            capacity: 4,
+            notificationCenter: center,
+            notificationNames: [changed],
+            resolveURL: { _ in
+                urlResolveCount += 1
+                return expectedURL
+            },
+            loadIcon: { _ in
+                iconLoadCount += 1
+                return NSImage(size: NSSize(width: 16, height: 16))
+            },
+            onWorkspaceChange: { refreshCount += 1 }
+        )
+
+        XCTAssertEqual(cache.applicationURL(for: "com.example.test"), expectedURL)
+        XCTAssertNotNil(cache.icon(for: "com.example.test"))
+        XCTAssertNotNil(cache.icon(for: "com.example.test"))
+        XCTAssertEqual(urlResolveCount, 1)
+        XCTAssertEqual(iconLoadCount, 1)
+
+        center.post(name: changed, object: nil)
+
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertNotNil(cache.icon(for: "com.example.test"))
+        XCTAssertEqual(urlResolveCount, 2)
+        XCTAssertEqual(iconLoadCount, 2)
+    }
+
+    @MainActor
+    func test_applicationResourceCache_evictsLeastRecentlyUsedEntry() {
+        var resolveCounts: [String: Int] = [:]
+        let cache = ApplicationResourceCache(
+            capacity: 2,
+            notificationCenter: NotificationCenter(),
+            notificationNames: [],
+            resolveURL: { bundleIdentifier in
+                resolveCounts[bundleIdentifier, default: 0] += 1
+                return URL(fileURLWithPath: "/Applications/\(bundleIdentifier).app")
+            },
+            loadIcon: { _ in NSImage() }
+        )
+
+        _ = cache.applicationURL(for: "a")
+        _ = cache.applicationURL(for: "b")
+        _ = cache.applicationURL(for: "a")
+        _ = cache.applicationURL(for: "c")
+        _ = cache.applicationURL(for: "b")
+
+        XCTAssertEqual(resolveCounts["a"], 1)
+        XCTAssertEqual(resolveCounts["b"], 2)
+        XCTAssertEqual(resolveCounts["c"], 1)
+    }
 
     func test_applicationIndex_concurrentRefreshesUseSingleFlight() async {
         let counter = OSAllocatedUnfairLock<Int>(initialState: 0)

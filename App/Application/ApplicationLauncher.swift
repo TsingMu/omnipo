@@ -8,14 +8,18 @@ import AppKit
 @MainActor
 public final class ApplicationLauncher {
     private let logger: any LoggingService
+    private let resourceCache: ApplicationResourceCache
 
-    public init(logger: any LoggingService) {
+    public init(
+        logger: any LoggingService,
+        resourceCache: ApplicationResourceCache
+    ) {
         self.logger = logger
+        self.resourceCache = resourceCache
     }
 
     public func launch(bundleIdentifier: String) async -> Result<Void, AppError> {
-        let urls = NSWorkspace.shared.urlsForApplications(withBundleIdentifier: bundleIdentifier)
-        guard let url = urls.first else {
+        guard let url = resourceCache.applicationURL(for: bundleIdentifier) else {
             logger.log(Self.logMissing())
             return .failure(.resourceUnavailable(reason: "application-missing"))
         }

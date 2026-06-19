@@ -5,10 +5,76 @@ import AppKit
 public struct AppRecord: Sendable, Hashable {
     public let bundleIdentifier: String
     public let displayName: String
+    public let aliases: [String]
 
-    public init(bundleIdentifier: String, displayName: String) {
+    public init(
+        bundleIdentifier: String,
+        displayName: String,
+        aliases: [String] = []
+    ) {
         self.bundleIdentifier = bundleIdentifier
         self.displayName = displayName
+        self.aliases = ApplicationSearchAliasBuilder.makeAliases(
+            displayName: displayName,
+            explicitAliases: aliases
+        )
+    }
+
+    public var searchCandidates: [String] {
+        [displayName, bundleIdentifier] + aliases
+    }
+}
+
+/// 在应用发现阶段生成稳定的本地搜索别名，避免每次按键重复做中文转写。
+enum ApplicationSearchAliasBuilder {
+    static func makeAliases(displayName: String, explicitAliases: [String]) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+
+        func append(_ value: String) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+            let key = SearchMatcher.normalize(trimmed)
+            guard !key.isEmpty, key != SearchMatcher.normalize(displayName), seen.insert(key).inserted else {
+                return
+            }
+            result.append(trimmed)
+        }
+
+        for alias in explicitAliases {
+            append(alias)
+        }
+
+        if containsHanCharacters(displayName),
+           let mandarin = displayName.applyingTransform(.mandarinToLatin, reverse: false),
+           let withoutDiacritics = mandarin.applyingTransform(.stripDiacritics, reverse: false) {
+            let fullPinyin = SearchMatcher.normalize(withoutDiacritics)
+            append(fullPinyin)
+
+            let compactPinyin = SearchMatcher.forms(for: fullPinyin).last ?? fullPinyin
+            append(compactPinyin)
+
+            let initials = fullPinyin
+                .split(separator: " ")
+                .compactMap(\.first)
+                .map(String.init)
+                .joined()
+            append(initials)
+        }
+
+        return result
+    }
+
+    private static func containsHanCharacters(_ text: String) -> Bool {
+        text.unicodeScalars.contains { scalar in
+            switch scalar.value {
+            case 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF,
+                 0x20000...0x2A6DF, 0x2A700...0x2EBEF:
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
 
@@ -55,10 +121,22 @@ public enum SystemApplicationDiscovery {
             guard url.pathExtension == "app" else { continue }
             guard let bundle = Bundle(url: url),
                   let bundleId = bundle.bundleIdentifier else { continue }
-            let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
-                ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String)
-                ?? bundleId
-            results.append(AppRecord(bundleIdentifier: bundleId, displayName: name))
+            let localizedInfo = bundle.localizedInfoDictionary ?? [:]
+            let rawInfo = bundle.infoDictionary ?? [:]
+            let discoveredNames = [
+                localizedInfo["CFBundleDisplayName"] as? String,
+                localizedInfo["CFBundleName"] as? String,
+                rawInfo["CFBundleDisplayName"] as? String,
+                rawInfo["CFBundleName"] as? String,
+                bundle.executableURL?.lastPathComponent,
+                url.deletingPathExtension().lastPathComponent
+            ].compactMap { $0 }
+            let name = discoveredNames.first ?? bundleId
+            results.append(AppRecord(
+                bundleIdentifier: bundleId,
+                displayName: name,
+                aliases: Array(discoveredNames.dropFirst())
+            ))
         }
         return results
     }

@@ -43,6 +43,20 @@ final class SearchMatcherTests: XCTestCase {
     func test_normalize_lowercasesAndTrims() {
         XCTAssertEqual(SearchMatcher.normalize("  Hello WORLD  "), "hello world")
     }
+
+    func test_normalize_foldsWidthAndDiacritics() {
+        XCTAssertEqual(SearchMatcher.normalize("  ＷéＣhat  "), "wechat")
+    }
+
+    func test_forms_addsCompactPinyinVariant() {
+        XCTAssertEqual(SearchMatcher.forms(for: "we chat"), ["we chat", "wechat"])
+        XCTAssertEqual(SearchMatcher.forms(for: "wei'xin"), ["wei'xin", "weixin"])
+    }
+
+    func test_bestMatch_usesCompactForms() {
+        let best = SearchMatcher.bestMatch(query: "we chat", candidates: ["WeChat"])
+        XCTAssertEqual(best?.score, 1.0)
+    }
 }
 
 final class SearchRankerTests: XCTestCase {

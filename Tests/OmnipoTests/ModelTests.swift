@@ -3,6 +3,27 @@ import XCTest
 
 final class ModelTests: XCTestCase {
 
+    // MARK: - LauncherInputState
+
+    func test_launcherInputState_defaultsEffectiveQueryToDisplayedText() {
+        let state = LauncherInputState(displayedText: "wechat", isComposing: true)
+
+        XCTAssertEqual(state.displayedText, "wechat")
+        XCTAssertEqual(state.effectiveQuery, "wechat")
+        XCTAssertTrue(state.isComposing)
+    }
+
+    func test_launcherInputState_keepsDisplayAndEffectiveQuerySeparate() {
+        let state = LauncherInputState(
+            displayedText: "we chat",
+            effectiveQuery: "wechat",
+            isComposing: true
+        )
+
+        XCTAssertEqual(state.displayedText, "we chat")
+        XCTAssertEqual(state.effectiveQuery, "wechat")
+    }
+
     // MARK: - AppError
 
     func test_appError_stableCodesAreUnique() {

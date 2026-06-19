@@ -30,8 +30,7 @@ public final class ApplicationSearchProvider: SearchProvider {
         }
         let apps = await currentRecords()
         let matched = apps.compactMap { app -> SearchResult? in
-            let candidates = [app.displayName, app.bundleIdentifier]
-            guard let best = SearchMatcher.bestMatch(query: trimmed, candidates: candidates) else {
+            guard let best = SearchMatcher.bestMatch(query: trimmed, candidates: app.searchCandidates) else {
                 return nil
             }
             return SearchResult(

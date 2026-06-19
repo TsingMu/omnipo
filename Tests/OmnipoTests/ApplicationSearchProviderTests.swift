@@ -5,7 +5,12 @@ import os
 private let sampleApps: [AppRecord] = [
     AppRecord(bundleIdentifier: "com.apple.Safari", displayName: "Safari"),
     AppRecord(bundleIdentifier: "com.apple.mail", displayName: "Mail"),
-    AppRecord(bundleIdentifier: "com.omnipo.app", displayName: "Omnipo")
+    AppRecord(bundleIdentifier: "com.omnipo.app", displayName: "Omnipo"),
+    AppRecord(
+        bundleIdentifier: "com.tencent.xinWeChat",
+        displayName: "微信",
+        aliases: ["WeChat"]
+    )
 ]
 
 final class ApplicationSearchProviderTests: XCTestCase {
@@ -96,5 +101,48 @@ final class ApplicationSearchProviderTests: XCTestCase {
         } else {
             XCTFail("icon descriptor should be appBundleIdentifier")
         }
+    }
+
+    func test_localizedApplication_matchesEnglishBundleName() async {
+        let provider = ApplicationSearchProvider(discover: { sampleApps })
+        let result = await provider.search(query: "wechat", generation: 1)
+
+        guard case .success(let results) = result else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertEqual(results.first?.title, "微信")
+    }
+
+    func test_localizedApplication_matchesCompactCompositionText() async {
+        let provider = ApplicationSearchProvider(discover: { sampleApps })
+        let result = await provider.search(query: "we chat", generation: 1)
+
+        guard case .success(let results) = result else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertEqual(results.first?.title, "微信")
+    }
+
+    func test_chineseApplication_matchesPinyinForms() async {
+        let provider = ApplicationSearchProvider(discover: { sampleApps })
+
+        for query in ["wechat", "we cha", "weixin", "wei xin", "wx", "微信"] {
+            let result = await provider.search(query: query, generation: 1)
+            guard case .success(let results) = result else {
+                XCTFail("expected success for \(query)")
+                continue
+            }
+            XCTAssertEqual(results.first?.title, "微信", "query: \(query)")
+        }
+    }
+
+    func test_appRecord_precomputesPinyinAliases() {
+        let record = AppRecord(bundleIdentifier: "com.tencent.xinWeChat", displayName: "微信")
+
+        XCTAssertTrue(record.aliases.contains("wei xin"))
+        XCTAssertTrue(record.aliases.contains("weixin"))
+        XCTAssertTrue(record.aliases.contains("wx"))
     }
 }

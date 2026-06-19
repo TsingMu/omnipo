@@ -67,6 +67,7 @@
 		00000000000000000000023F /* LauncherCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000031F /* LauncherCoordinator.swift */; };
 		000000000000000000000240 /* MainWindowNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* MainWindowNavigator.swift */; };
 		000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* LauncherCommandExecutorTests.swift */; };
+		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +144,7 @@
 		00000000000000000000031F /* LauncherCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCoordinator.swift; sourceTree = "<group>"; };
 		000000000000000000000320 /* MainWindowNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowNavigator.swift; sourceTree = "<group>"; };
 		000000000000000000000321 /* LauncherCommandExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutorTests.swift; sourceTree = "<group>"; };
+		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -254,6 +256,7 @@
 				000000000000000000000300 /* KeyboardShortcut.swift */,
 				000000000000000000000301 /* LauncherCommand.swift */,
 				000000000000000000000302 /* SearchResult.swift */,
+				000000000000000000000322 /* LauncherInputState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -493,6 +496,7 @@
 				00000000000000000000023E /* LauncherResultExecutor.swift in Sources */,
 				00000000000000000000023F /* LauncherCoordinator.swift in Sources */,
 				000000000000000000000240 /* MainWindowNavigator.swift in Sources */,
+				000000000000000000000242 /* LauncherInputState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

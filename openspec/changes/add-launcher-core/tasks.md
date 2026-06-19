@@ -189,3 +189,25 @@
 - [ ] 10.12 验收后将 launcher 规范合并到 `openspec/specs/launcher/spec.md` 并归档 change。
   - 等待用户在 10.6-10.10 完成人工验收后再执行。
 
+## 11. 输入法组合态搜索与应用搜索性能优化
+
+> 本节为后续补充任务，尚未实现；不得因既有 Launcher 任务已完成而提前标记。
+
+- [x] 11.1 定义 `LauncherInputState`，区分显示文本、有效查询与输入法组合状态。
+  - `App/Models/LauncherInputState.swift`：不可变 `Sendable` 值模型，分别保存 `displayedText`、`effectiveQuery` 与 `isComposing`。
+- [ ] 11.2 以窄 AppKit bridge 读取 Field Editor 的 marked text，并验证系统拼音输入法候选未确认时持续发布查询。
+- [x] 11.3 实现组合查询规范化，保留原始形式并生成去空格、撇号和宽度差异的紧凑形式。
+  - `SearchMatcher.forms(for:)`：折叠大小写、音调和全半角，并生成移除空白及常见拼音撇号的紧凑查询形式。
+- [ ] 11.4 实现输入法优先的 Return、Up/Down 和 Escape 处理，避免 Launcher 抢占候选交互。
+- [x] 11.5 扩展应用记录，保留本地化显示名、Bundle 名称、可执行文件名、Bundle Identifier、中文全拼和拼音首字母等别名。
+  - `SystemApplicationDiscovery` 同时读取 localized/raw Info.plist 名称和可执行文件名；`AppRecord` 保存去重后的搜索别名。
+- [x] 11.6 在应用索引构建阶段预计算别名，并测试 `wechat`、`we cha`、`weixin`、`wx` 和 `微信` 均可命中微信。
+  - `ApplicationSearchAliasBuilder` 使用 Foundation 原生 Mandarin-Latin 转换预生成去声调全拼、紧凑全拼和首字母；应用 Provider 与匹配器测试覆盖全部查询形式。
+- [ ] 11.7 在应用启动或 Launcher 首次显示前异步预热应用索引，并以 single-flight 合并并发刷新。
+- [ ] 11.8 将搜索聚合改为分批发布：命令和应用先返回，Spotlight 文件结果 debounce 后增量合并。
+- [ ] 11.9 将任务取消传播到 Spotlight backend，确保旧 `NSMetadataQuery` 调用 `stop()` 且 continuation 只完成一次。
+- [ ] 11.10 缓存应用 URL 与图标，避免 SwiftUI 结果行重绘时重复同步查询 `NSWorkspace`。
+- [ ] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
+- [ ] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。
+- [ ] 11.13 人工验证系统拼音输入法下无需确认候选或切换输入法即可用 `wechat` 搜索微信，并验证候选键盘操作不受影响。
+- [ ] 11.14 执行构建与全部测试，记录验收证据后更新任务状态。

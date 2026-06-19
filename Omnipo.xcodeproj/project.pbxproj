@@ -71,6 +71,7 @@
 		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
 		000000000000000000000244 /* LauncherSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000324 /* LauncherSearchField.swift */; };
 		000000000000000000000245 /* ApplicationResourceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000325 /* ApplicationResourceCache.swift */; };
+		000000000000000000000246 /* LauncherPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000326 /* LauncherPerformanceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -151,6 +152,7 @@
 		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
 		000000000000000000000324 /* LauncherSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherSearchField.swift; sourceTree = "<group>"; };
 		000000000000000000000325 /* ApplicationResourceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationResourceCache.swift; sourceTree = "<group>"; };
+		000000000000000000000326 /* LauncherPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherPerformanceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -354,6 +356,7 @@
 				000000000000000000000316 /* SpotlightFileSearchProviderTests.swift */,
 				000000000000000000000319 /* SearchAggregationTests.swift */,
 				000000000000000000000321 /* LauncherCommandExecutorTests.swift */,
+				000000000000000000000326 /* LauncherPerformanceTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -527,6 +530,7 @@
 				000000000000000000000236 /* SpotlightFileSearchProviderTests.swift in Sources */,
 				000000000000000000000239 /* SearchAggregationTests.swift in Sources */,
 				000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */,
+				000000000000000000000246 /* LauncherPerformanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

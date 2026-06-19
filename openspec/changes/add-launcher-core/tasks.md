@@ -215,6 +215,7 @@
   - `@MainActor ApplicationResourceCache` 按 Bundle Identifier 使用容量 128 的 LRU 缓存 URL/`NSImage`；结果行在 `.task(id:)` 中请求并响应缓存代次失效，应用执行器复用同一 URL。工作区文件操作和卷挂载变化通知清空缓存并触发 `ApplicationIndex` single-flight 刷新；测试覆盖重复命中、LRU 淘汰与通知失效。
 - [x] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
   - 测试覆盖 Field Editor marked text 状态发布、组合态按键优先、应用别名、分批时序、批次稳定选择、single-flight、debounce 取消与真实 Spotlight query `stop()`。
-- [ ] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。
+- [x] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。
+  - `LauncherPerformanceTests` 使用固定 1,000 条应用数据，预热与热身后分别采集 40 次 `ContinuousClock` 样本；应用匹配断言 P95 ≤ 50ms，`LauncherStore` 首批非空本地结果断言 P95 ≤ 100ms，带 150ms debounce 的文件 fake 验证 Spotlight 不进入首批预算。针对性测试与全量测试均通过。
 - [ ] 11.13 人工验证系统拼音输入法下无需确认候选或切换输入法即可用 `wechat` 搜索微信，并验证候选键盘操作不受影响。
 - [ ] 11.14 执行构建与全部测试，记录验收证据后更新任务状态。

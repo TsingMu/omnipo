@@ -69,6 +69,7 @@
 		000000000000000000000240 /* MainWindowNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* MainWindowNavigator.swift */; };
 		000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* LauncherCommandExecutorTests.swift */; };
 		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
+		000000000000000000000244 /* LauncherSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000324 /* LauncherSearchField.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -147,6 +148,7 @@
 		000000000000000000000320 /* MainWindowNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowNavigator.swift; sourceTree = "<group>"; };
 		000000000000000000000321 /* LauncherCommandExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutorTests.swift; sourceTree = "<group>"; };
 		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
+		000000000000000000000324 /* LauncherSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherSearchField.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -230,7 +232,7 @@
 		000000000000000000000006 /* Root */ = { isa = PBXGroup; children = ( 000000000000000000000104 /* RootView.swift */, ); path = Root; sourceTree = "<group>"; };
 		000000000000000000000007 /* Settings */ = { isa = PBXGroup; children = ( 000000000000000000000105 /* SettingsView.swift */, 00000000000000000000030A /* ShortcutSettingsSection.swift */, ); path = Settings; sourceTree = "<group>"; };
 		000000000000000000000008 /* Dashboard */ = { isa = PBXGroup; children = ( 000000000000000000000106 /* DashboardView.swift */, ); path = Dashboard; sourceTree = "<group>"; };
-		000000000000000000000009 /* Launcher */ = { isa = PBXGroup; children = ( 000000000000000000000107 /* LauncherView.swift */, 000000000000000000000318 /* LauncherStore.swift */, 00000000000000000000031A /* LauncherPanelView.swift */, ); path = Launcher; sourceTree = "<group>"; };
+		000000000000000000000009 /* Launcher */ = { isa = PBXGroup; children = ( 000000000000000000000107 /* LauncherView.swift */, 000000000000000000000318 /* LauncherStore.swift */, 000000000000000000000324 /* LauncherSearchField.swift */, 00000000000000000000031A /* LauncherPanelView.swift */, ); path = Launcher; sourceTree = "<group>"; };
 		00000000000000000000000A /* Clipboard */ = { isa = PBXGroup; children = ( 000000000000000000000108 /* ClipboardView.swift */, ); path = Clipboard; sourceTree = "<group>"; };
 		00000000000000000000000B /* Cleaner */ = { isa = PBXGroup; children = ( 000000000000000000000109 /* CleanerView.swift */, ); path = Cleaner; sourceTree = "<group>"; };
 		00000000000000000000000C /* Uninstaller */ = { isa = PBXGroup; children = ( 00000000000000000000010A /* UninstallerView.swift */, ); path = Uninstaller; sourceTree = "<group>"; };
@@ -501,6 +503,7 @@
 				00000000000000000000023F /* LauncherCoordinator.swift in Sources */,
 				000000000000000000000240 /* MainWindowNavigator.swift in Sources */,
 				000000000000000000000242 /* LauncherInputState.swift in Sources */,
+				000000000000000000000244 /* LauncherSearchField.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

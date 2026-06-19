@@ -16,7 +16,8 @@ public final class LauncherStore {
         case partialFailure(String)
     }
 
-    public private(set) var query: String = ""
+    public private(set) var inputState = LauncherInputState(displayedText: "")
+    public var query: String { inputState.displayedText }
     public private(set) var results: [SearchResult] = []
     public private(set) var selection: SearchResult.ID?
     public private(set) var state: State = .idle
@@ -33,8 +34,12 @@ public final class LauncherStore {
     }
 
     public func updateQuery(_ newQuery: String) {
+        updateInput(LauncherInputState(displayedText: newQuery))
+    }
+
+    public func updateInput(_ newState: LauncherInputState) {
         currentTask?.cancel()
-        query = newQuery
+        inputState = newState
         state = .loading
         transientError = nil
 
@@ -43,7 +48,7 @@ public final class LauncherStore {
 
         let task = Task { [weak self] in
             guard let self else { return }
-            for await batch in self.service.search(query: newQuery) {
+            for await batch in self.service.search(query: newState.effectiveQuery) {
                 if Task.isCancelled { return }
                 self.applyBatch(batch, expectedGeneration: capturedGeneration)
             }
@@ -64,7 +69,7 @@ public final class LauncherStore {
         currentTask = nil
         service.cancel()
         inflightGeneration &+= 1
-        query = ""
+        inputState = LauncherInputState(displayedText: "")
         results = []
         selection = nil
         state = .idle

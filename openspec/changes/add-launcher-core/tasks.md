@@ -195,10 +195,12 @@
 
 - [x] 11.1 定义 `LauncherInputState`，区分显示文本、有效查询与输入法组合状态。
   - `App/Models/LauncherInputState.swift`：不可变 `Sendable` 值模型，分别保存 `displayedText`、`effectiveQuery` 与 `isComposing`。
-- [ ] 11.2 以窄 AppKit bridge 读取 Field Editor 的 marked text，并验证系统拼音输入法候选未确认时持续发布查询。
+- [x] 11.2 以窄 AppKit bridge 读取 Field Editor 的 marked text，并验证系统拼音输入法候选未确认时持续发布查询。
+  - `LauncherSearchField` 以最小 `NSViewRepresentable` 包装 `NSTextField`，从 Field Editor 的完整字符串与 `hasMarkedText()` 发布 `LauncherInputState`；Store 使用 `effectiveQuery` 搜索且不回写打断组合文本。
 - [x] 11.3 实现组合查询规范化，保留原始形式并生成去空格、撇号和宽度差异的紧凑形式。
   - `SearchMatcher.forms(for:)`：折叠大小写、音调和全半角，并生成移除空白及常见拼音撇号的紧凑查询形式。
-- [ ] 11.4 实现输入法优先的 Return、Up/Down 和 Escape 处理，避免 Launcher 抢占候选交互。
+- [x] 11.4 实现输入法优先的 Return、Up/Down 和 Escape 处理，避免 Launcher 抢占候选交互。
+  - 局部 `NSTextFieldDelegate` 命令路由在 marked text 存在时不消费 Return、Up/Down、Escape；仅在非组合态执行 Launcher 选择、提交与关闭。
 - [x] 11.5 扩展应用记录，保留本地化显示名、Bundle 名称、可执行文件名、Bundle Identifier、中文全拼和拼音首字母等别名。
   - `SystemApplicationDiscovery` 同时读取 localized/raw Info.plist 名称和可执行文件名；`AppRecord` 保存去重后的搜索别名。
 - [x] 11.6 在应用索引构建阶段预计算别名，并测试 `wechat`、`we cha`、`weixin`、`wx` 和 `微信` 均可命中微信。
@@ -211,8 +213,8 @@
   - 新查询、流终止和面板关闭会取消聚合生产任务；`SpotlightFileSearchBackend` 的取消处理切回 MainActor 显式调用 `NSMetadataQuery.stop()`，完成、超时、取消共用幂等恢复出口。
 - [ ] 11.10 缓存应用 URL 与图标，避免 SwiftUI 结果行重绘时重复同步查询 `NSWorkspace`。
   - 应用记录索引与快照复用已由 11.7 完成；应用 URL、图标有界缓存及工作区通知失效仍待实现。
-- [ ] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
-  - 已覆盖分批时序、批次合并后的稳定选择、debounce 期间旧查询取消、single-flight 与真实 Spotlight query `stop()`；marked text 测试仍待输入桥接实现时补齐。
+- [x] 11.11 增加 marked text、别名匹配、分批时序、single-flight、真实取消和稳定选择测试。
+  - 测试覆盖 Field Editor marked text 状态发布、组合态按键优先、应用别名、分批时序、批次稳定选择、single-flight、debounce 取消与真实 Spotlight query `stop()`。
 - [ ] 11.12 增加性能基准：预热应用匹配 P95 目标不超过 50ms，首批本地结果目标在 100ms 内可见。
 - [ ] 11.13 人工验证系统拼音输入法下无需确认候选或切换输入法即可用 `wechat` 搜索微信，并验证候选键盘操作不受影响。
 - [ ] 11.14 执行构建与全部测试，记录验收证据后更新任务状态。

@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 @testable import Omnipo
 
 final class ModelTests: XCTestCase {
@@ -22,6 +23,99 @@ final class ModelTests: XCTestCase {
 
         XCTAssertEqual(state.displayedText, "we chat")
         XCTAssertEqual(state.effectiveQuery, "wechat")
+    }
+
+    @MainActor
+    func test_launcherSearchField_publishesMarkedTextAsEffectiveQuery() {
+        var published: LauncherInputState?
+        let coordinator = LauncherSearchField.Coordinator(
+            onInputStateChange: { published = $0 },
+            onMoveSelection: { _ in },
+            onSubmit: {},
+            onCancel: {}
+        )
+        let field = LauncherSearchTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        field.delegate = coordinator
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 80),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = field
+        window.makeFirstResponder(field)
+        guard let editor = field.currentEditor() as? NSTextView else {
+            XCTFail("expected field editor")
+            return
+        }
+
+        editor.setMarkedText(
+            "wechat",
+            selectedRange: NSRange(location: 6, length: 0),
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
+        coordinator.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: field))
+
+        XCTAssertEqual(published?.displayedText, "wechat")
+        XCTAssertEqual(published?.effectiveQuery, "wechat")
+        XCTAssertEqual(published?.isComposing, true)
+    }
+
+    @MainActor
+    func test_launcherSearchField_leavesLauncherCommandsUnhandledWhileComposing() {
+        var moves: [Int] = []
+        var submitCount = 0
+        var cancelCount = 0
+        let coordinator = LauncherSearchField.Coordinator(
+            onInputStateChange: { _ in },
+            onMoveSelection: { moves.append($0) },
+            onSubmit: { submitCount += 1 },
+            onCancel: { cancelCount += 1 }
+        )
+        let editor = NSTextView()
+        editor.setMarkedText(
+            "wechat",
+            selectedRange: NSRange(location: 6, length: 0),
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
+        let field = NSTextField()
+
+        for selector in [
+            #selector(NSResponder.moveUp(_:)),
+            #selector(NSResponder.moveDown(_:)),
+            #selector(NSResponder.insertNewline(_:)),
+            #selector(NSResponder.cancelOperation(_:))
+        ] {
+            XCTAssertFalse(coordinator.control(field, textView: editor, doCommandBy: selector))
+        }
+
+        XCTAssertTrue(moves.isEmpty)
+        XCTAssertEqual(submitCount, 0)
+        XCTAssertEqual(cancelCount, 0)
+    }
+
+    @MainActor
+    func test_launcherSearchField_handlesLauncherCommandsWithoutMarkedText() {
+        var moves: [Int] = []
+        var submitCount = 0
+        var cancelCount = 0
+        let coordinator = LauncherSearchField.Coordinator(
+            onInputStateChange: { _ in },
+            onMoveSelection: { moves.append($0) },
+            onSubmit: { submitCount += 1 },
+            onCancel: { cancelCount += 1 }
+        )
+        let editor = NSTextView()
+        let field = NSTextField()
+
+        XCTAssertTrue(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.moveUp(_:))))
+        XCTAssertTrue(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.moveDown(_:))))
+        XCTAssertTrue(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.insertNewline(_:))))
+        XCTAssertTrue(coordinator.control(field, textView: editor, doCommandBy: #selector(NSResponder.cancelOperation(_:))))
+
+        XCTAssertEqual(moves, [-1, 1])
+        XCTAssertEqual(submitCount, 1)
+        XCTAssertEqual(cancelCount, 1)
     }
 
     // MARK: - AppError

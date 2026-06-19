@@ -10,23 +10,19 @@ struct LauncherPanelView: View {
     let onExecute: (SearchResult) -> Void
     let onHide: () -> Void
 
-    @FocusState private var searchFieldFocused: Bool
-
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("搜索应用、文件、功能…", text: textBinding)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 18))
-                    .focused($searchFieldFocused)
-                    .submitLabel(.go)
-                    .onSubmit {
-                        if let result = store.currentResult() {
-                            onExecute(result)
-                        }
-                    }
+                LauncherSearchField(
+                    inputState: store.inputState,
+                    onInputStateChange: store.updateInput,
+                    onMoveSelection: store.moveSelection,
+                    onSubmit: executeSelection,
+                    onCancel: onHide
+                )
+                .frame(height: 24)
                 if !store.query.isEmpty {
                     Button {
                         store.updateQuery("")
@@ -87,19 +83,12 @@ struct LauncherPanelView: View {
                 .stroke(.tertiary.opacity(0.3), lineWidth: 1)
         )
         .frame(width: 560, height: 420)
-        .onAppear {
-            searchFieldFocused = true
-        }
-        .background(
-            ShortcutKeyHandler(store: store, onExecute: onExecute, onHide: onHide)
-        )
     }
 
-    private var textBinding: Binding<String> {
-        Binding(
-            get: { store.query },
-            set: { store.updateQuery($0) }
-        )
+    private func executeSelection() {
+        if let result = store.currentResult() {
+            onExecute(result)
+        }
     }
 
     @ViewBuilder
@@ -139,35 +128,6 @@ struct LauncherPanelView: View {
             }
             .padding(.vertical, 4)
         }
-    }
-}
-
-private struct ShortcutKeyHandler: View {
-    let store: LauncherStore
-    let onExecute: (SearchResult) -> Void
-    let onHide: () -> Void
-
-    var body: some View {
-        Color.clear
-            .focusable()
-            .onKeyPress(.upArrow) {
-                store.moveSelection(by: -1)
-                return .handled
-            }
-            .onKeyPress(.downArrow) {
-                store.moveSelection(by: 1)
-                return .handled
-            }
-            .onKeyPress(.return) {
-                if let result = store.currentResult() {
-                    onExecute(result)
-                }
-                return .handled
-            }
-            .onKeyPress(.escape) {
-                onHide()
-                return .handled
-            }
     }
 }
 

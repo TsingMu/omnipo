@@ -77,7 +77,7 @@ public final class LauncherPanelController {
         panel.hasShadow = true
         panel.level = .floating
         panel.hidesOnDeactivate = false
-        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .canJoinAllSpaces]
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let hosting = NSHostingView(
             rootView: LauncherPanelView(

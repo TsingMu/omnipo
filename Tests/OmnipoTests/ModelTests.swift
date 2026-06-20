@@ -24,10 +24,11 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(Set(DashboardShortcut.allCases.map(\.destination)).count, 4)
     }
 
-    func test_sidebarLayout_usesCurrentTitlebarSafeArea() {
-        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: 58), 58)
-        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: 0), 0)
-        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: -1), 0)
+    func test_sidebarLayout_keepsViewportBelowCurrentTitlebarSafeArea() {
+        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 58, windowTitlebarHeight: 72), 96)
+        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 58, windowTitlebarHeight: 44), 82)
+        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 0, windowTitlebarHeight: 0), 0)
+        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: -1, windowTitlebarHeight: -2), 0)
     }
 
     // MARK: - LauncherInputState

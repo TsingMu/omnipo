@@ -10,9 +10,21 @@ struct RootView: View {
     var body: some View {
         @Bindable var appState = appState
         return NavigationSplitView(columnVisibility: $sidebarVisibility) {
-            sidebar
+            SidebarView(selection: $selection)
         } detail: {
-            selection.detailView
+            selection.detailView(onNavigate: navigate)
+                .navigationTitle(selection.title)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    container.launcherCoordinator.panelController.toggle()
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .help("打开 Launcher")
+                .accessibilityLabel("打开 Launcher")
+            }
         }
         .onChange(of: selection) { _, newValue in
             appState.lastOpenedDestination = newValue
@@ -42,14 +54,8 @@ struct RootView: View {
         }
     }
 
-    private var sidebar: some View {
-        List(AppDestination.allCases, selection: $selection) { destination in
-            Label(destination.title, systemImage: destination.symbol)
-                .tag(destination)
-                .accessibilityIdentifier("nav.\(destination.rawValue)")
-        }
-        .navigationTitle("Omnipo")
-        .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
+    private func navigate(to destination: AppDestination) {
+        selection = destination
     }
 }
 

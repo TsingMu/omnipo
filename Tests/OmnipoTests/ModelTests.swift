@@ -4,6 +4,26 @@ import AppKit
 
 final class ModelTests: XCTestCase {
 
+    func test_appDestination_sectionsCoverAllDestinationsOnce() {
+        let grouped = AppDestination.Section.allCases.flatMap { section in
+            AppDestination.allCases.filter { $0.section == section }
+        }
+
+        XCTAssertEqual(grouped.count, AppDestination.allCases.count)
+        XCTAssertEqual(Set(grouped), Set(AppDestination.allCases))
+        XCTAssertEqual(AppDestination.dashboard.section, .overview)
+        XCTAssertEqual(AppDestination.launcher.section, .productivity)
+        XCTAssertEqual(AppDestination.cleaner.section, .system)
+    }
+
+    func test_dashboardShortcuts_mapToSafeNavigationDestinations() {
+        XCTAssertEqual(DashboardShortcut.scanDisk.destination, .cleaner)
+        XCTAssertEqual(DashboardShortcut.uninstallApplication.destination, .uninstaller)
+        XCTAssertEqual(DashboardShortcut.auditPermissions.destination, .permissionAudit)
+        XCTAssertEqual(DashboardShortcut.manageWeChat.destination, .wechatManager)
+        XCTAssertEqual(Set(DashboardShortcut.allCases.map(\.destination)).count, 4)
+    }
+
     // MARK: - LauncherInputState
 
     func test_launcherInputState_defaultsEffectiveQueryToDisplayedText() {

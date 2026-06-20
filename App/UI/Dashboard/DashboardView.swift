@@ -1,18 +1,38 @@
 import SwiftUI
 
 struct DashboardView: View {
+    let onNavigate: @MainActor (AppDestination) -> Void
+
+    init(onNavigate: @escaping @MainActor (AppDestination) -> Void = { _ in }) {
+        self.onNavigate = onNavigate
+    }
+
     var body: some View {
-        PlaceholderFeatureView(
-            title: "Dashboard",
-            symbol: "square.grid.2x2",
-            summary: "应用总览将在后续 change 中接入真实指标。",
-            capabilitiesNotImplemented: [
-                "磁盘占用概览",
-                "近期操作日志",
-                "权限状态摘要",
-                "系统资源快照"
-            ]
-        )
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color.accentColor.opacity(0.08),
+                    Color.cyan.opacity(0.05),
+                    Color(nsColor: .windowBackgroundColor)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 22) {
+                    DashboardBrandHeader()
+                    DashboardDiskCard()
+                    DashboardShortcutGrid(onNavigate: onNavigate)
+                    DashboardSafetyNote()
+                }
+                .frame(maxWidth: 760)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 34)
+                .frame(maxWidth: .infinity)
+            }
+        }
     }
 }
 

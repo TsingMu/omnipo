@@ -29,7 +29,7 @@ struct OmnipoApp: App {
                 .environment(appState)
                 .frame(minWidth: 720, minHeight: 480)
         }
-        .defaultSize(width: 960, height: 640)
+        .defaultSize(width: 1040, height: 700)
         .windowResizability(.contentMinSize)
 
         Settings {

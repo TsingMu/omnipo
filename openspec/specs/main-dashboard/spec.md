@@ -5,7 +5,7 @@ TBD - created by archiving change redesign-main-dashboard. Update Purpose after 
 ## Requirements
 ### Requirement: 主窗口必须提供清晰的分组导航
 
-系统 MUST 在原生 macOS 侧栏中保留八个稳定功能入口，并按概览、效率工具和系统工具分组展示中文标题、语义图标与简短说明。
+系统 MUST 在原生 macOS 侧栏中保留八个稳定功能入口，并按概览、效率工具和系统工具分组展示中文标题、语义图标与简短说明。侧栏滚动内容必须避开窗口标题栏、窗口控制按钮和工具栏占用的顶部安全区域。
 
 #### Scenario: 选择侧栏入口
 
@@ -13,6 +13,19 @@ TBD - created by archiving change redesign-main-dashboard. Update Purpose after 
 - **那么** 详情区显示对应现有页面
 - **并且** 选择状态继续支持本地恢复和 Launcher 命令导航
 - **并且** 选择入口本身不启动敏感业务操作
+
+#### Scenario: 启动或恢复主窗口
+
+- **当** 用户启动主窗口或恢复到任一侧栏目的地
+- **那么** 侧栏首个分组和入口位于标题栏安全区域下方
+- **并且** 文字和点击区域不与红黄绿窗口按钮、侧栏切换按钮或工具栏重叠
+- **并且** 侧栏仍保持原生选择、滚动与折叠行为
+
+#### Scenario: 窗口环境改变
+
+- **当** 标题栏高度、安全区或窗口尺寸发生变化
+- **那么** 侧栏顶部间距依据当前安全区自适应
+- **并且** 不依赖固定标题栏高度
 
 ### Requirement: Dashboard 必须说明产品定位与当前状态
 

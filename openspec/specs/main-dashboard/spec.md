@@ -1,0 +1,47 @@
+# main-dashboard Specification
+
+## Purpose
+TBD - created by archiving change redesign-main-dashboard. Update Purpose after archive.
+## Requirements
+### Requirement: 主窗口必须提供清晰的分组导航
+
+系统 MUST 在原生 macOS 侧栏中保留八个稳定功能入口，并按概览、效率工具和系统工具分组展示中文标题、语义图标与简短说明。
+
+#### Scenario: 选择侧栏入口
+
+- **当** 用户选择任一侧栏入口
+- **那么** 详情区显示对应现有页面
+- **并且** 选择状态继续支持本地恢复和 Launcher 命令导航
+- **并且** 选择入口本身不启动敏感业务操作
+
+### Requirement: Dashboard 必须说明产品定位与当前状态
+
+Dashboard MUST 展示 Omnipo 品牌说明、启动磁盘状态卡和安全说明。未接入真实磁盘服务时，系统必须明确显示尚未扫描，不得展示虚构容量或占用率。
+
+#### Scenario: 首次查看 Dashboard
+
+- **假如** 当前没有真实磁盘扫描结果
+- **当** 用户打开 Dashboard
+- **那么** 状态卡显示“尚未扫描”
+- **并且** 不读取用户文件或隐私数据
+- **并且** 不展示演示容量、占用百分比或虚构节省空间
+
+### Requirement: Dashboard 必须提供安全的快捷导航
+
+Dashboard MUST 提供磁盘扫描、应用卸载、权限审计和微信管理四个快捷入口。这些入口只能导航到对应页面，不得自动开始扫描、删除、审计或读取微信数据。
+
+#### Scenario: 使用快捷入口
+
+- **当** 用户点击任一 Dashboard 快捷入口
+- **那么** 主窗口选择对应侧栏目的地
+- **并且** 不自动执行该页面的业务操作
+
+### Requirement: Dashboard 必须适配 macOS 外观与窗口尺寸
+
+Dashboard MUST 使用系统语义色和材质，并在应用最小窗口尺寸下保持内容可读和可访问。
+
+#### Scenario: 缩小窗口或切换外观
+
+- **当** 用户将窗口缩小到支持的最小尺寸或切换浅色与深色外观
+- **那么** 内容可通过自适应布局或滚动继续访问
+- **并且** 文字、卡片与操作保持足够对比度

@@ -24,11 +24,18 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(Set(DashboardShortcut.allCases.map(\.destination)).count, 4)
     }
 
-    func test_sidebarLayout_keepsViewportBelowCurrentTitlebarSafeArea() {
-        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 58, windowTitlebarHeight: 72), 96)
-        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 58, windowTitlebarHeight: 44), 82)
-        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: 0, windowTitlebarHeight: 0), 0)
-        XCTAssertEqual(SidebarLayout.viewportTopInset(safeAreaTop: -1, windowTitlebarHeight: -2), 0)
+    func test_mainWindowLayout_usesStableTitlebarInsets() {
+        XCTAssertEqual(MainWindowLayout.titlebarInset(safeAreaTop: 58, windowTitlebarHeight: 72), 72)
+        XCTAssertEqual(MainWindowLayout.sidebarTopInset(safeAreaTop: 58, windowTitlebarHeight: 72), 88)
+        XCTAssertEqual(MainWindowLayout.detailTopInset(safeAreaTop: 58, windowTitlebarHeight: 44), 70)
+        XCTAssertEqual(MainWindowLayout.titlebarInset(safeAreaTop: -1, windowTitlebarHeight: -2), 0)
+    }
+
+    func test_sidebarNavigation_movesInStableOrderAndClampsAtEdges() {
+        XCTAssertEqual(SidebarNavigation.destination(from: .dashboard, move: .previous), .dashboard)
+        XCTAssertEqual(SidebarNavigation.destination(from: .dashboard, move: .next), .launcher)
+        XCTAssertEqual(SidebarNavigation.destination(from: .permissionAudit, move: .previous), .uninstaller)
+        XCTAssertEqual(SidebarNavigation.destination(from: .systemMonitor, move: .next), .systemMonitor)
     }
 
     // MARK: - LauncherInputState

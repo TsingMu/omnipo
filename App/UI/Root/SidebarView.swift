@@ -46,6 +46,7 @@ struct SidebarView: View {
                     .padding(.bottom, 16)
                 }
                 .focusable()
+                .focusEffectDisabled()
                 .onMoveCommand { direction in
                     guard let move = SidebarNavigation.Move(direction) else { return }
                     let destination = SidebarNavigation.destination(from: selection, move: move)

@@ -4,20 +4,33 @@ struct SidebarView: View {
     @Binding var selection: AppDestination
 
     var body: some View {
-        List(selection: $selection) {
-            ForEach(AppDestination.Section.allCases) { section in
-                Section(section.title) {
-                    ForEach(AppDestination.allCases.filter { $0.section == section }) { destination in
-                        SidebarDestinationRow(destination: destination)
-                            .tag(destination)
-                            .accessibilityIdentifier("nav.\(destination.rawValue)")
+        GeometryReader { geometry in
+            List(selection: $selection) {
+                ForEach(AppDestination.Section.allCases) { section in
+                    Section(section.title) {
+                        ForEach(AppDestination.allCases.filter { $0.section == section }) { destination in
+                            SidebarDestinationRow(destination: destination)
+                                .tag(destination)
+                                .accessibilityIdentifier("nav.\(destination.rawValue)")
+                        }
                     }
                 }
             }
+            .contentMargins(
+                .top,
+                SidebarLayout.contentTopMargin(safeAreaTop: geometry.safeAreaInsets.top),
+                for: .scrollContent
+            )
+            .listStyle(.sidebar)
         }
-        .listStyle(.sidebar)
         .navigationTitle("Omnipo")
         .navigationSplitViewColumnWidth(min: 210, ideal: 238, max: 300)
+    }
+}
+
+enum SidebarLayout {
+    static func contentTopMargin(safeAreaTop: CGFloat) -> CGFloat {
+        max(0, safeAreaTop)
     }
 }
 

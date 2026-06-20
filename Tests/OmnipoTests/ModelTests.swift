@@ -24,6 +24,12 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(Set(DashboardShortcut.allCases.map(\.destination)).count, 4)
     }
 
+    func test_sidebarLayout_usesCurrentTitlebarSafeArea() {
+        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: 58), 58)
+        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: 0), 0)
+        XCTAssertEqual(SidebarLayout.contentTopMargin(safeAreaTop: -1), 0)
+    }
+
     // MARK: - LauncherInputState
 
     func test_launcherInputState_defaultsEffectiveQueryToDisplayedText() {

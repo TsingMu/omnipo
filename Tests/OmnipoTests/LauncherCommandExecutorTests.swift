@@ -1,4 +1,5 @@
 import XCTest
+import Observation
 @testable import Omnipo
 
 @MainActor
@@ -49,5 +50,32 @@ final class LauncherCommandExecutorTests: XCTestCase {
         XCTAssertEqual(Set(navigator.navigatedDestinations), Set(LauncherCommand.allCases.map {
             LauncherCommandExecutor.destination(for: $0)
         }))
+    }
+
+    func test_mainWindowNavigator_publishesAndConsumesObservableDestination() {
+        let navigator = MainWindowNavigator()
+        let changed = expectation(description: "pending destination changed")
+
+        withObservationTracking {
+            _ = navigator.pendingDestination
+        } onChange: {
+            changed.fulfill()
+        }
+
+        navigator.navigate(to: .systemMonitor)
+
+        wait(for: [changed], timeout: 1)
+        XCTAssertEqual(navigator.pendingDestination, .systemMonitor)
+
+        navigator.consumePendingDestination()
+        XCTAssertNil(navigator.pendingDestination)
+    }
+
+    func test_mainWindowNavigator_recognizesSwiftUIMainWindowIdentifiers() {
+        XCTAssertTrue(MainWindowNavigator.isMainWindowIdentifier("omnipo.main"))
+        XCTAssertTrue(MainWindowNavigator.isMainWindowIdentifier("omnipo.main-AppWindow-1"))
+        XCTAssertTrue(MainWindowNavigator.isMainWindowIdentifier("omnipo.main-AppWindow-42"))
+        XCTAssertFalse(MainWindowNavigator.isMainWindowIdentifier("omnipo.settings-AppWindow-1"))
+        XCTAssertFalse(MainWindowNavigator.isMainWindowIdentifier(nil))
     }
 }

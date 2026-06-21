@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import Combine
+import Observation
 
 /// 通过 `pendingDestination` 与 `openWindowRequestId` 把导航请求广播给主窗口视图。
 ///
@@ -8,24 +8,35 @@ import Combine
 /// 主窗口关闭后,`activateMainWindow` 会发出新的 `openWindowRequestId`,
 /// 由 RootView 通过 `@Environment(\.openWindow)` 调用 `openWindow(id:)` 重新创建。
 @MainActor
-public final class MainWindowNavigator: LauncherNavigation, ObservableObject {
-    @Published public private(set) var pendingDestination: AppDestination?
-    @Published public private(set) var activateRequested: Int = 0
-    @Published public private(set) var openWindowRequestId: Int = 0
+@Observable
+public final class MainWindowNavigator: LauncherNavigation {
+    public private(set) var pendingDestination: AppDestination?
+    public private(set) var activateRequested: Int = 0
+    public private(set) var openWindowRequestId: Int = 0
 
     public init() {}
 
+    public static func isMainWindowIdentifier(_ identifier: String?) -> Bool {
+        guard let identifier else { return false }
+        return identifier == "omnipo.main" || identifier.hasPrefix("omnipo.main-AppWindow-")
+    }
+
     public func activateMainWindow() {
-        openWindowRequestId &+= 1
         activateRequested &+= 1
-        for window in NSApp.windows where window.identifier?.rawValue == "omnipo.main" {
-            window.makeKeyAndOrderFront(nil)
+        let mainWindows = NSApp.windows.filter {
+            Self.isMainWindowIdentifier($0.identifier?.rawValue)
+        }
+        if mainWindows.isEmpty {
+            openWindowRequestId &+= 1
+        } else {
+            for window in mainWindows {
+                window.makeKeyAndOrderFront(nil)
+            }
         }
         NSApp.activate(ignoringOtherApps: true)
     }
 
     public func navigate(to destination: AppDestination) {
-        activateMainWindow()
         pendingDestination = destination
     }
 

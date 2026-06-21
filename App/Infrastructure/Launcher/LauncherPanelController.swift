@@ -45,7 +45,7 @@ public final class LauncherPanelController {
     }
 
     public func show() {
-        let resolved = ensurePanel(delegate: delegate)
+        let resolved = ensurePanel()
         store.cancelAll()
         // 触发空查询,让 CommandSearchProvider 立即返回六个内置命令,
         // 而不是等用户首次输入才出现内容。
@@ -64,7 +64,7 @@ public final class LauncherPanelController {
         panel?.isVisible ?? false
     }
 
-    private func ensurePanel(delegate: LauncherPanelDelegate?) -> NSPanel {
+    private func ensurePanel() -> NSPanel {
         if let panel { return panel }
 
         let panel = NSPanel(
@@ -89,10 +89,10 @@ public final class LauncherPanelController {
                 store: store,
                 applicationResourceCache: applicationResourceCache,
                 onExecute: { [weak self] result in
-                    delegate?.launcherPanelDidRequestExecute(result)
+                    self?.delegate?.launcherPanelDidRequestExecute(result)
                 },
                 onHide: { [weak self] in
-                    delegate?.launcherPanelDidRequestHide()
+                    self?.delegate?.launcherPanelDidRequestHide()
                 }
             )
         )

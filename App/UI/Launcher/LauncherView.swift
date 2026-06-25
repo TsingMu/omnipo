@@ -4,30 +4,58 @@ struct LauncherView: View {
     @Environment(DependencyContainer.self) private var container
 
     var body: some View {
-        PlaceholderFeatureView(
-            title: "Launcher",
-            symbol: "magnifyingglass",
-            summary: "通过全局快捷键 Option + Space 唤起搜索面板。",
-            capabilitiesNotImplemented: [
-                "全局快捷键(设置中可改)",
-                "应用搜索与启动",
-                "Spotlight 文件搜索",
-                "六个功能命令"
-            ]
-        )
-        .overlay(alignment: .topTrailing) {
-            Button {
-                container.launcherCoordinator.panelController.show()
-            } label: {
-                Label("打开面板", systemImage: "rectangle.stack.badge.plus")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 30, weight: .light))
+                            .foregroundStyle(.tint)
+                        Text("Launcher")
+                            .font(.largeTitle.bold())
+                    }
+
+                    Text("在主窗口内直接搜索应用、文件与功能命令；也可随时使用全局快捷键 Option + Space 打开独立面板。")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 10) {
+                    Label("本地搜索", systemImage: "checkmark.shield")
+                    Label("支持键盘操作", systemImage: "keyboard")
+                    Label("Option + Space", systemImage: "command")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+                LauncherWorkbenchCard()
+
+                HStack {
+                    Label("需要悬浮面板时，可继续使用全局快捷键或手动打开。", systemImage: "rectangle.stack")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button {
+                        container.launcherCoordinator.panelController.show()
+                    } label: {
+                        Label("打开悬浮面板", systemImage: "rectangle.stack.badge.plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
-            .padding()
+            .padding(24)
+            .frame(maxWidth: 860)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
 #Preview {
     LauncherView()
         .environment(DependencyContainer.production())
-        .frame(width: 720, height: 540)
+        .frame(width: 840, height: 620)
 }

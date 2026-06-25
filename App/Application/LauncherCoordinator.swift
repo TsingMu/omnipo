@@ -41,19 +41,11 @@ public final class LauncherCoordinator: LauncherPanelDelegate {
     }
 
     public func launcherPanelDidRequestExecute(_ result: SearchResult) {
-        let captured = result
-        Task { [weak self] in
-            guard let self else { return }
-            let execResult = await self.resultExecutor.execute(captured)
-            await MainActor.run {
-                switch execResult {
-                case .success:
-                    self.panelController.hide()
-                case .failure(let error):
-                    self.store.setTransientError(error)
-                }
-            }
-        }
+        execute(result, hidesPanelOnSuccess: true)
+    }
+
+    public func executeInline(_ result: SearchResult) {
+        execute(result, hidesPanelOnSuccess: false)
     }
 
     /// 应用启动时读取保存的快捷键,失败回退到 Option + Space。
@@ -73,5 +65,26 @@ public final class LauncherCoordinator: LauncherPanelDelegate {
             stableCode: "W_SHORTCUT_BOOT",
             sanitizedContext: ["code": "W_SHORTCUT_BOOT", "reason": reason]
         )
+    }
+
+    private func execute(
+        _ result: SearchResult,
+        hidesPanelOnSuccess: Bool
+    ) {
+        let captured = result
+        Task { [weak self] in
+            guard let self else { return }
+            let execResult = await self.resultExecutor.execute(captured)
+            await MainActor.run {
+                switch execResult {
+                case .success:
+                    if hidesPanelOnSuccess {
+                        self.panelController.hide()
+                    }
+                case .failure(let error):
+                    self.store.setTransientError(error)
+                }
+            }
+        }
     }
 }

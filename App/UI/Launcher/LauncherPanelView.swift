@@ -6,10 +6,16 @@ import AppKit
 /// 不直接持有 NSPanel;由 `LauncherPanelController` 用 `NSHostingView` 加载。
 /// 唯一事实来源是 `LauncherStore`,执行通过 closure 委托给协调层。
 struct LauncherPanelView: View {
+    enum SurfaceStyle {
+        case panel
+        case embedded
+    }
+
     @Bindable var store: LauncherStore
     let applicationResourceCache: ApplicationResourceCache
     let onExecute: (SearchResult) -> Void
     let onHide: () -> Void
+    var surfaceStyle: SurfaceStyle = .panel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,13 +83,30 @@ struct LauncherPanelView: View {
                 .background(.orange.opacity(0.12))
             }
         }
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(.tertiary.opacity(0.3), lineWidth: 1)
         )
-        .frame(width: 560, height: 420)
+        .frame(
+            maxWidth: surfaceStyle == .panel ? 560 : .infinity,
+            minHeight: surfaceStyle == .panel ? 420 : 460,
+            maxHeight: surfaceStyle == .panel ? 420 : .infinity
+        )
+        .shadow(
+            color: .black.opacity(surfaceStyle == .panel ? 0.08 : 0.05),
+            radius: surfaceStyle == .panel ? 20 : 12,
+            y: 8
+        )
+    }
+
+    private var cornerRadius: CGFloat {
+        switch surfaceStyle {
+        case .panel:
+            return 12
+        case .embedded:
+            return 18
+        }
     }
 
     private func executeSelection() {
@@ -129,6 +152,35 @@ struct LauncherPanelView: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+}
+
+struct LauncherWorkbenchCard: View {
+    @Environment(DependencyContainer.self) private var container
+
+    var body: some View {
+        @Bindable var store = container.launcherCoordinator.store
+
+        LauncherPanelView(
+            store: store,
+            applicationResourceCache: container.launcherCoordinator.panelController.resourceCache,
+            onExecute: { result in
+                container.launcherCoordinator.executeInline(result)
+            },
+            onHide: {
+                if store.query.isEmpty {
+                    store.clearTransientError()
+                } else {
+                    store.updateQuery("")
+                }
+            },
+            surfaceStyle: .embedded
+        )
+        .task {
+            if store.state == .idle {
+                store.updateQuery("")
+            }
         }
     }
 }

@@ -64,6 +64,10 @@ public final class LauncherPanelController {
         panel?.isVisible ?? false
     }
 
+    var resourceCache: ApplicationResourceCache {
+        applicationResourceCache
+    }
+
     private func ensurePanel() -> NSPanel {
         if let panel { return panel }
 

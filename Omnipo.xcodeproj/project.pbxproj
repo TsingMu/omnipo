@@ -76,6 +76,20 @@
 		000000000000000000000248 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000328 /* SidebarView.swift */; };
 		000000000000000000000249 /* DashboardComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000329 /* DashboardComponents.swift */; };
 		000000000000000000000250 /* WindowLayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032A /* WindowLayoutMetrics.swift */; };
+		000000000000000000000251 /* DiskCapacitySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032B /* DiskCapacitySnapshot.swift */; };
+		000000000000000000000252 /* DiskUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032C /* DiskUsageService.swift */; };
+		000000000000000000000253 /* DiskUsageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032D /* DiskUsageServiceTests.swift */; };
+		000000000000000000000254 /* SystemDiskUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032E /* SystemDiskUsageService.swift */; };
+		000000000000000000000255 /* SystemDiskUsageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000032F /* SystemDiskUsageServiceTests.swift */; };
+		000000000000000000000256 /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000330 /* AppStateTests.swift */; };
+		000000000000000000000257 /* LauncherCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000331 /* LauncherCoordinatorTests.swift */; };
+		000000000000000000000258 /* LargeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000332 /* LargeFile.swift */; };
+		000000000000000000000259 /* LargeFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000333 /* LargeFileTests.swift */; };
+		00000000000000000000025A /* LargeFileScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000334 /* LargeFileScanner.swift */; };
+		00000000000000000000025B /* LargeFileScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000335 /* LargeFileScannerTests.swift */; };
+		00000000000000000000025C /* CleanerLargeFileSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000336 /* CleanerLargeFileSection.swift */; };
+		00000000000000000000025D /* CleanerLargeFileSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000337 /* CleanerLargeFileSectionTests.swift */; };
+		00000000000000000000025E /* AuthorizedRootManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000338 /* AuthorizedRootManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +175,20 @@
 		000000000000000000000328 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		000000000000000000000329 /* DashboardComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardComponents.swift; sourceTree = "<group>"; };
 		00000000000000000000032A /* WindowLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutMetrics.swift; sourceTree = "<group>"; };
+		00000000000000000000032B /* DiskCapacitySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskCapacitySnapshot.swift; sourceTree = "<group>"; };
+		00000000000000000000032C /* DiskUsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskUsageService.swift; sourceTree = "<group>"; };
+		00000000000000000000032D /* DiskUsageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskUsageServiceTests.swift; sourceTree = "<group>"; };
+		00000000000000000000032E /* SystemDiskUsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDiskUsageService.swift; sourceTree = "<group>"; };
+		00000000000000000000032F /* SystemDiskUsageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDiskUsageServiceTests.swift; sourceTree = "<group>"; };
+		000000000000000000000330 /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
+		000000000000000000000331 /* LauncherCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCoordinatorTests.swift; sourceTree = "<group>"; };
+		000000000000000000000332 /* LargeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFile.swift; sourceTree = "<group>"; };
+		000000000000000000000333 /* LargeFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileTests.swift; sourceTree = "<group>"; };
+		000000000000000000000334 /* LargeFileScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileScanner.swift; sourceTree = "<group>"; };
+		000000000000000000000335 /* LargeFileScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileScannerTests.swift; sourceTree = "<group>"; };
+		000000000000000000000336 /* CleanerLargeFileSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanerLargeFileSection.swift; sourceTree = "<group>"; };
+		000000000000000000000337 /* CleanerLargeFileSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanerLargeFileSectionTests.swift; sourceTree = "<group>"; };
+		000000000000000000000338 /* AuthorizedRootManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizedRootManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +247,7 @@
 				00000000000000000000031E /* LauncherResultExecutor.swift */,
 				00000000000000000000031F /* LauncherCoordinator.swift */,
 				000000000000000000000320 /* MainWindowNavigator.swift */,
+				000000000000000000000338 /* AuthorizedRootManager.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -246,7 +275,7 @@
 		000000000000000000000008 /* Dashboard */ = { isa = PBXGroup; children = ( 000000000000000000000106 /* DashboardView.swift */, 000000000000000000000329 /* DashboardComponents.swift */, ); path = Dashboard; sourceTree = "<group>"; };
 		000000000000000000000009 /* Launcher */ = { isa = PBXGroup; children = ( 000000000000000000000107 /* LauncherView.swift */, 000000000000000000000318 /* LauncherStore.swift */, 000000000000000000000324 /* LauncherSearchField.swift */, 00000000000000000000031A /* LauncherPanelView.swift */, ); path = Launcher; sourceTree = "<group>"; };
 		00000000000000000000000A /* Clipboard */ = { isa = PBXGroup; children = ( 000000000000000000000108 /* ClipboardView.swift */, ); path = Clipboard; sourceTree = "<group>"; };
-		00000000000000000000000B /* Cleaner */ = { isa = PBXGroup; children = ( 000000000000000000000109 /* CleanerView.swift */, ); path = Cleaner; sourceTree = "<group>"; };
+		00000000000000000000000B /* Cleaner */ = { isa = PBXGroup; children = ( 000000000000000000000109 /* CleanerView.swift */, 000000000000000000000336 /* CleanerLargeFileSection.swift */, ); path = Cleaner; sourceTree = "<group>"; };
 		00000000000000000000000C /* Uninstaller */ = { isa = PBXGroup; children = ( 00000000000000000000010A /* UninstallerView.swift */, ); path = Uninstaller; sourceTree = "<group>"; };
 		00000000000000000000000D /* PermissionAudit */ = { isa = PBXGroup; children = ( 00000000000000000000010B /* PermissionAuditView.swift */, ); path = PermissionAudit; sourceTree = "<group>"; };
 		00000000000000000000000E /* WeChatManager */ = { isa = PBXGroup; children = ( 00000000000000000000010C /* WeChatManagerView.swift */, ); path = WeChatManager; sourceTree = "<group>"; };
@@ -259,6 +288,7 @@
 				000000000000000000000110 /* LoggingService.swift */,
 				000000000000000000000303 /* ShortcutService.swift */,
 				000000000000000000000304 /* SearchService.swift */,
+				00000000000000000000032C /* DiskUsageService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -274,6 +304,8 @@
 				000000000000000000000302 /* SearchResult.swift */,
 				000000000000000000000322 /* LauncherInputState.swift */,
 				000000000000000000000327 /* DashboardShortcut.swift */,
+				00000000000000000000032B /* DiskCapacitySnapshot.swift */,
+				000000000000000000000332 /* LargeFile.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -283,6 +315,7 @@
 			children = (
 				000000000000000000000014 /* Settings */,
 				000000000000000000000015 /* Logging */,
+				000000000000000000000044 /* FileSystem */,
 				000000000000000000000040 /* Shortcut */,
 				000000000000000000000041 /* Search */,
 				000000000000000000000042 /* AppDiscovery */,
@@ -331,6 +364,15 @@
 			path = Launcher;
 			sourceTree = "<group>";
 		};
+		000000000000000000000044 /* FileSystem */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000032E /* SystemDiskUsageService.swift */,
+				000000000000000000000334 /* LargeFileScanner.swift */,
+			);
+			path = FileSystem;
+			sourceTree = "<group>";
+		};
 		000000000000000000000014 /* Settings */ = { isa = PBXGroup; children = ( 000000000000000000000114 /* UserDefaultsSettingsService.swift */, ); path = Settings; sourceTree = "<group>"; };
 		000000000000000000000015 /* Logging */ = { isa = PBXGroup; children = ( 000000000000000000000115 /* OSLogLoggingService.swift */, ); path = Logging; sourceTree = "<group>"; };
 		000000000000000000000016 /* Resources */ = {
@@ -366,6 +408,13 @@
 				000000000000000000000319 /* SearchAggregationTests.swift */,
 				000000000000000000000321 /* LauncherCommandExecutorTests.swift */,
 				000000000000000000000326 /* LauncherPerformanceTests.swift */,
+				00000000000000000000032D /* DiskUsageServiceTests.swift */,
+				00000000000000000000032F /* SystemDiskUsageServiceTests.swift */,
+				000000000000000000000330 /* AppStateTests.swift */,
+				000000000000000000000331 /* LauncherCoordinatorTests.swift */,
+				000000000000000000000333 /* LargeFileTests.swift */,
+				000000000000000000000335 /* LargeFileScannerTests.swift */,
+				000000000000000000000337 /* CleanerLargeFileSectionTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -479,6 +528,8 @@
 				000000000000000000000207 /* LauncherView.swift in Sources */,
 				000000000000000000000208 /* ClipboardView.swift in Sources */,
 				000000000000000000000209 /* CleanerView.swift in Sources */,
+				00000000000000000000025C /* CleanerLargeFileSection.swift in Sources */,
+				00000000000000000000025E /* AuthorizedRootManager.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
 				00000000000000000000020C /* WeChatManagerView.swift in Sources */,
@@ -496,6 +547,8 @@
 				000000000000000000000222 /* SearchResult.swift in Sources */,
 				000000000000000000000223 /* ShortcutService.swift in Sources */,
 				000000000000000000000224 /* SearchService.swift in Sources */,
+				000000000000000000000252 /* DiskUsageService.swift in Sources */,
+				000000000000000000000254 /* SystemDiskUsageService.swift in Sources */,
 				000000000000000000000228 /* CarbonShortcutService.swift in Sources */,
 				00000000000000000000022A /* ShortcutSettingsSection.swift in Sources */,
 				00000000000000000000022B /* SearchMatcher.swift in Sources */,
@@ -524,6 +577,9 @@
 				000000000000000000000248 /* SidebarView.swift in Sources */,
 				000000000000000000000249 /* DashboardComponents.swift in Sources */,
 				000000000000000000000250 /* WindowLayoutMetrics.swift in Sources */,
+				000000000000000000000251 /* DiskCapacitySnapshot.swift in Sources */,
+				000000000000000000000258 /* LargeFile.swift in Sources */,
+				00000000000000000000025A /* LargeFileScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -544,6 +600,13 @@
 				000000000000000000000239 /* SearchAggregationTests.swift in Sources */,
 				000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */,
 				000000000000000000000246 /* LauncherPerformanceTests.swift in Sources */,
+				000000000000000000000253 /* DiskUsageServiceTests.swift in Sources */,
+				000000000000000000000255 /* SystemDiskUsageServiceTests.swift in Sources */,
+				000000000000000000000256 /* AppStateTests.swift in Sources */,
+				000000000000000000000257 /* LauncherCoordinatorTests.swift in Sources */,
+				000000000000000000000259 /* LargeFileTests.swift in Sources */,
+				00000000000000000000025B /* LargeFileScannerTests.swift in Sources */,
+				00000000000000000000025D /* CleanerLargeFileSectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

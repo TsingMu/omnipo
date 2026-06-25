@@ -98,6 +98,7 @@ public enum PrivacyRedaction {
         "stage",
         "key",
         "code",
+        "trigger",
         "systemCode",
         "reason",
         "category",

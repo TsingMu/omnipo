@@ -15,7 +15,10 @@ struct OmnipoApp: App {
             initialState = destination
         }
         _container = State(initialValue: container)
-        _appState = State(initialValue: AppState(lastOpenedDestination: initialState))
+        _appState = State(initialValue: AppState(
+            lastOpenedDestination: initialState,
+            diskUsageService: container.diskUsageService
+        ))
 
         Task { @MainActor in
             await container.launcherCoordinator.registerShortcutOnLaunch()

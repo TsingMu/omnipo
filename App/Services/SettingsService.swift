@@ -54,6 +54,13 @@ public extension SettingsKey {
         "omnipo.settings.launcher.shortcut.modifiers",
         default: .double(0)
     )
+
+    /// 用户授权的大文件扫描根 security-scoped bookmark(base64 字符串)。
+    /// 空串表示未授权。
+    static let largeFileRootBookmark = SettingsKey(
+        "omnipo.settings.disk.largeFileRootBookmark",
+        default: .string("")
+    )
 }
 
 public extension SettingsService {
@@ -98,5 +105,25 @@ public extension SettingsService {
     func clearLauncherShortcut() {
         remove(forKey: .launcherShortcutKeyCode)
         remove(forKey: .launcherShortcutModifiers)
+    }
+
+    /// 读取已保存的大文件根 bookmark;未授权或损坏返回 nil。
+    func readLargeFileRootBookmark() -> Data? {
+        guard let base64 = readString(forKey: .largeFileRootBookmark),
+              !base64.isEmpty,
+              let data = Data(base64Encoded: base64) else {
+            return nil
+        }
+        return data
+    }
+
+    /// 持久化新 bookmark;传 nil 清除授权。
+    func writeLargeFileRootBookmark(_ data: Data?) {
+        guard let data, !data.isEmpty else {
+            remove(forKey: .largeFileRootBookmark)
+            return
+        }
+        let base64 = data.base64EncodedString()
+        write(base64, forKey: .largeFileRootBookmark)
     }
 }

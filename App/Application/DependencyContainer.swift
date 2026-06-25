@@ -7,6 +7,8 @@ public final class DependencyContainer {
     public let settings: any SettingsService
     public let logging: any LoggingService
     public let shortcutService: any ShortcutService
+    public let diskUsageService: any DiskUsageService
+    public let authorizedRootManager: AuthorizedRootManager
     public let launcherCoordinator: LauncherCoordinator
     public let mainNavigator: MainWindowNavigator
 
@@ -14,12 +16,16 @@ public final class DependencyContainer {
         settings: any SettingsService,
         logging: any LoggingService,
         shortcutService: any ShortcutService,
+        diskUsageService: any DiskUsageService,
+        authorizedRootManager: AuthorizedRootManager,
         launcherCoordinator: LauncherCoordinator,
         mainNavigator: MainWindowNavigator
     ) {
         self.settings = settings
         self.logging = logging
         self.shortcutService = shortcutService
+        self.diskUsageService = diskUsageService
+        self.authorizedRootManager = authorizedRootManager
         self.launcherCoordinator = launcherCoordinator
         self.mainNavigator = mainNavigator
     }
@@ -28,6 +34,16 @@ public final class DependencyContainer {
         let settings = UserDefaultsSettingsService()
         let logging = OSLogLoggingService()
         let shortcut = CarbonShortcutService(logger: logging)
+        let authorizedRootManager = AuthorizedRootManager(settings: settings)
+        let diskUsageService = SystemDiskUsageService(
+            logger: logging,
+            largeFileRootsProvider: { @MainActor in
+                if let url = authorizedRootManager.currentRoot() {
+                    return [url]
+                }
+                return []
+            }
+        )
 
         let navigator = MainWindowNavigator()
         let commandProvider = CommandSearchProvider()
@@ -82,6 +98,8 @@ public final class DependencyContainer {
             settings: settings,
             logging: logging,
             shortcutService: shortcut,
+            diskUsageService: diskUsageService,
+            authorizedRootManager: authorizedRootManager,
             launcherCoordinator: coordinator,
             mainNavigator: navigator
         )

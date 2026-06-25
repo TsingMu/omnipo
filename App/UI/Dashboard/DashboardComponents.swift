@@ -33,37 +33,43 @@ struct DashboardBrandHeader: View {
 }
 
 struct DashboardDiskCard: View {
+    let availability: DiskCapacityAvailability
+
     var body: some View {
+        let presentation = DashboardDiskCardPresentation(availability: availability)
+
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 Label("启动磁盘", systemImage: "internaldrive")
                     .font(.headline)
                 Spacer()
-                Text("尚未扫描")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.quaternary, in: Capsule())
+                statusBadge(presentation: presentation)
             }
 
-            Capsule()
-                .fill(.quaternary)
-                .frame(height: 10)
+            progressBar(presentation: presentation)
 
             HStack(spacing: 0) {
-                DashboardDiskMetric(title: "已用空间")
+                DashboardDiskMetric(
+                    value: presentation.usedValue,
+                    title: "已用空间"
+                )
                 Divider().frame(height: 34)
-                DashboardDiskMetric(title: "可用空间")
+                DashboardDiskMetric(
+                    value: presentation.availableValue,
+                    title: "可用空间"
+                )
                 Divider().frame(height: 34)
-                DashboardDiskMetric(title: "总容量")
+                DashboardDiskMetric(
+                    value: presentation.totalValue,
+                    title: "总容量"
+                )
             }
 
             Divider()
 
-            Label("前往“磁盘清理”开始扫描后，这里才会显示真实容量。", systemImage: "info.circle")
+            Label(presentation.footerText, systemImage: "info.circle")
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(presentation.footerColor)
         }
         .padding(22)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -73,14 +79,43 @@ struct DashboardDiskCard: View {
         }
         .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
     }
+
+    private func statusBadge(presentation: DashboardDiskCardPresentation) -> some View {
+        Text(presentation.statusText)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(presentation.statusColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.quaternary, in: Capsule())
+    }
+
+    private func progressBar(presentation: DashboardDiskCardPresentation) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.quaternary)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [.accentColor.opacity(0.88), .cyan.opacity(0.72)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: geometry.size.width * presentation.progressFraction)
+            }
+        }
+        .frame(height: 10)
+    }
 }
 
 private struct DashboardDiskMetric: View {
+    let value: String
     let title: String
 
     var body: some View {
         VStack(spacing: 3) {
-            Text("—")
+            Text(value)
                 .font(.headline)
             Text(title)
                 .font(.caption)
@@ -88,6 +123,84 @@ private struct DashboardDiskMetric: View {
         }
         .frame(maxWidth: .infinity)
     }
+}
+
+enum DiskCapacityFormatting {
+    static func string(fromBytes bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.includesUnit = true
+        formatter.allowedUnits = [.useTB, .useGB, .useMB]
+        return formatter.string(fromByteCount: bytes)
+    }
+}
+
+struct DashboardDiskCardPresentation {
+    let statusText: String
+    let usedValue: String
+    let availableValue: String
+    let totalValue: String
+    let footerText: String
+    let progressFraction: CGFloat
+    let state: DashboardDiskCardPresentationState
+
+    init(
+        availability: DiskCapacityAvailability
+    ) {
+        switch availability {
+        case .idle, .loading:
+            self.statusText = "读取中"
+            self.usedValue = "…"
+            self.availableValue = "…"
+            self.totalValue = "…"
+            self.footerText = "应用启动后正在读取启动卷容量，不会扫描目录或读取文件内容。"
+            self.progressFraction = 0
+            self.state = .loading
+        case .available(let snapshot):
+            self.statusText = "已更新"
+            self.usedValue = DiskCapacityFormatting.string(fromBytes: snapshot.usedBytes)
+            self.availableValue = DiskCapacityFormatting.string(fromBytes: snapshot.availableBytes)
+            self.totalValue = DiskCapacityFormatting.string(fromBytes: snapshot.totalBytes)
+            self.footerText = "容量来自启动卷只读元数据；最近更新于 \(snapshot.capturedAt.formatted(date: .omitted, time: .shortened))。"
+            self.progressFraction = CGFloat(snapshot.utilizationFraction ?? 0)
+            self.state = .available
+        case .unavailable(let reason):
+            self.statusText = "暂不可用"
+            self.usedValue = "—"
+            self.availableValue = "—"
+            self.totalValue = "—"
+            self.footerText = "\(reason.userDescription) 你仍可前往“磁盘清理”页手动重试。"
+            self.progressFraction = 0
+            self.state = .unavailable
+        }
+    }
+
+    var statusColor: Color {
+        switch state {
+        case .loading:
+            return .secondary
+        case .available:
+            return .accentColor
+        case .unavailable:
+            return .orange
+        }
+    }
+
+    var footerColor: Color {
+        switch state {
+        case .unavailable:
+            return .orange
+        case .loading, .available:
+            return .secondary
+        }
+    }
+
+}
+
+enum DashboardDiskCardPresentationState {
+    case loading
+    case available
+    case unavailable
 }
 
 struct DashboardShortcutGrid: View {

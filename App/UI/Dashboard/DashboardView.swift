@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DashboardView: View {
+    @Environment(AppState.self) private var appState
     let onNavigate: @MainActor (AppDestination) -> Void
 
     init(onNavigate: @escaping @MainActor (AppDestination) -> Void = { _ in }) {
@@ -23,7 +24,7 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 22) {
                     DashboardBrandHeader()
-                    DashboardDiskCard()
+                    DashboardDiskCard(availability: appState.startupVolumeCapacity)
                     DashboardShortcutGrid(onNavigate: onNavigate)
                     DashboardSafetyNote()
                 }

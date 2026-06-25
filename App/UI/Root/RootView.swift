@@ -69,6 +69,7 @@ struct RootView: View {
                     selection = pending
                     container.mainNavigator.consumePendingDestination()
                 }
+                await appState.loadStartupVolumeCapacityIfNeeded()
             }
         }
     }
@@ -93,6 +94,6 @@ private extension LogEvent {
 #Preview {
     RootView()
         .environment(DependencyContainer.production())
-        .environment(AppState())
+        .environment(AppState(diskUsageService: DependencyContainer.production().diskUsageService))
         .frame(width: 960, height: 640)
 }

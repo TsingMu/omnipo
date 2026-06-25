@@ -24,6 +24,55 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(Set(DashboardShortcut.allCases.map(\.destination)).count, 4)
     }
 
+    func test_dashboardDiskCardPresentation_loadingState_usesNonNumericPlaceholders() {
+        let presentation = DashboardDiskCardPresentation(availability: .loading)
+
+        XCTAssertEqual(presentation.state, .loading)
+        XCTAssertEqual(presentation.statusText, "读取中")
+        XCTAssertEqual(presentation.usedValue, "…")
+        XCTAssertEqual(presentation.availableValue, "…")
+        XCTAssertEqual(presentation.totalValue, "…")
+        XCTAssertEqual(presentation.progressFraction, 0)
+        XCTAssertTrue(presentation.footerText.contains("不会扫描目录"))
+    }
+
+    func test_dashboardDiskCardPresentation_availableState_usesRealNumbers() {
+        let snapshot = DiskCapacitySnapshot(
+            volumeName: "Macintosh HD",
+            volumeIdentifier: "disk-1",
+            usedBytes: 40 * 1_000_000_000,
+            availableBytes: 60 * 1_000_000_000,
+            totalBytes: 100 * 1_000_000_000,
+            capturedAt: Date(timeIntervalSince1970: 1_718_000_000)
+        )
+
+        let presentation = DashboardDiskCardPresentation(availability: .available(snapshot))
+
+        XCTAssertEqual(presentation.state, .available)
+        XCTAssertEqual(presentation.statusText, "已更新")
+        XCTAssertNotEqual(presentation.usedValue, "…")
+        XCTAssertNotEqual(presentation.usedValue, "—")
+        XCTAssertNotEqual(presentation.availableValue, "…")
+        XCTAssertNotEqual(presentation.totalValue, "…")
+        XCTAssertEqual(presentation.progressFraction, 0.4, accuracy: 0.0001)
+        XCTAssertTrue(presentation.footerText.contains("容量来自启动卷只读元数据"))
+    }
+
+    func test_dashboardDiskCardPresentation_unavailableState_hidesNumbers() {
+        let presentation = DashboardDiskCardPresentation(
+            availability: .unavailable(reason: .resourceUnavailable)
+        )
+
+        XCTAssertEqual(presentation.state, .unavailable)
+        XCTAssertEqual(presentation.statusText, "暂不可用")
+        XCTAssertEqual(presentation.usedValue, "—")
+        XCTAssertEqual(presentation.availableValue, "—")
+        XCTAssertEqual(presentation.totalValue, "—")
+        XCTAssertEqual(presentation.progressFraction, 0)
+        XCTAssertTrue(presentation.footerText.contains("当前无法读取磁盘容量信息"))
+        XCTAssertTrue(presentation.footerText.contains("手动重试"))
+    }
+
     func test_mainWindowLayout_usesStableTitlebarInsets() {
         XCTAssertEqual(MainWindowLayout.titlebarInset(safeAreaTop: 58, windowTitlebarHeight: 72), 72)
         XCTAssertEqual(MainWindowLayout.sidebarTopInset(safeAreaTop: 58, windowTitlebarHeight: 72), 88)
@@ -335,6 +384,73 @@ final class ModelTests: XCTestCase {
         XCTAssertTrue(progress.isTerminal)
         XCTAssertFalse(progress.markCompleted())
         XCTAssertEqual(progress.status, .cancelled)
+    }
+
+    // MARK: - DiskCapacitySnapshot
+
+    func test_diskCapacitySnapshot_clampsNegativeValues() {
+        let snapshot = DiskCapacitySnapshot(
+            volumeName: "Macintosh HD",
+            volumeIdentifier: "disk1s1",
+            usedBytes: -1,
+            availableBytes: -2,
+            totalBytes: -3,
+            capturedAt: Date(timeIntervalSince1970: 123)
+        )
+
+        XCTAssertEqual(snapshot.usedBytes, 0)
+        XCTAssertEqual(snapshot.availableBytes, 0)
+        XCTAssertEqual(snapshot.totalBytes, 0)
+        XCTAssertNil(snapshot.utilizationFraction)
+    }
+
+    func test_diskCapacitySnapshot_clampsValuesToTotal() {
+        let snapshot = DiskCapacitySnapshot(
+            volumeName: "Macintosh HD",
+            volumeIdentifier: "disk1s1",
+            usedBytes: 900,
+            availableBytes: 600,
+            totalBytes: 700
+        )
+
+        XCTAssertEqual(snapshot.usedBytes, 700)
+        XCTAssertEqual(snapshot.availableBytes, 600)
+        XCTAssertEqual(snapshot.totalBytes, 700)
+        XCTAssertEqual(snapshot.utilizationFraction, 1.0)
+    }
+
+    func test_diskCapacityUnavailableReason_stableCodesAreUnique() {
+        let codes = Set(DiskCapacityUnavailableReason.allCases.map(\.stableCode))
+        XCTAssertEqual(codes.count, DiskCapacityUnavailableReason.allCases.count)
+    }
+
+    func test_diskCapacityUnavailableReason_userDescription_isNonEmpty() {
+        for reason in DiskCapacityUnavailableReason.allCases {
+            XCTAssertFalse(reason.userDescription.isEmpty)
+        }
+    }
+
+    func test_diskCapacityAvailability_exposesSnapshotAndReason() {
+        let snapshot = DiskCapacitySnapshot(
+            volumeName: "Macintosh HD",
+            volumeIdentifier: "disk1s1",
+            usedBytes: 250,
+            availableBytes: 750,
+            totalBytes: 1000
+        )
+
+        let available = DiskCapacityAvailability.available(snapshot)
+        XCTAssertEqual(available.snapshot, snapshot)
+        XCTAssertNil(available.unavailableReason)
+        XCTAssertFalse(available.isLoading)
+
+        let unavailable = DiskCapacityAvailability.unavailable(reason: .resourceUnavailable)
+        XCTAssertNil(unavailable.snapshot)
+        XCTAssertEqual(unavailable.unavailableReason, .resourceUnavailable)
+        XCTAssertFalse(unavailable.isLoading)
+
+        XCTAssertTrue(DiskCapacityAvailability.loading.isLoading)
+        XCTAssertNil(DiskCapacityAvailability.idle.snapshot)
     }
 
     // MARK: - OperationLog

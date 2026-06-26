@@ -79,17 +79,18 @@ final class SystemMonitorModelsTests: XCTestCase {
     // MARK: - Energy
 
     func test_energyMetrics_clampsBatteryPercent() {
-        let m = EnergyMetrics(batteryPercent: 1.5, isCharging: true)
+        let m = EnergyMetrics(batteryPercent: 1.5, isCharging: true, isOnExternalPower: true)
         XCTAssertEqual(m.batteryPercent, 1.0)
         XCTAssertEqual(m.isCharging, true)
+        XCTAssertEqual(m.isOnExternalPower, true)
         XCTAssertTrue(m.hasBattery)
 
-        let negative = EnergyMetrics(batteryPercent: -0.5, isCharging: false)
+        let negative = EnergyMetrics(batteryPercent: -0.5, isCharging: false, isOnExternalPower: false)
         XCTAssertEqual(negative.batteryPercent, 0.0)
     }
 
     func test_energyMetrics_wholeMachinePowerUnsupportedDefaultsTrue() {
-        let m = EnergyMetrics(batteryPercent: 0.8, isCharging: false)
+        let m = EnergyMetrics(batteryPercent: 0.8, isCharging: false, isOnExternalPower: false)
         XCTAssertTrue(m.wholeMachinePowerUnsupported, "整机能耗瓦数无公开 API,默认标记为不支持")
     }
 
@@ -144,7 +145,7 @@ final class SystemMonitorModelsTests: XCTestCase {
         let s = SystemMetricSnapshot(
             cpu: .available(CPUMetrics(userPercent: 0.5, systemPercent: 0.3, idlePercent: 0.2)),
             memory: nil,
-            energy: .available(EnergyMetrics(batteryPercent: 0.8, isCharging: false))
+            energy: .available(EnergyMetrics(batteryPercent: 0.8, isCharging: false, isOnExternalPower: false))
         )
         XCTAssertNotNil(s.cpu)
         XCTAssertNil(s.memory)

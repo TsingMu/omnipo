@@ -87,7 +87,7 @@ public enum AppDestination: String, CaseIterable, Identifiable, Hashable, Sendab
         case .uninstaller: UninstallerView()
         case .permissionAudit: PermissionAuditView()
         case .wechatManager: WeChatManagerView()
-        case .systemMonitor: SystemMonitorView()
+        case .systemMonitor: SystemMonitorView(onNavigate: onNavigate)
         }
     }
 }

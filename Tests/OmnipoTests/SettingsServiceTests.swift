@@ -104,4 +104,16 @@ final class SettingsServiceTests: XCTestCase {
 
         XCTAssertNil(service.readLauncherShortcut())
     }
+
+    // MARK: - System Monitor
+
+    func test_systemMonitorInterval_roundTripsAndClampsInvalidValue() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.writeSystemMonitorIntervalSeconds(12)
+        XCTAssertEqual(service.readSystemMonitorIntervalSeconds(), 12)
+
+        service.writeSystemMonitorIntervalSeconds(-1)
+        XCTAssertEqual(service.readSystemMonitorIntervalSeconds(), SystemMonitorInterval.defaultSeconds)
+    }
 }

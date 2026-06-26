@@ -103,6 +103,8 @@
 		000000000000000000000269 /* NetworkSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000343 /* NetworkSamplerTests.swift */; };
 		00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000344 /* DefaultSystemMonitorService.swift */; };
 		00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */; };
+		00000000000000000000026C /* SystemMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000346 /* SystemMonitorStore.swift */; };
+		00000000000000000000026D /* SystemMonitorStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000347 /* SystemMonitorStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -215,6 +217,8 @@
 		000000000000000000000343 /* NetworkSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSamplerTests.swift; sourceTree = "<group>"; };
 		000000000000000000000344 /* DefaultSystemMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSystemMonitorService.swift; sourceTree = "<group>"; };
 		000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSystemMonitorServiceTests.swift; sourceTree = "<group>"; };
+		000000000000000000000346 /* SystemMonitorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorStore.swift; sourceTree = "<group>"; };
+		000000000000000000000347 /* SystemMonitorStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -274,6 +278,7 @@
 				00000000000000000000031F /* LauncherCoordinator.swift */,
 				000000000000000000000320 /* MainWindowNavigator.swift */,
 				000000000000000000000338 /* AuthorizedRootManager.swift */,
+				000000000000000000000346 /* SystemMonitorStore.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -462,6 +467,7 @@
 				000000000000000000000341 /* EnergyStatusTests.swift */,
 				000000000000000000000343 /* NetworkSamplerTests.swift */,
 				000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */,
+				000000000000000000000347 /* SystemMonitorStoreTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -584,6 +590,7 @@
 				000000000000000000000266 /* EnergyStatus.swift in Sources */,
 				000000000000000000000268 /* NetworkSampler.swift in Sources */,
 				00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */,
+				00000000000000000000026C /* SystemMonitorStore.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
 				00000000000000000000020C /* WeChatManagerView.swift in Sources */,
@@ -667,6 +674,7 @@
 				000000000000000000000267 /* EnergyStatusTests.swift in Sources */,
 				000000000000000000000269 /* NetworkSamplerTests.swift in Sources */,
 				00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */,
+				00000000000000000000026D /* SystemMonitorStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -61,6 +61,11 @@ public extension SettingsKey {
         "omnipo.settings.disk.largeFileRootBookmark",
         default: .string("")
     )
+
+    static let systemMonitorIntervalSeconds = SettingsKey(
+        "omnipo.settings.systemMonitor.intervalSeconds",
+        default: .double(SystemMonitorInterval.defaultSeconds)
+    )
 }
 
 public extension SettingsService {
@@ -125,5 +130,17 @@ public extension SettingsService {
         }
         let base64 = data.base64EncodedString()
         write(base64, forKey: .largeFileRootBookmark)
+    }
+
+    /// 读取系统监控采样间隔;损坏值回退到默认 5 秒。
+    func readSystemMonitorIntervalSeconds() -> Double {
+        let stored = readDouble(forKey: .systemMonitorIntervalSeconds)
+        return SystemMonitorInterval.clampOrFallback(stored)
+    }
+
+    /// 持久化系统监控采样间隔;非法值写入前钳到默认。
+    func writeSystemMonitorIntervalSeconds(_ value: Double) {
+        let clamped = SystemMonitorInterval.clampOrFallback(value)
+        write(clamped, forKey: .systemMonitorIntervalSeconds)
     }
 }

@@ -132,14 +132,22 @@ public struct EnergyMetrics: Sendable, Equatable {
     /// 0.0 ... 1.0;无电池设备为 nil。
     public let batteryPercent: Double?
     public let isCharging: Bool?
+    /// `true` 表示当前由电源适配器供电,即使电池未处于充电状态。
+    public let isOnExternalPower: Bool?
     /// 整机能耗瓦数在 macOS 无公开 API,本应用不调用 SMC/PowerMetrics;
     /// 此字段固定为 true,UI 据此显示降级文案。
     public let wholeMachinePowerUnsupported: Bool
 
-    public init(batteryPercent: Double?, isCharging: Bool?, wholeMachinePowerUnsupported: Bool = true) {
+    public init(
+        batteryPercent: Double?,
+        isCharging: Bool?,
+        isOnExternalPower: Bool? = nil,
+        wholeMachinePowerUnsupported: Bool = true
+    ) {
         let clampedBattery = batteryPercent.map { max(0, min(1, $0)) }
         self.batteryPercent = clampedBattery
         self.isCharging = isCharging
+        self.isOnExternalPower = isOnExternalPower
         self.wholeMachinePowerUnsupported = wholeMachinePowerUnsupported
     }
 

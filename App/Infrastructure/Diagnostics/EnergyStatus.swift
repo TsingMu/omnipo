@@ -14,10 +14,12 @@ public struct EnergyStatus: Sendable {
         /// 0.0 ... 1.0;由 IOKit 的 current/max 归一化得到。
         public let percent: Double
         public let isCharging: Bool
+        public let isOnExternalPower: Bool
 
-        public init(percent: Double, isCharging: Bool) {
+        public init(percent: Double, isCharging: Bool, isOnExternalPower: Bool) {
             self.percent = max(0, min(1, percent))
             self.isCharging = isCharging
+            self.isOnExternalPower = isOnExternalPower
         }
     }
 
@@ -53,6 +55,7 @@ public struct EnergyStatus: Sendable {
         .available(EnergyMetrics(
             batteryPercent: battery.percent,
             isCharging: battery.isCharging,
+            isOnExternalPower: battery.isOnExternalPower,
             wholeMachinePowerUnsupported: true
         ))
     }
@@ -81,7 +84,13 @@ public struct EnergyStatus: Sendable {
         }
         let percent = Double(current) / Double(max)
         let isCharging = (desc[kIOPSIsChargingKey] as? Bool) ?? false
+        let powerSourceState = desc[kIOPSPowerSourceStateKey] as? String
+        let isOnExternalPower = powerSourceState == kIOPSACPowerValue
 
-        return BatteryInfo(percent: percent, isCharging: isCharging)
+        return BatteryInfo(
+            percent: percent,
+            isCharging: isCharging,
+            isOnExternalPower: isOnExternalPower
+        )
     }
 }

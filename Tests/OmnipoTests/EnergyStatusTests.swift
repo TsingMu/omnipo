@@ -7,7 +7,7 @@ final class EnergyStatusTests: XCTestCase {
     // MARK: - availability(from:) 纯函数
 
     func test_availability_carriesBatteryAndChargingState() {
-        let battery = EnergyStatus.BatteryInfo(percent: 0.7, isCharging: true)
+        let battery = EnergyStatus.BatteryInfo(percent: 0.7, isCharging: true, isOnExternalPower: true)
         let result = EnergyStatus.availability(from: battery)
 
         guard case .available(let metrics) = result else {
@@ -15,12 +15,13 @@ final class EnergyStatusTests: XCTestCase {
         }
         XCTAssertEqual(metrics.batteryPercent ?? -1, 0.7, accuracy: 1e-9)
         XCTAssertEqual(metrics.isCharging, true)
+        XCTAssertEqual(metrics.isOnExternalPower, true)
         XCTAssertTrue(metrics.wholeMachinePowerUnsupported, "整机能耗瓦数无公开 API,固定降级")
         XCTAssertTrue(metrics.hasBattery)
     }
 
     func test_availability_dischargedBattery() {
-        let battery = EnergyStatus.BatteryInfo(percent: 0.15, isCharging: false)
+        let battery = EnergyStatus.BatteryInfo(percent: 0.15, isCharging: false, isOnExternalPower: false)
         let result = EnergyStatus.availability(from: battery)
 
         guard case .available(let metrics) = result else {
@@ -28,6 +29,18 @@ final class EnergyStatusTests: XCTestCase {
         }
         XCTAssertEqual(metrics.batteryPercent ?? -1, 0.15, accuracy: 1e-9)
         XCTAssertEqual(metrics.isCharging, false)
+        XCTAssertEqual(metrics.isOnExternalPower, false)
+    }
+
+    func test_availability_externalPowerWithoutCharging() {
+        let battery = EnergyStatus.BatteryInfo(percent: 0.92, isCharging: false, isOnExternalPower: true)
+        let result = EnergyStatus.availability(from: battery)
+
+        guard case .available(let metrics) = result else {
+            return XCTFail("expected available")
+        }
+        XCTAssertEqual(metrics.isCharging, false)
+        XCTAssertEqual(metrics.isOnExternalPower, true)
     }
 
     // MARK: - sample() with injected provider
@@ -35,7 +48,7 @@ final class EnergyStatusTests: XCTestCase {
     func test_sample_injectedBatteryReturnsAvailable() {
         let status = EnergyStatus(
             logger: OSLogLoggingService(subsystem: "com.omnipo.tests.energy"),
-            powerSourcesProvider: { .init(percent: 0.42, isCharging: false) }
+            powerSourcesProvider: { .init(percent: 0.42, isCharging: false, isOnExternalPower: false) }
         )
 
         let result = status.sample()
@@ -44,6 +57,7 @@ final class EnergyStatusTests: XCTestCase {
         }
         XCTAssertEqual(metrics.batteryPercent ?? -1, 0.42, accuracy: 1e-9)
         XCTAssertEqual(metrics.isCharging, false)
+        XCTAssertEqual(metrics.isOnExternalPower, false)
     }
 
     func test_sample_nilProviderReturnsNoBattery() {
@@ -58,10 +72,10 @@ final class EnergyStatusTests: XCTestCase {
     // MARK: - BatteryInfo 钳制
 
     func test_batteryInfo_clampsPercentToUnitRange() {
-        let high = EnergyStatus.BatteryInfo(percent: 1.5, isCharging: true)
+        let high = EnergyStatus.BatteryInfo(percent: 1.5, isCharging: true, isOnExternalPower: true)
         XCTAssertEqual(high.percent, 1.0)
 
-        let negative = EnergyStatus.BatteryInfo(percent: -0.5, isCharging: false)
+        let negative = EnergyStatus.BatteryInfo(percent: -0.5, isCharging: false, isOnExternalPower: false)
         XCTAssertEqual(negative.percent, 0.0)
     }
 

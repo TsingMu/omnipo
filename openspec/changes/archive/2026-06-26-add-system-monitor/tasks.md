@@ -56,36 +56,36 @@
 
 ## 5. 应用状态与依赖装配
 
-- [ ] 5.1 新增 `SystemMonitorStore`（`@MainActor @Observable`）：持有最新快照、当前 generation、是否激活、采样间隔；提供 `activate/deactivate/refresh/setInterval`。
-- [ ] 5.2 store 在 activate 时订阅 service 的 AsyncStream，按 generation 过滤并写回 `snapshot`；deactivate 时取消订阅并清空激活状态。
-- [ ] 5.3 在 `DependencyContainer` 装配真实 `SystemMonitorService`，注入到 store 与“系统监控”页面。
-- [ ] 5.4 持久化采样间隔到 `SettingsService`（新增 `systemMonitorIntervalSeconds` 键，默认 5，范围 [1, 30]），损坏值回退默认。
-- [ ] 5.5 为 store 编写状态测试：activate/deactivate、generation 过滤、间隔切换。
-- [ ] 5.6 执行构建与测试并更新任务状态。
+- [x] 5.1 新增 `SystemMonitorStore`（`@MainActor @Observable`）：持有最新快照、当前 generation、是否激活、采样间隔；提供 `activate/deactivate/refresh/setInterval`。
+- [x] 5.2 store 在 activate 时订阅 service 的 AsyncStream，按 generation 过滤并写回 `snapshot`；deactivate 时取消订阅并清空激活状态。
+- [x] 5.3 在 `DependencyContainer` 装配真实 `SystemMonitorService`，注入到 store 与“系统监控”页面。
+- [x] 5.4 持久化采样间隔到 `SettingsService`（新增 `systemMonitorIntervalSeconds` 键，默认 5，范围 [1, 30]），损坏值回退默认。
+- [x] 5.5 为 store 编写状态测试：activate/deactivate、generation 过滤、间隔切换。
+- [x] 5.6 执行构建与测试并更新任务状态。
 
 ## 6. UI 概览页
 
-- [ ] 6.1 将 `SystemMonitorView` 从 `PlaceholderFeatureView` 升级为多卡片只读概览页。
-- [ ] 6.2 实现 CPU 卡（user+system 百分比 + 圆环/进度条 + user/system/idle 拆分）。
-- [ ] 6.3 实现内存卡（堆叠条 + 数字 + 三态）。
-- [ ] 6.4 实现能耗卡（电池百分比 + 充放电状态 + 整机能耗降级文案）。
-- [ ] 6.5 实现磁盘卡（复用 `DashboardDiskCard` 同源 `appState.startupVolumeCapacity`，提供进入磁盘分析页入口）。
-- [ ] 6.6 实现网络卡（活跃接口列表 + 上下行速率 + 总速率栏）。
-- [ ] 6.7 五张卡片统一三态：loading、available、unavailable；降级文案与 `UnavailableReason.userDescription` 一一对应。
-- [ ] 6.8 顶部提供“立即刷新”按钮与采样间隔选择器（Stepper 或 Picker，范围 [1, 30]）。
-- [ ] 6.9 `.onAppear` 调 `store.activate()`；`.onDisappear` 调 `store.deactivate()`。
-- [ ] 6.10 VoiceOver 标签、键盘可达与浅色/深色外观适配。
-- [ ] 6.11 执行构建与测试并更新任务状态。
+- [x] 6.1 将 `SystemMonitorView` 从 `PlaceholderFeatureView` 升级为多卡片只读概览页。
+- [x] 6.2 实现 CPU 卡（user+system 百分比 + 圆环/进度条 + user/system/idle 拆分）。
+- [x] 6.3 实现内存卡（堆叠条 + 数字 + 三态）。
+- [x] 6.4 实现能耗卡（电池百分比 + 充放电状态 + 整机能耗降级文案）。
+- [x] 6.5 实现磁盘卡（复用 `DashboardDiskCard` 同源 `appState.startupVolumeCapacity`，提供进入磁盘分析页入口）。
+- [x] 6.6 实现网络卡（活跃接口列表 + 上下行速率 + 总速率栏）。
+- [x] 6.7 五张卡片统一三态：loading、available、unavailable；降级文案与 `UnavailableReason.userDescription` 一一对应。
+- [x] 6.8 顶部提供“立即刷新”按钮与采样间隔选择器（Stepper 或 Picker，范围 [1, 30]）。
+- [x] 6.9 `.onAppear` 调 `store.activate()`；`.onDisappear` 调 `store.deactivate()`。
+- [x] 6.10 VoiceOver 标签、键盘可达与浅色/深色外观适配。
+- [x] 6.11 执行构建与测试并更新任务状态。
 
 ## 7. 隐私、性能与验收
 
-- [ ] 7.1 审计日志：确认不写入具体数值、接口名、电池百分比；只记录稳定事件码与维度缩写。
-- [ ] 7.2 确认不存在上报、磁盘写入、私有 API 调用或额外权限申请。
-- [ ] 7.3 确认采样仅在页面活跃时进行；视图关闭、应用退出后采样停止（用活动监视器交叉验证 Omnipo 自身 CPU 占用回落）。
-- [ ] 7.4 运行全部单元测试与集成测试。
-- [ ] 7.5 运行 Debug 构建，确认无编译错误与新增警告。
-- [ ] 7.6 人工验证五张卡片显示真实值；切换频率生效；刷新按钮工作；能耗与磁盘 IOPS 降级文案清晰。
-- [ ] 7.7 人工验证 CPU 卡百分比与活动监视器接近；内存卡与活动监视器“内存”标签一致；网络卡接口与 `ifconfig` 一致。
-- [ ] 7.8 人工验证采样停止后 Omnipo 自身 CPU 占用接近 0（不构成后台监控负担）。
-- [ ] 7.9 审阅任务清单，确保完成状态与验收证据准确。
-- [ ] 7.10 验收后将 `system-monitor` 规范合并到 `openspec/specs/system-monitor/spec.md` 并归档 change。
+- [x] 7.1 审计日志：确认不写入具体数值、接口名、电池百分比；只记录稳定事件码与维度缩写。
+- [x] 7.2 确认不存在上报、磁盘写入、私有 API 调用或额外权限申请。
+- [x] 7.3 确认采样仅在页面活跃时进行；视图关闭、应用退出后采样停止（用活动监视器交叉验证 Omnipo 自身 CPU 占用回落）。
+- [x] 7.4 运行全部单元测试与集成测试。
+- [x] 7.5 运行 Debug 构建，确认无编译错误与新增警告。
+- [x] 7.6 人工验证五张卡片显示真实值；切换频率生效；刷新按钮工作；能耗与磁盘 IOPS 降级文案清晰。
+- [x] 7.7 人工验证 CPU 卡百分比与活动监视器接近；内存卡与活动监视器“内存”标签一致；网络卡接口与 `ifconfig` 一致。
+- [x] 7.8 人工验证采样停止后 Omnipo 自身 CPU 占用接近 0（不构成后台监控负担）。
+- [x] 7.9 审阅任务清单，确保完成状态与验收证据准确。
+- [x] 7.10 验收后将 `system-monitor` 规范合并到 `openspec/specs/system-monitor/spec.md` 并归档 change。

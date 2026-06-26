@@ -51,17 +51,20 @@ struct DashboardDiskCard: View {
             HStack(spacing: 0) {
                 DashboardDiskMetric(
                     value: presentation.usedValue,
-                    title: "已用空间"
+                    title: "已用空间",
+                    tint: .accentColor
                 )
                 Divider().frame(height: 34)
                 DashboardDiskMetric(
                     value: presentation.availableValue,
-                    title: "可用空间"
+                    title: "可用空间",
+                    tint: .cyan
                 )
                 Divider().frame(height: 34)
                 DashboardDiskMetric(
                     value: presentation.totalValue,
-                    title: "总容量"
+                    title: "总容量",
+                    tint: .secondary
                 )
             }
 
@@ -112,14 +115,28 @@ struct DashboardDiskCard: View {
 private struct DashboardDiskMetric: View {
     let value: String
     let title: String
+    let tint: Color?
+
+    init(value: String, title: String, tint: Color? = nil) {
+        self.value = value
+        self.title = title
+        self.tint = tint
+    }
 
     var body: some View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.headline)
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                if let tint {
+                    Circle()
+                        .fill(tint)
+                        .frame(width: 8, height: 8)
+                }
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity)
     }

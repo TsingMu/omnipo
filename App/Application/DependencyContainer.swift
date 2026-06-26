@@ -8,6 +8,8 @@ public final class DependencyContainer {
     public let logging: any LoggingService
     public let shortcutService: any ShortcutService
     public let diskUsageService: any DiskUsageService
+    public let systemMonitorService: any SystemMonitorService
+    public let systemMonitorStore: SystemMonitorStore
     public let authorizedRootManager: AuthorizedRootManager
     public let launcherCoordinator: LauncherCoordinator
     public let mainNavigator: MainWindowNavigator
@@ -17,6 +19,8 @@ public final class DependencyContainer {
         logging: any LoggingService,
         shortcutService: any ShortcutService,
         diskUsageService: any DiskUsageService,
+        systemMonitorService: any SystemMonitorService,
+        systemMonitorStore: SystemMonitorStore,
         authorizedRootManager: AuthorizedRootManager,
         launcherCoordinator: LauncherCoordinator,
         mainNavigator: MainWindowNavigator
@@ -25,6 +29,8 @@ public final class DependencyContainer {
         self.logging = logging
         self.shortcutService = shortcutService
         self.diskUsageService = diskUsageService
+        self.systemMonitorService = systemMonitorService
+        self.systemMonitorStore = systemMonitorStore
         self.authorizedRootManager = authorizedRootManager
         self.launcherCoordinator = launcherCoordinator
         self.mainNavigator = mainNavigator
@@ -43,6 +49,15 @@ public final class DependencyContainer {
                 }
                 return []
             }
+        )
+        let systemMonitorService = DefaultSystemMonitorService(
+            logger: logging,
+            diskUsageService: diskUsageService
+        )
+        let systemMonitorStore = SystemMonitorStore(
+            service: systemMonitorService,
+            settings: settings,
+            intervalSeconds: settings.readSystemMonitorIntervalSeconds()
         )
 
         let navigator = MainWindowNavigator()
@@ -99,6 +114,8 @@ public final class DependencyContainer {
             logging: logging,
             shortcutService: shortcut,
             diskUsageService: diskUsageService,
+            systemMonitorService: systemMonitorService,
+            systemMonitorStore: systemMonitorStore,
             authorizedRootManager: authorizedRootManager,
             launcherCoordinator: coordinator,
             mainNavigator: navigator

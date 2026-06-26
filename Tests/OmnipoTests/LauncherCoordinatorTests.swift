@@ -113,7 +113,7 @@ private final class FakeResultExecutor: LauncherResultExecutor {
     }
 }
 
-private final class FakeShortcutService: @preconcurrency ShortcutService {
+private final class FakeShortcutService: ShortcutService, @unchecked Sendable {
     nonisolated(unsafe) var onTrigger: (@MainActor () -> Void)?
 
     nonisolated func currentShortcut() async -> KeyboardShortcut { .default }

@@ -85,7 +85,7 @@ public enum LargeFileScanner {
                   isDirectory.boolValue else {
                 continue
             }
-            guard let enumerator = try? fileManager.enumerator(
+            guard let enumerator = fileManager.enumerator(
                 at: root,
                 includingPropertiesForKeys: resourceKeys,
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
@@ -96,6 +96,7 @@ public enum LargeFileScanner {
 
             let keySet = Set(resourceKeys)
             let skipped = Self.skippedSubtreeNames
+            let rootComponents = root.standardizedFileURL.pathComponents
             for case let url as URL in enumerator {
                 // 跳过系统/缓存子树;命中后 skipDescendants 避免继续递归。
                 let lastComponent = url.lastPathComponent
@@ -107,15 +108,25 @@ public enum LargeFileScanner {
 
                 // 兜底:某些 enumerator 顺序下 skipDescendants 可能漏网,
                 // 显式检查路径任意一段是否命中跳过集合。
-                if url.pathComponents.contains(where: { skipped.contains($0) }) {
+                let relativeComponents = url.standardizedFileURL.pathComponents.dropFirst(rootComponents.count)
+                if relativeComponents.contains(where: { skipped.contains($0) }) {
                     continue
                 }
 
-                guard let values = try? url.resourceValues(forKeys: keySet) else {
-                    continue
-                }
-                guard values.isRegularFile == true else { continue }
-                guard let size = values.fileSize else { continue }
+                let values = try? url.resourceValues(forKeys: keySet)
+                let attributes = try? fileManager.attributesOfItem(atPath: url.path)
+
+                let isRegularFile = values?.isRegularFile
+                    ?? ((attributes?[.type] as? FileAttributeType) == .typeRegular)
+                guard isRegularFile else { continue }
+
+                let size = values?.fileSize
+                    ?? (attributes?[.size] as? NSNumber)?.intValue
+                    ?? (attributes?[.size] as? Int)
+                guard let size else { continue }
+
+                let modificationDate = values?.contentModificationDate
+                    ?? (attributes?[.modificationDate] as? Date)
                 let path = url.path(percentEncoded: false)
                 guard seenPaths.insert(path).inserted else { continue }
                 records.append(
@@ -123,7 +134,7 @@ public enum LargeFileScanner {
                         name: url.lastPathComponent,
                         displayPath: path,
                         sizeBytes: Int64(size),
-                        lastModifiedAt: values.contentModificationDate,
+                        lastModifiedAt: modificationDate,
                         sourceVolumeIdentifier: volumeIdentifier
                     )
                 )

@@ -30,7 +30,7 @@ public enum SystemMonitorInterval {
 /// - `refreshOnce` 立即采样一次,用于首次进入页面与显式刷新按钮。
 /// - 采样代次(generation)在 service 内部维护,过期结果不推送。
 /// - 不写入磁盘、不上报、不申请额外权限。
-public protocol SystemMonitorService: AnyObject {
+public protocol SystemMonitorService: AnyObject, Sendable {
     /// 启动周期采样;非法 interval 由 `SystemMonitorInterval.clampOrFallback` 钳到默认。
     func start(intervalSeconds: Double) async
 

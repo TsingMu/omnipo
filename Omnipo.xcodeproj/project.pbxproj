@@ -90,6 +90,19 @@
 		00000000000000000000025C /* CleanerLargeFileSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000336 /* CleanerLargeFileSection.swift */; };
 		00000000000000000000025D /* CleanerLargeFileSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000337 /* CleanerLargeFileSectionTests.swift */; };
 		00000000000000000000025E /* AuthorizedRootManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000338 /* AuthorizedRootManager.swift */; };
+		00000000000000000000025F /* SystemMetricSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000339 /* SystemMetricSnapshot.swift */; };
+		000000000000000000000260 /* SystemMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033A /* SystemMonitorService.swift */; };
+		000000000000000000000261 /* SystemMonitorModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033B /* SystemMonitorModelsTests.swift */; };
+		000000000000000000000262 /* CPUSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033C /* CPUSampler.swift */; };
+		000000000000000000000263 /* CPUSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033D /* CPUSamplerTests.swift */; };
+		000000000000000000000264 /* MemorySampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033E /* MemorySampler.swift */; };
+		000000000000000000000265 /* MemorySamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000033F /* MemorySamplerTests.swift */; };
+		000000000000000000000266 /* EnergyStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000340 /* EnergyStatus.swift */; };
+		000000000000000000000267 /* EnergyStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000341 /* EnergyStatusTests.swift */; };
+		000000000000000000000268 /* NetworkSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000342 /* NetworkSampler.swift */; };
+		000000000000000000000269 /* NetworkSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000343 /* NetworkSamplerTests.swift */; };
+		00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000344 /* DefaultSystemMonitorService.swift */; };
+		00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -189,6 +202,19 @@
 		000000000000000000000336 /* CleanerLargeFileSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanerLargeFileSection.swift; sourceTree = "<group>"; };
 		000000000000000000000337 /* CleanerLargeFileSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanerLargeFileSectionTests.swift; sourceTree = "<group>"; };
 		000000000000000000000338 /* AuthorizedRootManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorizedRootManager.swift; sourceTree = "<group>"; };
+		000000000000000000000339 /* SystemMetricSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMetricSnapshot.swift; sourceTree = "<group>"; };
+		00000000000000000000033A /* SystemMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorService.swift; sourceTree = "<group>"; };
+		00000000000000000000033B /* SystemMonitorModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorModelsTests.swift; sourceTree = "<group>"; };
+		00000000000000000000033C /* CPUSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPUSampler.swift; sourceTree = "<group>"; };
+		00000000000000000000033D /* CPUSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPUSamplerTests.swift; sourceTree = "<group>"; };
+		00000000000000000000033E /* MemorySampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorySampler.swift; sourceTree = "<group>"; };
+		00000000000000000000033F /* MemorySamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorySamplerTests.swift; sourceTree = "<group>"; };
+		000000000000000000000340 /* EnergyStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyStatus.swift; sourceTree = "<group>"; };
+		000000000000000000000341 /* EnergyStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyStatusTests.swift; sourceTree = "<group>"; };
+		000000000000000000000342 /* NetworkSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSampler.swift; sourceTree = "<group>"; };
+		000000000000000000000343 /* NetworkSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSamplerTests.swift; sourceTree = "<group>"; };
+		000000000000000000000344 /* DefaultSystemMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSystemMonitorService.swift; sourceTree = "<group>"; };
+		000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSystemMonitorServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -289,6 +315,7 @@
 				000000000000000000000303 /* ShortcutService.swift */,
 				000000000000000000000304 /* SearchService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
+				00000000000000000000033A /* SystemMonitorService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -306,6 +333,7 @@
 				000000000000000000000327 /* DashboardShortcut.swift */,
 				00000000000000000000032B /* DiskCapacitySnapshot.swift */,
 				000000000000000000000332 /* LargeFile.swift */,
+				000000000000000000000339 /* SystemMetricSnapshot.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -320,8 +348,21 @@
 				000000000000000000000041 /* Search */,
 				000000000000000000000042 /* AppDiscovery */,
 				000000000000000000000043 /* Launcher */,
+				000000000000000000000045 /* Diagnostics */,
 			);
 			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		000000000000000000000045 /* Diagnostics */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000033C /* CPUSampler.swift */,
+				00000000000000000000033E /* MemorySampler.swift */,
+				000000000000000000000340 /* EnergyStatus.swift */,
+				000000000000000000000342 /* NetworkSampler.swift */,
+				000000000000000000000344 /* DefaultSystemMonitorService.swift */,
+			);
+			path = Diagnostics;
 			sourceTree = "<group>";
 		};
 		000000000000000000000041 /* Search */ = {
@@ -415,6 +456,12 @@
 				000000000000000000000333 /* LargeFileTests.swift */,
 				000000000000000000000335 /* LargeFileScannerTests.swift */,
 				000000000000000000000337 /* CleanerLargeFileSectionTests.swift */,
+				00000000000000000000033B /* SystemMonitorModelsTests.swift */,
+				00000000000000000000033D /* CPUSamplerTests.swift */,
+				00000000000000000000033F /* MemorySamplerTests.swift */,
+				000000000000000000000341 /* EnergyStatusTests.swift */,
+				000000000000000000000343 /* NetworkSamplerTests.swift */,
+				000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -530,6 +577,13 @@
 				000000000000000000000209 /* CleanerView.swift in Sources */,
 				00000000000000000000025C /* CleanerLargeFileSection.swift in Sources */,
 				00000000000000000000025E /* AuthorizedRootManager.swift in Sources */,
+				00000000000000000000025F /* SystemMetricSnapshot.swift in Sources */,
+				000000000000000000000260 /* SystemMonitorService.swift in Sources */,
+				000000000000000000000262 /* CPUSampler.swift in Sources */,
+				000000000000000000000264 /* MemorySampler.swift in Sources */,
+				000000000000000000000266 /* EnergyStatus.swift in Sources */,
+				000000000000000000000268 /* NetworkSampler.swift in Sources */,
+				00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
 				00000000000000000000020C /* WeChatManagerView.swift in Sources */,
@@ -607,6 +661,12 @@
 				000000000000000000000259 /* LargeFileTests.swift in Sources */,
 				00000000000000000000025B /* LargeFileScannerTests.swift in Sources */,
 				00000000000000000000025D /* CleanerLargeFileSectionTests.swift in Sources */,
+				000000000000000000000261 /* SystemMonitorModelsTests.swift in Sources */,
+				000000000000000000000263 /* CPUSamplerTests.swift in Sources */,
+				000000000000000000000265 /* MemorySamplerTests.swift in Sources */,
+				000000000000000000000267 /* EnergyStatusTests.swift in Sources */,
+				000000000000000000000269 /* NetworkSamplerTests.swift in Sources */,
+				00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

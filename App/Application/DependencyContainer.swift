@@ -9,6 +9,7 @@ public final class DependencyContainer {
     public let shortcutService: any ShortcutService
     public let diskUsageService: any DiskUsageService
     public let systemMonitorService: any SystemMonitorService
+    public let appUsageSampler: any AppUsageSampling
     public let systemMonitorStore: SystemMonitorStore
     public let authorizedRootManager: AuthorizedRootManager
     public let launcherCoordinator: LauncherCoordinator
@@ -20,6 +21,7 @@ public final class DependencyContainer {
         shortcutService: any ShortcutService,
         diskUsageService: any DiskUsageService,
         systemMonitorService: any SystemMonitorService,
+        appUsageSampler: any AppUsageSampling,
         systemMonitorStore: SystemMonitorStore,
         authorizedRootManager: AuthorizedRootManager,
         launcherCoordinator: LauncherCoordinator,
@@ -30,6 +32,7 @@ public final class DependencyContainer {
         self.shortcutService = shortcutService
         self.diskUsageService = diskUsageService
         self.systemMonitorService = systemMonitorService
+        self.appUsageSampler = appUsageSampler
         self.systemMonitorStore = systemMonitorStore
         self.authorizedRootManager = authorizedRootManager
         self.launcherCoordinator = launcherCoordinator
@@ -54,8 +57,10 @@ public final class DependencyContainer {
             logger: logging,
             diskUsageService: diskUsageService
         )
+        let appUsageSampler = DefaultAppUsageSampler(logger: logging)
         let systemMonitorStore = SystemMonitorStore(
             service: systemMonitorService,
+            appUsageSampler: appUsageSampler,
             settings: settings,
             intervalSeconds: settings.readSystemMonitorIntervalSeconds()
         )
@@ -115,6 +120,7 @@ public final class DependencyContainer {
             shortcutService: shortcut,
             diskUsageService: diskUsageService,
             systemMonitorService: systemMonitorService,
+            appUsageSampler: appUsageSampler,
             systemMonitorStore: systemMonitorStore,
             authorizedRootManager: authorizedRootManager,
             launcherCoordinator: coordinator,

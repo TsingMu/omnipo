@@ -3,6 +3,156 @@ import XCTest
 
 final class SystemMonitorModelsTests: XCTestCase {
 
+    // MARK: - Tabs
+
+    func test_systemMonitorTabs_coverExpectedDisplayOrder() {
+        XCTAssertEqual(
+            SystemMonitorTab.allCases,
+            [.overview, .cpu, .memory, .energy, .disk, .network]
+        )
+    }
+
+    func test_systemMonitorTabs_haveDisplayTitles() {
+        XCTAssertEqual(SystemMonitorTab.overview.title, "纵览")
+        XCTAssertEqual(SystemMonitorTab.cpu.title, "CPU")
+        XCTAssertEqual(SystemMonitorTab.memory.title, "内存")
+        XCTAssertEqual(SystemMonitorTab.energy.title, "能耗")
+        XCTAssertEqual(SystemMonitorTab.disk.title, "磁盘")
+        XCTAssertEqual(SystemMonitorTab.network.title, "网络")
+    }
+
+    func test_systemMonitorTabs_haveAccessibilityLabels() {
+        for tab in SystemMonitorTab.allCases {
+            XCTAssertFalse(tab.accessibilityLabel.isEmpty)
+            XCTAssertTrue(tab.accessibilityLabel.contains("监控") || tab.accessibilityLabel.contains("纵览"))
+        }
+    }
+
+    // MARK: - App Usage
+
+    func test_appUsageRecord_normalizesValues() {
+        let record = AppUsageRecord(
+            displayName: "Safari",
+            bundleIdentifier: "com.apple.Safari",
+            iconIdentifier: "com.apple.Safari",
+            cpuPercent: 1.4,
+            memoryBytes: -100,
+            networkBytesInPerSec: -50,
+            networkBytesOutPerSec: .nan,
+            usageAmount: .infinity
+        )
+
+        XCTAssertEqual(record.id, "com.apple.Safari")
+        XCTAssertEqual(record.cpuPercent, 1.4)
+        XCTAssertEqual(record.memoryBytes, 0)
+        XCTAssertEqual(record.networkBytesInPerSec, 0)
+        XCTAssertNil(record.networkBytesOutPerSec)
+        XCTAssertEqual(record.usageAmount, 0)
+    }
+
+    func test_appUsageRecord_usesExplicitIdWhenProvided() {
+        let record = AppUsageRecord(
+            id: "pid-123",
+            displayName: "Terminal",
+            bundleIdentifier: "com.apple.Terminal",
+            usageAmount: 0.2
+        )
+
+        XCTAssertEqual(record.id, "pid-123")
+    }
+
+    func test_appUsageRecord_trimsOptionalIdentifiers() {
+        let record = AppUsageRecord(
+            displayName: "Preview",
+            bundleIdentifier: "  ",
+            iconIdentifier: "\n",
+            usageAmount: 0.1
+        )
+
+        XCTAssertEqual(record.id, "Preview")
+        XCTAssertNil(record.bundleIdentifier)
+        XCTAssertNil(record.iconIdentifier)
+    }
+
+    func test_appUsageSnapshot_emptyWhenNoRecordsAndNoReason() {
+        let snapshot = AppUsageSnapshot(records: [])
+        XCTAssertTrue(snapshot.isEmpty)
+
+        let unavailable = AppUsageSnapshot(records: [], unavailableReason: .resourceUsageUnavailable)
+        XCTAssertFalse(unavailable.isEmpty)
+    }
+
+    func test_appUsageUnavailableReasons_haveUniqueStableCodes() {
+        let codes = Set(AppUsageUnavailableReason.allCases.map(\.stableCode))
+        XCTAssertEqual(codes.count, AppUsageUnavailableReason.allCases.count)
+    }
+
+    func test_appUsageUnavailableReasons_haveNonEmptyDescriptions() {
+        for reason in AppUsageUnavailableReason.allCases {
+            XCTAssertFalse(reason.userDescription.isEmpty)
+        }
+    }
+
+    func test_appUsageAvailability_accessors() {
+        let record = AppUsageRecord(displayName: "Safari", usageAmount: 0.5)
+        let snapshot = AppUsageSnapshot(records: [record])
+        let available: AppUsageAvailability = .available(snapshot)
+
+        XCTAssertEqual(available.snapshot, snapshot)
+        XCTAssertEqual(available.records, [record])
+        XCTAssertNil(available.unavailableReason)
+        XCTAssertFalse(available.isLoading)
+
+        let unavailable: AppUsageAvailability = .unavailable(reason: .processListUnavailable)
+        XCTAssertNil(unavailable.snapshot)
+        XCTAssertTrue(unavailable.records.isEmpty)
+        XCTAssertEqual(unavailable.unavailableReason, .processListUnavailable)
+    }
+
+    func test_appUsageAvailability_loadingState() {
+        XCTAssertTrue(AppUsageAvailability.loading.isLoading)
+        XCTAssertFalse(AppUsageAvailability.idle.isLoading)
+    }
+
+    func test_appUsageRecords_sortByUsageThenMemoryThenName() {
+        let records = [
+            AppUsageRecord(displayName: "Preview", memoryBytes: 500, usageAmount: 0.2),
+            AppUsageRecord(displayName: "Safari", memoryBytes: 100, usageAmount: 0.8),
+            AppUsageRecord(displayName: "Xcode", memoryBytes: 900, usageAmount: 0.8),
+            AppUsageRecord(displayName: "Notes", memoryBytes: 500, usageAmount: 0.2)
+        ]
+
+        let sorted = records.sortedByDefaultUsage()
+        XCTAssertEqual(sorted.map(\.displayName), ["Xcode", "Safari", "Notes", "Preview"])
+    }
+
+    func test_appUsageSnapshot_sortsRecordsByDefaultUsage() {
+        let snapshot = AppUsageSnapshot(records: [
+            AppUsageRecord(displayName: "Low", memoryBytes: 1_000, usageAmount: 0.1),
+            AppUsageRecord(displayName: "High", memoryBytes: 1, usageAmount: 0.9)
+        ])
+
+        XCTAssertEqual(snapshot.records.map(\.displayName), ["High", "Low"])
+    }
+
+    func test_appUsageAvailability_sortedByDefaultUsagePreservesNonAvailableStates() {
+        let idle = AppUsageAvailability.idle.sortedByDefaultUsage()
+        XCTAssertEqual(idle, .idle)
+
+        let unavailable = AppUsageAvailability.unavailable(reason: .unknown).sortedByDefaultUsage()
+        XCTAssertEqual(unavailable, .unavailable(reason: .unknown))
+    }
+
+    func test_appUsageSamplingProtocol_allowsInjectableSampler() async {
+        let record = AppUsageRecord(displayName: "Safari", usageAmount: 0.4)
+        let sampler = MockAppUsageSampler(
+            availability: .available(AppUsageSnapshot(records: [record]))
+        )
+
+        let availability = await sampler.sampleAppUsage()
+        XCTAssertEqual(availability.records, [record])
+    }
+
     // MARK: - CPU
 
     func test_cpuMetrics_normalizesToUnitSum() {
@@ -162,6 +312,14 @@ final class SystemMonitorModelsTests: XCTestCase {
         )
         XCTAssertEqual(s.cpu?.unavailableReason, .warmup)
         XCTAssertEqual(s.network?.unavailableReason, .getifaddrsFailed)
+    }
+}
+
+private struct MockAppUsageSampler: AppUsageSampling {
+    let availability: AppUsageAvailability
+
+    func sampleAppUsage() async -> AppUsageAvailability {
+        availability
     }
 }
 

@@ -105,6 +105,11 @@
 		00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */; };
 		00000000000000000000026C /* SystemMonitorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000346 /* SystemMonitorStore.swift */; };
 		00000000000000000000026D /* SystemMonitorStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000347 /* SystemMonitorStoreTests.swift */; };
+		00000000000000000000026E /* SystemMonitorTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000348 /* SystemMonitorTab.swift */; };
+		00000000000000000000026F /* AppUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000349 /* AppUsage.swift */; };
+		000000000000000000000270 /* AppUsageSampling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034A /* AppUsageSampling.swift */; };
+		000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034B /* DefaultAppUsageSampler.swift */; };
+		000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034C /* AppUsageSamplerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -219,6 +224,11 @@
 		000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSystemMonitorServiceTests.swift; sourceTree = "<group>"; };
 		000000000000000000000346 /* SystemMonitorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorStore.swift; sourceTree = "<group>"; };
 		000000000000000000000347 /* SystemMonitorStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorStoreTests.swift; sourceTree = "<group>"; };
+		000000000000000000000348 /* SystemMonitorTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorTab.swift; sourceTree = "<group>"; };
+		000000000000000000000349 /* AppUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsage.swift; sourceTree = "<group>"; };
+		00000000000000000000034A /* AppUsageSampling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSampling.swift; sourceTree = "<group>"; };
+		00000000000000000000034B /* DefaultAppUsageSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAppUsageSampler.swift; sourceTree = "<group>"; };
+		00000000000000000000034C /* AppUsageSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSamplerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -321,6 +331,7 @@
 				000000000000000000000304 /* SearchService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
+				00000000000000000000034A /* AppUsageSampling.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -339,6 +350,8 @@
 				00000000000000000000032B /* DiskCapacitySnapshot.swift */,
 				000000000000000000000332 /* LargeFile.swift */,
 				000000000000000000000339 /* SystemMetricSnapshot.swift */,
+				000000000000000000000348 /* SystemMonitorTab.swift */,
+				000000000000000000000349 /* AppUsage.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -366,6 +379,7 @@
 				000000000000000000000340 /* EnergyStatus.swift */,
 				000000000000000000000342 /* NetworkSampler.swift */,
 				000000000000000000000344 /* DefaultSystemMonitorService.swift */,
+				00000000000000000000034B /* DefaultAppUsageSampler.swift */,
 			);
 			path = Diagnostics;
 			sourceTree = "<group>";
@@ -468,6 +482,7 @@
 				000000000000000000000343 /* NetworkSamplerTests.swift */,
 				000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */,
 				000000000000000000000347 /* SystemMonitorStoreTests.swift */,
+				00000000000000000000034C /* AppUsageSamplerTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -585,11 +600,15 @@
 				00000000000000000000025E /* AuthorizedRootManager.swift in Sources */,
 				00000000000000000000025F /* SystemMetricSnapshot.swift in Sources */,
 				000000000000000000000260 /* SystemMonitorService.swift in Sources */,
+				00000000000000000000026E /* SystemMonitorTab.swift in Sources */,
+				00000000000000000000026F /* AppUsage.swift in Sources */,
+				000000000000000000000270 /* AppUsageSampling.swift in Sources */,
 				000000000000000000000262 /* CPUSampler.swift in Sources */,
 				000000000000000000000264 /* MemorySampler.swift in Sources */,
 				000000000000000000000266 /* EnergyStatus.swift in Sources */,
 				000000000000000000000268 /* NetworkSampler.swift in Sources */,
 				00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */,
+				000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */,
 				00000000000000000000026C /* SystemMonitorStore.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
@@ -675,6 +694,7 @@
 				000000000000000000000269 /* NetworkSamplerTests.swift in Sources */,
 				00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */,
 				00000000000000000000026D /* SystemMonitorStoreTests.swift in Sources */,
+				000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -40,16 +40,19 @@ struct SystemMonitorView: View {
                         }
                     )
 
-                    VStack(spacing: 16) {
-                        SystemMonitorCPUCard(snapshot: store.snapshot)
-                        SystemMonitorMemoryCard(snapshot: store.snapshot)
-                        SystemMonitorEnergyCard(snapshot: store.snapshot)
-                        SystemMonitorDiskCard(
-                            availability: appState.startupVolumeCapacity,
-                            onNavigate: onNavigate
-                        )
-                        SystemMonitorNetworkCard(snapshot: store.snapshot)
-                    }
+                    SystemMonitorTabPicker(selectedTab: Binding(
+                        get: { store.selectedTab },
+                        set: { store.selectedTab = $0 }
+                    ))
+
+                    SystemMonitorTabContent(
+                        selectedTab: store.selectedTab,
+                        snapshot: store.snapshot,
+                        diskAvailability: appState.startupVolumeCapacity,
+                        appUsage: store.appUsage,
+                        appUsageRecords: store.sortedAppUsageRecords,
+                        onNavigate: onNavigate
+                    )
                 }
                 .frame(maxWidth: 860)
                 .padding(.horizontal, 28)
@@ -64,6 +67,553 @@ struct SystemMonitorView: View {
             Task { await store.deactivate() }
         }
         .accessibilityElement(children: .contain)
+    }
+}
+
+private struct SystemMonitorTabPicker: View {
+    @Binding var selectedTab: SystemMonitorTab
+
+    var body: some View {
+        Picker("系统监控页面", selection: $selectedTab) {
+            ForEach(SystemMonitorTab.allCases) { tab in
+                Text(tab.title)
+                    .tag(tab)
+                    .accessibilityLabel(tab.accessibilityLabel)
+            }
+        }
+        .pickerStyle(.segmented)
+        .controlSize(.large)
+        .help("切换系统监控页面")
+        .accessibilityLabel("系统监控页面标签")
+        .accessibilityHint("切换纵览、CPU、内存、能耗、磁盘和网络页面")
+    }
+}
+
+private struct SystemMonitorTabContent: View {
+    let selectedTab: SystemMonitorTab
+    let snapshot: SystemMetricSnapshot?
+    let diskAvailability: DiskCapacityAvailability
+    let appUsage: AppUsageAvailability
+    let appUsageRecords: [AppUsageRecord]
+    let onNavigate: @MainActor (AppDestination) -> Void
+
+    var body: some View {
+        Group {
+            switch selectedTab {
+            case .overview:
+                SystemMonitorOverviewPage(
+                    snapshot: snapshot,
+                    diskAvailability: diskAvailability
+                )
+            case .cpu:
+                VStack(spacing: 16) {
+                    SystemMonitorCPUCard(snapshot: snapshot)
+                    SystemMonitorAppUsageList(
+                        availability: appUsage,
+                        records: appUsageRecords,
+                        ranking: .cpu
+                    )
+                }
+            case .memory:
+                VStack(spacing: 16) {
+                    SystemMonitorMemoryCard(snapshot: snapshot)
+                    SystemMonitorAppUsageList(
+                        availability: appUsage,
+                        records: appUsageRecords,
+                        ranking: .memory
+                    )
+                }
+            case .energy:
+                VStack(spacing: 16) {
+                    SystemMonitorEnergyCard(snapshot: snapshot)
+                    SystemMonitorAppUsageList(
+                        availability: appUsage,
+                        records: appUsageRecords,
+                        ranking: .energy
+                    )
+                }
+            case .disk:
+                VStack(spacing: 16) {
+                    SystemMonitorDiskCard(
+                        availability: diskAvailability,
+                        onNavigate: onNavigate
+                    )
+                    SystemMonitorAppUsageList(
+                        availability: appUsage,
+                        records: appUsageRecords,
+                        ranking: .disk
+                    )
+                }
+            case .network:
+                VStack(spacing: 16) {
+                    SystemMonitorNetworkCard(snapshot: snapshot)
+                    SystemMonitorAppUsageList(
+                        availability: appUsage,
+                        records: appUsageRecords,
+                        ranking: .network
+                    )
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct SystemMonitorOverviewPage: View {
+    let snapshot: SystemMetricSnapshot?
+    let diskAvailability: DiskCapacityAvailability
+
+    var body: some View {
+        SystemMonitorOverviewSummary(
+            snapshot: snapshot,
+            diskAvailability: diskAvailability
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("系统监控纵览")
+    }
+}
+
+private struct SystemMonitorOverviewSummary: View {
+    let snapshot: SystemMetricSnapshot?
+    let diskAvailability: DiskCapacityAvailability
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: 142, maximum: 220), spacing: 12)]
+    }
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+            SystemMonitorSummaryTile(presentation: .cpu(snapshot))
+            SystemMonitorSummaryTile(presentation: .memory(snapshot))
+            SystemMonitorSummaryTile(presentation: .energy(snapshot))
+            SystemMonitorSummaryTile(presentation: .disk(diskAvailability))
+            SystemMonitorSummaryTile(presentation: .network(snapshot))
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("整机资源摘要")
+    }
+}
+
+private struct SystemMonitorSummaryTile: View {
+    let presentation: SystemMonitorSummaryTilePresentation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: presentation.symbolName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(presentation.tint)
+                    .frame(width: 28, height: 28)
+                    .background(presentation.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                Text(presentation.title)
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+
+            Text(presentation.value)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Text(presentation.subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(.primary.opacity(0.07), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(presentation.title)，\(presentation.value)，\(presentation.subtitle)")
+    }
+}
+
+private struct SystemMonitorAppUsageList: View {
+    let availability: AppUsageAvailability
+    let records: [AppUsageRecord]
+    let ranking: SystemMonitorAppUsageRanking
+
+    var body: some View {
+        let rankedRecords = ranking.sorted(records)
+
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(ranking.title)
+                        .font(.headline)
+                    Text(ranking.subtitle)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(statusText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(statusColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.quaternary, in: Capsule())
+            }
+
+            if let unsupportedMessage = ranking.unsupportedMessage {
+                SystemMonitorAppUsageStateView(
+                    symbolName: ranking.symbolName,
+                    title: ranking.unsupportedTitle,
+                    message: unsupportedMessage
+                )
+            } else {
+                switch availability {
+                case .idle, .loading:
+                    SystemMonitorAppUsageStateView(
+                        symbolName: "hourglass",
+                        title: availability.isLoading ? "正在读取 APP 使用情况" : "等待 APP 使用采样",
+                        message: "进入系统监控后会读取当前运行中应用的 CPU 与内存占用。"
+                    )
+                case .unavailable(let reason):
+                    SystemMonitorAppUsageStateView(
+                        symbolName: "exclamationmark.triangle",
+                        title: "\(ranking.title)暂不可用",
+                        message: reason.userDescription
+                    )
+                case .available(let snapshot):
+                    if !ranking.hasUsableMetric(in: records), let unavailableMessage = ranking.metricUnavailableMessage {
+                        SystemMonitorAppUsageStateView(
+                            symbolName: ranking.symbolName,
+                            title: "\(ranking.title)暂不可用",
+                            message: unavailableMessage
+                        )
+                    } else if rankedRecords.isEmpty {
+                        SystemMonitorAppUsageStateView(
+                            symbolName: "app.dashed",
+                            title: "当前没有可展示的运行中应用",
+                            message: snapshot.unavailableReason?.userDescription ?? "没有读取到符合展示条件的运行中 APP。"
+                        )
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(rankedRecords) { record in
+                                SystemMonitorAppUsageRow(
+                                    record: record,
+                                    ranking: ranking
+                                )
+                                if record.id != rankedRecords.last?.id {
+                                    Divider()
+                                        .padding(.leading, 48)
+                                }
+                            }
+                        }
+                        .background(.quaternary.opacity(0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(.primary.opacity(0.07), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var statusText: String {
+        if ranking.unsupportedMessage != nil {
+            return "不支持"
+        }
+
+        switch availability {
+        case .idle: return "待采样"
+        case .loading: return "读取中"
+        case .available:
+            return ranking.hasUsableMetric(in: records) || ranking.metricUnavailableMessage == nil
+                ? "已更新"
+                : "暂不可用"
+        case .unavailable: return "暂不可用"
+        }
+    }
+
+    private var statusColor: Color {
+        if ranking.unsupportedMessage != nil {
+            return .secondary
+        }
+
+        switch availability {
+        case .available:
+            return ranking.hasUsableMetric(in: records) || ranking.metricUnavailableMessage == nil
+                ? .accentColor
+                : .orange
+        case .unavailable: return .orange
+        case .idle, .loading: return .secondary
+        }
+    }
+}
+
+private enum SystemMonitorAppUsageRanking {
+    case cpu
+    case memory
+    case energy
+    case disk
+    case network
+
+    var title: String {
+        switch self {
+        case .cpu: return "APP CPU 使用排行"
+        case .memory: return "APP 内存使用排行"
+        case .energy: return "APP 能耗排行"
+        case .disk: return "APP 磁盘使用排行"
+        case .network: return "APP 网络使用排行"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .cpu: return "按当前 CPU 占有率降序排列。"
+        case .memory: return "按当前内存占用降序排列。"
+        case .energy: return "macOS 未提供可靠公开应用级能耗数据。"
+        case .disk: return "当前磁盘页展示整机容量，不伪造应用级磁盘排行。"
+        case .network: return "仅在存在可靠应用级网络归因时展示排行。"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .memory: return "memorychip"
+        case .energy: return "bolt.slash"
+        case .disk: return "internaldrive"
+        case .network: return "network.slash"
+        }
+    }
+
+    var unsupportedTitle: String {
+        switch self {
+        case .energy: return "APP 能耗排行暂不可用"
+        case .disk: return "APP 磁盘排行暂不可用"
+        case .cpu, .memory, .network: return "\(title)暂不可用"
+        }
+    }
+
+    var unsupportedMessage: String? {
+        switch self {
+        case .energy:
+            return "当前实现只读取整机电池状态；不调用私有能耗接口，也不展示不可靠的应用级能耗排行。"
+        case .disk:
+            return "当前实现只展示整机磁盘容量摘要；未采集应用级磁盘读写或占用排行。"
+        case .cpu, .memory, .network:
+            return nil
+        }
+    }
+
+    var metricUnavailableMessage: String? {
+        switch self {
+        case .network:
+            return "macOS 没有可靠公开 API 可将网络流量归因到应用；因此不展示应用级网络排行。"
+        case .cpu, .memory, .energy, .disk:
+            return nil
+        }
+    }
+
+    var primaryTitle: String {
+        switch self {
+        case .cpu: return "CPU"
+        case .memory: return "内存"
+        case .energy: return "能耗"
+        case .disk: return "磁盘"
+        case .network: return "网络"
+        }
+    }
+
+    func sorted(_ records: [AppUsageRecord]) -> [AppUsageRecord] {
+        records.sorted { lhs, rhs in
+            switch self {
+            case .cpu:
+                return compare(
+                    lhs: lhs,
+                    rhs: rhs,
+                    lhsPrimary: lhs.cpuPercent,
+                    rhsPrimary: rhs.cpuPercent
+                )
+            case .memory:
+                return compare(
+                    lhs: lhs,
+                    rhs: rhs,
+                    lhsPrimary: lhs.memoryBytes.map(Double.init),
+                    rhsPrimary: rhs.memoryBytes.map(Double.init)
+                )
+            case .network:
+                return compare(
+                    lhs: lhs,
+                    rhs: rhs,
+                    lhsPrimary: networkUsage(for: lhs),
+                    rhsPrimary: networkUsage(for: rhs)
+                )
+            case .energy, .disk:
+                return lhs.defaultSortPrecedes(rhs)
+            }
+        }
+    }
+
+    func primaryValue(for record: AppUsageRecord) -> String {
+        switch self {
+        case .cpu:
+            return record.cpuPercent.map(SystemMonitorFormatting.appCPUText) ?? "—"
+        case .memory:
+            return record.memoryBytes.map(SystemMonitorFormatting.byteCountText) ?? "—"
+        case .network:
+            return networkUsage(for: record).map(SystemMonitorFormatting.rateText) ?? "—"
+        case .energy, .disk:
+            return "—"
+        }
+    }
+
+    func hasUsableMetric(in records: [AppUsageRecord]) -> Bool {
+        switch self {
+        case .cpu:
+            return records.contains { $0.cpuPercent != nil }
+        case .memory:
+            return records.contains { $0.memoryBytes != nil }
+        case .network:
+            return records.contains { networkUsage(for: $0) != nil }
+        case .energy, .disk:
+            return false
+        }
+    }
+
+    private func networkUsage(for record: AppUsageRecord) -> Double? {
+        let inbound = record.networkBytesInPerSec
+        let outbound = record.networkBytesOutPerSec
+        guard inbound != nil || outbound != nil else { return nil }
+        return (inbound ?? 0) + (outbound ?? 0)
+    }
+
+    private func compare(
+        lhs: AppUsageRecord,
+        rhs: AppUsageRecord,
+        lhsPrimary: Double?,
+        rhsPrimary: Double?
+    ) -> Bool {
+        switch (lhsPrimary, rhsPrimary) {
+        case let (lhsValue?, rhsValue?) where lhsValue != rhsValue:
+            return lhsValue > rhsValue
+        case (_?, nil):
+            return true
+        case (nil, _?):
+            return false
+        default:
+            return lhs.defaultSortPrecedes(rhs)
+        }
+    }
+}
+
+private struct SystemMonitorAppUsageRow: View {
+    let record: AppUsageRecord
+    let ranking: SystemMonitorAppUsageRanking
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.12))
+                Image(systemName: "app.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(width: 36, height: 36)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.displayName)
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Text(record.bundleIdentifier ?? "未识别 Bundle ID")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(ranking.primaryValue(for: record))
+                    .font(.callout.weight(.semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text(ranking.primaryTitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minWidth: 76, alignment: .trailing)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(record.cpuPercent.map(SystemMonitorFormatting.appCPUText) ?? "—")
+                    .font(.callout.weight(.semibold))
+                    .monospacedDigit()
+                Text("CPU")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minWidth: 58, alignment: .trailing)
+
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(record.memoryBytes.map(SystemMonitorFormatting.byteCountText) ?? "—")
+                    .font(.callout.weight(.semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text("内存")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minWidth: 84, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            "\(record.displayName)，\(ranking.primaryTitle) \(ranking.primaryValue(for: record))，CPU \(record.cpuPercent.map(SystemMonitorFormatting.appCPUText) ?? "不可用")，内存 \(record.memoryBytes.map(SystemMonitorFormatting.byteCountText) ?? "不可用")"
+        )
+    }
+}
+
+private struct SystemMonitorAppUsageStateView: View {
+    let symbolName: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbolName)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 34, height: 34)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.callout.weight(.semibold))
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(.quaternary.opacity(0.28), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -217,7 +767,7 @@ private struct SystemMonitorNetworkCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("网络")
                         .font(.headline)
-                    Text("活跃接口、上下行速率与总流量栏。")
+                    Text("整机接口上下行速率，不展示不可靠的应用级网络排行。")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -984,7 +1534,7 @@ private struct SystemMonitorNetworkCardPresentation {
             self.outboundFraction = 0
             self.summaryText = "网络卡会在首帧快照到达后展示各接口上下行速率。"
             self.interfaces = []
-            self.footerText = "首次采样后会识别接口，第二次及之后会根据差值计算速率。"
+            self.footerText = "这里只展示整机接口速率；macOS 无可靠公开 API 可归因应用级网络排行。"
             self.footerColor = .secondary
             return
         }
@@ -1008,7 +1558,7 @@ private struct SystemMonitorNetworkCardPresentation {
             self.outboundFraction = min(metrics.totalBytesOutPerSec / peak, 1)
             self.summaryText = activeInterfaces.isEmpty
                 ? "已识别网络接口，正在等待连续采样后展示真实速率。"
-                : "优先展示当前有流量的接口，便于快速定位是谁在上网。"
+                : "优先展示当前有流量的接口，便于快速观察整机网络活动。"
             self.interfaces = displayed.map {
                 InterfacePresentation(
                     id: $0.name,
@@ -1018,7 +1568,7 @@ private struct SystemMonitorNetworkCardPresentation {
                     outboundText: "出 \((SystemMonitorFormatting.rateText(from: $0.bytesOutPerSec)))"
                 )
             }
-            self.footerText = "最近更新于 \(snapshot?.capturedAt.formatted(date: .omitted, time: .shortened) ?? "刚刚")。"
+            self.footerText = "最近更新于 \(snapshot?.capturedAt.formatted(date: .omitted, time: .shortened) ?? "刚刚")；不展示应用级网络排行。"
             self.footerColor = .secondary
         case .unavailable(let reason):
             self.statusText = "暂不可用"
@@ -1031,8 +1581,175 @@ private struct SystemMonitorNetworkCardPresentation {
             self.outboundFraction = 0
             self.summaryText = reason.userDescription
             self.interfaces = []
-            self.footerText = reason.userDescription
+            self.footerText = "\(reason.userDescription) 不展示应用级网络排行。"
             self.footerColor = .orange
+        }
+    }
+}
+
+private struct SystemMonitorSummaryTilePresentation {
+    let title: String
+    let symbolName: String
+    let value: String
+    let subtitle: String
+    let tint: Color
+
+    static func cpu(_ snapshot: SystemMetricSnapshot?) -> Self {
+        guard let cpu = snapshot?.cpu else {
+            return .init(
+                title: "CPU",
+                symbolName: "cpu",
+                value: "—",
+                subtitle: "等待首帧",
+                tint: .accentColor
+            )
+        }
+        switch cpu {
+        case .available(let metrics):
+            return .init(
+                title: "CPU",
+                symbolName: "cpu",
+                value: SystemMonitorFormatting.percentText(from: metrics.busyPercent),
+                subtitle: "用户 \(SystemMonitorFormatting.percentText(from: metrics.userPercent)) / 系统 \(SystemMonitorFormatting.percentText(from: metrics.systemPercent))",
+                tint: .accentColor
+            )
+        case .unavailable(let reason):
+            return .init(
+                title: "CPU",
+                symbolName: "cpu",
+                value: "—",
+                subtitle: reason == .warmup ? "预热中" : reason.userDescription,
+                tint: .orange
+            )
+        }
+    }
+
+    static func memory(_ snapshot: SystemMetricSnapshot?) -> Self {
+        guard let memory = snapshot?.memory else {
+            return .init(
+                title: "内存",
+                symbolName: "memorychip",
+                value: "—",
+                subtitle: "等待首帧",
+                tint: .blue
+            )
+        }
+        switch memory {
+        case .available(let metrics):
+            return .init(
+                title: "内存",
+                symbolName: "memorychip",
+                value: SystemMonitorFormatting.byteCountText(from: metrics.usedBytes),
+                subtitle: "可用 \(SystemMonitorFormatting.byteCountText(from: metrics.availableBytes))",
+                tint: .blue
+            )
+        case .unavailable(let reason):
+            return .init(
+                title: "内存",
+                symbolName: "memorychip",
+                value: "—",
+                subtitle: reason.userDescription,
+                tint: .orange
+            )
+        }
+    }
+
+    static func energy(_ snapshot: SystemMetricSnapshot?) -> Self {
+        guard let energy = snapshot?.energy else {
+            return .init(
+                title: "能耗",
+                symbolName: "battery.100",
+                value: "—",
+                subtitle: "等待首帧",
+                tint: .yellow
+            )
+        }
+        switch energy {
+        case .available(let metrics):
+            let isCharging = metrics.isCharging ?? false
+            let isOnExternalPower = metrics.isOnExternalPower ?? isCharging
+            return .init(
+                title: "能耗",
+                symbolName: isCharging ? "battery.100.bolt" : (isOnExternalPower ? "powerplug" : "battery.75"),
+                value: metrics.batteryPercent.map(SystemMonitorFormatting.percentText) ?? "—",
+                subtitle: isCharging ? "充电中" : (isOnExternalPower ? "外接电源" : "电池供电"),
+                tint: isOnExternalPower ? .green : .yellow
+            )
+        case .unavailable(let reason):
+            return .init(
+                title: "能耗",
+                symbolName: "battery.slash",
+                value: "—",
+                subtitle: reason.userDescription,
+                tint: .orange
+            )
+        }
+    }
+
+    static func disk(_ availability: DiskCapacityAvailability) -> Self {
+        switch availability {
+        case .idle:
+            return .init(
+                title: "磁盘",
+                symbolName: "internaldrive",
+                value: "—",
+                subtitle: "等待容量读取",
+                tint: .purple
+            )
+        case .loading:
+            return .init(
+                title: "磁盘",
+                symbolName: "internaldrive",
+                value: "—",
+                subtitle: "读取中",
+                tint: .purple
+            )
+        case .available(let snapshot):
+            return .init(
+                title: "磁盘",
+                symbolName: "internaldrive",
+                value: SystemMonitorFormatting.byteCountText(from: snapshot.usedBytes),
+                subtitle: "可用 \(SystemMonitorFormatting.byteCountText(from: snapshot.availableBytes))",
+                tint: .purple
+            )
+        case .unavailable(let reason):
+            return .init(
+                title: "磁盘",
+                symbolName: "internaldrive",
+                value: "—",
+                subtitle: reason.userDescription,
+                tint: .orange
+            )
+        }
+    }
+
+    static func network(_ snapshot: SystemMetricSnapshot?) -> Self {
+        guard let network = snapshot?.network else {
+            return .init(
+                title: "网络",
+                symbolName: "network",
+                value: "—",
+                subtitle: "等待首帧",
+                tint: .green
+            )
+        }
+        switch network {
+        case .available(let metrics):
+            return .init(
+                title: "网络",
+                symbolName: "network",
+                value: SystemMonitorFormatting.rateText(from: metrics.totalBytesInPerSec),
+                subtitle: "上行 \(SystemMonitorFormatting.rateText(from: metrics.totalBytesOutPerSec))",
+                tint: .green
+            )
+        case .unavailable(let reason):
+            return .init(
+                title: "网络",
+                symbolName: "network",
+                value: "—",
+                subtitle: reason.userDescription,
+                tint: .orange
+            )
         }
     }
 }
@@ -1041,6 +1758,11 @@ private enum SystemMonitorFormatting {
     static func percentText(from fraction: Double) -> String {
         let value = max(0, min(1, fraction))
         return value.formatted(.percent.precision(.fractionLength(0)))
+    }
+
+    static func appCPUText(from fraction: Double) -> String {
+        let value = max(0, fraction) * 100
+        return "\(value.formatted(.number.precision(.fractionLength(1))))%"
     }
 
     static func byteCountText(from bytes: Int64) -> String {
@@ -1057,6 +1779,14 @@ private enum SystemMonitorFormatting {
         formatter.includesUnit = true
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
         return "\(formatter.string(fromByteCount: Int64(bytesPerSecond.rounded())))/s"
+    }
+
+    static func usageText(from amount: Double) -> String {
+        guard amount.isFinite else { return "0%" }
+        if amount <= 1 {
+            return percentText(from: amount)
+        }
+        return amount.formatted(.number.precision(.fractionLength(0...1)))
     }
 }
 

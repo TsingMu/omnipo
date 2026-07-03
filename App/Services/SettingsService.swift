@@ -29,6 +29,27 @@ public enum SettingsValue: Sendable, Hashable {
     case double(Double)
 }
 
+public enum ClipboardSettingsDefaults {
+    public static let isEnabled = false
+    public static let hasAcknowledgedLocalStorageNotice = false
+    public static let autoPaste = false
+    public static let maxRecords = 500.0
+    public static let retentionDays = 30.0
+    public static let maxStorageMB = 512.0
+
+    public static func clampMaxRecords(_ value: Double) -> Double {
+        min(max(value.rounded(), 1), 10_000)
+    }
+
+    public static func clampRetentionDays(_ value: Double) -> Double {
+        min(max(value.rounded(), 1), 365)
+    }
+
+    public static func clampMaxStorageMB(_ value: Double) -> Double {
+        min(max(value.rounded(), 16), 10_240)
+    }
+}
+
 public extension SettingsKey {
     static let launchDashboardAtStart = SettingsKey(
         "omnipo.settings.launchDashboardAtStart",
@@ -72,6 +93,36 @@ public extension SettingsKey {
     static let systemMonitorIntervalSeconds = SettingsKey(
         "omnipo.settings.systemMonitor.intervalSeconds",
         default: .double(SystemMonitorInterval.defaultSeconds)
+    )
+
+    static let clipboardIsEnabled = SettingsKey(
+        "omnipo.settings.clipboard.isEnabled",
+        default: .bool(ClipboardSettingsDefaults.isEnabled)
+    )
+
+    static let clipboardHasAcknowledgedLocalStorageNotice = SettingsKey(
+        "omnipo.settings.clipboard.hasAcknowledgedLocalStorageNotice",
+        default: .bool(ClipboardSettingsDefaults.hasAcknowledgedLocalStorageNotice)
+    )
+
+    static let clipboardAutoPaste = SettingsKey(
+        "omnipo.settings.clipboard.autoPaste",
+        default: .bool(ClipboardSettingsDefaults.autoPaste)
+    )
+
+    static let clipboardMaxRecords = SettingsKey(
+        "omnipo.settings.clipboard.maxRecords",
+        default: .double(ClipboardSettingsDefaults.maxRecords)
+    )
+
+    static let clipboardRetentionDays = SettingsKey(
+        "omnipo.settings.clipboard.retentionDays",
+        default: .double(ClipboardSettingsDefaults.retentionDays)
+    )
+
+    static let clipboardMaxStorageMB = SettingsKey(
+        "omnipo.settings.clipboard.maxStorageMB",
+        default: .double(ClipboardSettingsDefaults.maxStorageMB)
     )
 }
 
@@ -170,5 +221,29 @@ public extension SettingsService {
     func writeSystemMonitorIntervalSeconds(_ value: Double) {
         let clamped = SystemMonitorInterval.clampOrFallback(value)
         write(clamped, forKey: .systemMonitorIntervalSeconds)
+    }
+
+    func readClipboardMaxRecords() -> Double {
+        ClipboardSettingsDefaults.clampMaxRecords(readDouble(forKey: .clipboardMaxRecords))
+    }
+
+    func writeClipboardMaxRecords(_ value: Double) {
+        write(ClipboardSettingsDefaults.clampMaxRecords(value), forKey: .clipboardMaxRecords)
+    }
+
+    func readClipboardRetentionDays() -> Double {
+        ClipboardSettingsDefaults.clampRetentionDays(readDouble(forKey: .clipboardRetentionDays))
+    }
+
+    func writeClipboardRetentionDays(_ value: Double) {
+        write(ClipboardSettingsDefaults.clampRetentionDays(value), forKey: .clipboardRetentionDays)
+    }
+
+    func readClipboardMaxStorageMB() -> Double {
+        ClipboardSettingsDefaults.clampMaxStorageMB(readDouble(forKey: .clipboardMaxStorageMB))
+    }
+
+    func writeClipboardMaxStorageMB(_ value: Double) {
+        write(ClipboardSettingsDefaults.clampMaxStorageMB(value), forKey: .clipboardMaxStorageMB)
     }
 }

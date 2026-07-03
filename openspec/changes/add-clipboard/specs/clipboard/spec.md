@@ -1,0 +1,81 @@
+## ADDED Requirements
+
+### Requirement: Clipboard First-Run Acknowledgement
+
+Clipboard MUST require an explicit first-run acknowledgement before it begins monitoring or storing clipboard history.
+
+#### Scenario: User opens Clipboard for the first time
+
+- **Given** the user has never acknowledged Clipboard local storage behavior
+- **When** the user opens the Clipboard page
+- **Then** the app shows a clear notice that clipboard contents will be stored only on the local device
+- **And** the notice warns that copied content may include passwords, verification codes, links, file paths, or other sensitive data
+- **And** Clipboard monitoring does not start before the user confirms
+
+#### Scenario: User confirms first-run notice
+
+- **Given** the first-run notice is visible
+- **When** the user confirms the notice
+- **Then** the app stores the acknowledgement locally
+- **And** Clipboard monitoring may start
+- **And** subsequent Clipboard page visits do not require the same notice again unless the acknowledgement is reset
+
+### Requirement: Local-Only Clipboard History
+
+Clipboard MUST store clipboard history only on the local device and MUST NOT upload clipboard contents to any remote service.
+
+#### Scenario: Clipboard captures content
+
+- **Given** Clipboard has been enabled after first-run acknowledgement
+- **When** the system pasteboard changes to supported content
+- **Then** the app may persist the clipboard content locally for history purposes
+- **And** the content is not uploaded, synced, or sent to any network service
+
+### Requirement: Supported Clipboard Content Types
+
+Clipboard MUST support local history capture for text, rich text, HTML, images, and file paths.
+
+#### Scenario: User copies supported content
+
+- **Given** Clipboard monitoring is active
+- **When** the user copies plain text, rich text, HTML, an image, or a file path
+- **Then** the app records the content as a clipboard history item of the corresponding content type
+
+### Requirement: Clipboard Search And History Actions
+
+Clipboard MUST allow users to search history, filter by content type, favorite records, delete records, and copy a record back to the system pasteboard.
+
+#### Scenario: User searches clipboard history
+
+- **Given** the app has stored multiple clipboard items locally
+- **When** the user enters a search query in the Clipboard page
+- **Then** the app shows matching local history items without sending the query off-device
+
+#### Scenario: User copies an existing record again
+
+- **Given** the Clipboard page shows a stored history item
+- **When** the user chooses to copy that item
+- **Then** the app writes that record back to the system pasteboard
+
+### Requirement: Auto-Paste Permission Downgrade
+
+Clipboard MUST degrade auto-paste to copy-only behavior when the app does not have required accessibility permission.
+
+#### Scenario: User requests auto-paste without permission
+
+- **Given** the app does not have accessibility permission
+- **When** the user chooses a clipboard action that requests auto-paste
+- **Then** the app still copies the selected record back to the system pasteboard
+- **And** the app does not block the copy action
+- **And** the app clearly explains that auto-paste requires accessibility permission
+
+### Requirement: Clipboard Privacy In Logs
+
+Clipboard MUST NOT include clipboard raw content, search queries, file paths, or file names in logs.
+
+#### Scenario: Clipboard logs internal events
+
+- **Given** Clipboard monitoring, searching, saving, or copy-back operations occur
+- **When** the app writes operational logs
+- **Then** the logs contain only stable codes or sanitized context
+- **And** the logs do not contain clipboard raw content, search queries, file paths, or file names

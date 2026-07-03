@@ -13,6 +13,16 @@ final class LoggingServiceTests: XCTestCase {
         XCTAssertEqual(result["code"], "I_TEST")
     }
 
+    func test_sanitize_redactsClipboardPreviewAndPathFields() {
+        let result = PrivacyRedaction.sanitize(context: [
+            "clipboardPreview": "copied text",
+            "clipboardFilePath": "/Users/foo/Desktop/private.pdf"
+        ])
+
+        XCTAssertEqual(result["clipboardPreview"], "<redacted>")
+        XCTAssertEqual(result["clipboardFilePath"], "<redacted>")
+    }
+
     func test_sanitize_redactsUserPathsInAllowedKey() {
         let result = PrivacyRedaction.sanitize(context: [
             "resource": "/Users/foo/Library/thing"

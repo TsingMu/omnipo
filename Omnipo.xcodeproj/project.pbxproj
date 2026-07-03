@@ -112,6 +112,19 @@
 		000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034C /* AppUsageSamplerTests.swift */; };
 		000000000000000000000273 /* StatusBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034D /* StatusBarManager.swift */; };
 		000000000000000000000274 /* OmnipoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034E /* OmnipoTheme.swift */; };
+		000000000000000000000275 /* ClipboardContentType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034F /* ClipboardContentType.swift */; };
+		000000000000000000000276 /* ClipboardItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000350 /* ClipboardItem.swift */; };
+		000000000000000000000277 /* ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000351 /* ClipboardService.swift */; };
+		000000000000000000000278 /* ClipboardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000352 /* ClipboardModelTests.swift */; };
+		000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000353 /* ClipboardStorageLocation.swift */; };
+		00000000000000000000027A /* ClipboardStorageLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000354 /* ClipboardStorageLocationTests.swift */; };
+		00000000000000000000027B /* ClipboardDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000355 /* ClipboardDatabase.swift */; };
+		00000000000000000000027C /* ClipboardDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000356 /* ClipboardDatabaseTests.swift */; };
+		00000000000000000000027D /* ClipboardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000357 /* ClipboardRepository.swift */; };
+		00000000000000000000027E /* ClipboardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000358 /* ClipboardRepositoryTests.swift */; };
+		00000000000000000000027F /* ClipboardBinaryPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000359 /* ClipboardBinaryPayload.swift */; };
+		000000000000000000000280 /* BinaryContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035A /* BinaryContentStore.swift */; };
+		000000000000000000000281 /* BinaryContentStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035B /* BinaryContentStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -233,6 +246,19 @@
 		00000000000000000000034C /* AppUsageSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSamplerTests.swift; sourceTree = "<group>"; };
 		00000000000000000000034D /* StatusBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarManager.swift; sourceTree = "<group>"; };
 		00000000000000000000034E /* OmnipoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnipoTheme.swift; sourceTree = "<group>"; };
+		00000000000000000000034F /* ClipboardContentType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentType.swift; sourceTree = "<group>"; };
+		000000000000000000000350 /* ClipboardItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardItem.swift; sourceTree = "<group>"; };
+		000000000000000000000351 /* ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardService.swift; sourceTree = "<group>"; };
+		000000000000000000000352 /* ClipboardModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardModelTests.swift; sourceTree = "<group>"; };
+		000000000000000000000353 /* ClipboardStorageLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardStorageLocation.swift; sourceTree = "<group>"; };
+		000000000000000000000354 /* ClipboardStorageLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardStorageLocationTests.swift; sourceTree = "<group>"; };
+		000000000000000000000355 /* ClipboardDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardDatabase.swift; sourceTree = "<group>"; };
+		000000000000000000000356 /* ClipboardDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardDatabaseTests.swift; sourceTree = "<group>"; };
+		000000000000000000000357 /* ClipboardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardRepository.swift; sourceTree = "<group>"; };
+		000000000000000000000358 /* ClipboardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardRepositoryTests.swift; sourceTree = "<group>"; };
+		000000000000000000000359 /* ClipboardBinaryPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardBinaryPayload.swift; sourceTree = "<group>"; };
+		00000000000000000000035A /* BinaryContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryContentStore.swift; sourceTree = "<group>"; };
+		00000000000000000000035B /* BinaryContentStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryContentStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -333,6 +359,7 @@
 				000000000000000000000110 /* LoggingService.swift */,
 				000000000000000000000303 /* ShortcutService.swift */,
 				000000000000000000000304 /* SearchService.swift */,
+				000000000000000000000351 /* ClipboardService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
 				00000000000000000000034A /* AppUsageSampling.swift */,
@@ -356,6 +383,9 @@
 				000000000000000000000339 /* SystemMetricSnapshot.swift */,
 				000000000000000000000348 /* SystemMonitorTab.swift */,
 				000000000000000000000349 /* AppUsage.swift */,
+				00000000000000000000034F /* ClipboardContentType.swift */,
+				000000000000000000000350 /* ClipboardItem.swift */,
+				000000000000000000000359 /* ClipboardBinaryPayload.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -365,6 +395,8 @@
 			children = (
 				000000000000000000000014 /* Settings */,
 				000000000000000000000015 /* Logging */,
+				000000000000000000000047 /* Database */,
+				000000000000000000000049 /* Clipboard */,
 				000000000000000000000044 /* FileSystem */,
 				000000000000000000000040 /* Shortcut */,
 				000000000000000000000041 /* Search */,
@@ -376,12 +408,38 @@
 			path = Infrastructure;
 			sourceTree = "<group>";
 		};
+		000000000000000000000049 /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000035A /* BinaryContentStore.swift */,
+			);
+			path = Clipboard;
+			sourceTree = "<group>";
+		};
 		000000000000000000000046 /* StatusBar */ = {
 			isa = PBXGroup;
 			children = (
 				00000000000000000000034D /* StatusBarManager.swift */,
 			);
 			path = StatusBar;
+			sourceTree = "<group>";
+		};
+		000000000000000000000047 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000048 /* Clipboard */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
+		000000000000000000000048 /* Clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000353 /* ClipboardStorageLocation.swift */,
+				000000000000000000000355 /* ClipboardDatabase.swift */,
+				000000000000000000000357 /* ClipboardRepository.swift */,
+			);
+			path = Clipboard;
 			sourceTree = "<group>";
 		};
 		000000000000000000000045 /* Diagnostics */ = {
@@ -496,6 +554,11 @@
 				000000000000000000000345 /* DefaultSystemMonitorServiceTests.swift */,
 				000000000000000000000347 /* SystemMonitorStoreTests.swift */,
 				00000000000000000000034C /* AppUsageSamplerTests.swift */,
+				000000000000000000000352 /* ClipboardModelTests.swift */,
+				000000000000000000000354 /* ClipboardStorageLocationTests.swift */,
+				000000000000000000000356 /* ClipboardDatabaseTests.swift */,
+				000000000000000000000358 /* ClipboardRepositoryTests.swift */,
+				00000000000000000000035B /* BinaryContentStoreTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -630,6 +693,14 @@
 				00000000000000000000020D /* SystemMonitorView.swift in Sources */,
 				00000000000000000000020E /* PlaceholderFeatureView.swift in Sources */,
 				000000000000000000000274 /* OmnipoTheme.swift in Sources */,
+				000000000000000000000275 /* ClipboardContentType.swift in Sources */,
+				000000000000000000000276 /* ClipboardItem.swift in Sources */,
+				000000000000000000000277 /* ClipboardService.swift in Sources */,
+				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,
+				00000000000000000000027B /* ClipboardDatabase.swift in Sources */,
+				00000000000000000000027D /* ClipboardRepository.swift in Sources */,
+				00000000000000000000027F /* ClipboardBinaryPayload.swift in Sources */,
+				000000000000000000000280 /* BinaryContentStore.swift in Sources */,
 				00000000000000000000020F /* SettingsService.swift in Sources */,
 				000000000000000000000210 /* LoggingService.swift in Sources */,
 				000000000000000000000211 /* AppError.swift in Sources */,
@@ -710,6 +781,11 @@
 				00000000000000000000026B /* DefaultSystemMonitorServiceTests.swift in Sources */,
 				00000000000000000000026D /* SystemMonitorStoreTests.swift in Sources */,
 				000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */,
+				000000000000000000000278 /* ClipboardModelTests.swift in Sources */,
+				00000000000000000000027A /* ClipboardStorageLocationTests.swift in Sources */,
+				00000000000000000000027C /* ClipboardDatabaseTests.swift in Sources */,
+				00000000000000000000027E /* ClipboardRepositoryTests.swift in Sources */,
+				000000000000000000000281 /* BinaryContentStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -817,6 +893,10 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.omnipo.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -842,6 +922,10 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.omnipo.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

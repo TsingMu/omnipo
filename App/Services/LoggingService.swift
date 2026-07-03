@@ -77,6 +77,10 @@ public enum PrivacyRedaction {
     public static let forbiddenKeys: Set<String> = [
         "clipboardContent",
         "clipboardRaw",
+        "clipboardPreview",
+        "clipboardText",
+        "clipboardHTML",
+        "clipboardFilePath",
         "fileName",
         "userPath",
         "absolutePath",

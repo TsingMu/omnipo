@@ -151,6 +151,19 @@ final class ClipboardRepositoryTests: XCTestCase {
         XCTAssertEqual(matches.map(\.contentHash), ["a"])
     }
 
+    func test_itemWithID_returnsVisibleRecordAndExcludesSoftDeletedByDefault() throws {
+        let (repo, root) = try makeRepo()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let item = try repo.insert(self.item(hash: "x", preview: "hello"))
+
+        XCTAssertEqual(try repo.item(withID: item.id)?.contentHash, "x")
+
+        try repo.softDelete(item.id)
+        XCTAssertNil(try repo.item(withID: item.id))
+        XCTAssertEqual(try repo.item(withID: item.id, includeDeleted: true)?.contentHash, "x")
+    }
+
     func test_setFavorite_togglesAndReportsHit() throws {
         let (repo, root) = try makeRepo()
         defer { try? FileManager.default.removeItem(at: root) }

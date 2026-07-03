@@ -125,6 +125,16 @@
 		00000000000000000000027F /* ClipboardBinaryPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000359 /* ClipboardBinaryPayload.swift */; };
 		000000000000000000000280 /* BinaryContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035A /* BinaryContentStore.swift */; };
 		000000000000000000000281 /* BinaryContentStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035B /* BinaryContentStoreTests.swift */; };
+		000000000000000000000282 /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035C /* ClipboardMonitor.swift */; };
+		000000000000000000000283 /* ClipboardMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035D /* ClipboardMonitorTests.swift */; };
+		000000000000000000000284 /* ClipboardCapturedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035E /* ClipboardCapturedContent.swift */; };
+		000000000000000000000285 /* ClipboardContentReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000035F /* ClipboardContentReader.swift */; };
+		000000000000000000000286 /* ClipboardContentReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000360 /* ClipboardContentReaderTests.swift */; };
+		000000000000000000000287 /* ClipboardSourceApplicationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000361 /* ClipboardSourceApplicationProvider.swift */; };
+		000000000000000000000288 /* ClipboardContentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000362 /* ClipboardContentWriter.swift */; };
+		000000000000000000000289 /* ClipboardPasteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000363 /* ClipboardPasteController.swift */; };
+		00000000000000000000028A /* ClipboardPasteControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000364 /* ClipboardPasteControllerTests.swift */; };
+		00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000365 /* ClipboardContentWriterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -259,6 +269,16 @@
 		000000000000000000000359 /* ClipboardBinaryPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardBinaryPayload.swift; sourceTree = "<group>"; };
 		00000000000000000000035A /* BinaryContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryContentStore.swift; sourceTree = "<group>"; };
 		00000000000000000000035B /* BinaryContentStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryContentStoreTests.swift; sourceTree = "<group>"; };
+		00000000000000000000035C /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
+		00000000000000000000035D /* ClipboardMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitorTests.swift; sourceTree = "<group>"; };
+		00000000000000000000035E /* ClipboardCapturedContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCapturedContent.swift; sourceTree = "<group>"; };
+		00000000000000000000035F /* ClipboardContentReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentReader.swift; sourceTree = "<group>"; };
+		000000000000000000000360 /* ClipboardContentReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentReaderTests.swift; sourceTree = "<group>"; };
+		000000000000000000000361 /* ClipboardSourceApplicationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSourceApplicationProvider.swift; sourceTree = "<group>"; };
+		000000000000000000000362 /* ClipboardContentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentWriter.swift; sourceTree = "<group>"; };
+		000000000000000000000363 /* ClipboardPasteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteController.swift; sourceTree = "<group>"; };
+		000000000000000000000364 /* ClipboardPasteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteControllerTests.swift; sourceTree = "<group>"; };
+		000000000000000000000365 /* ClipboardContentWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentWriterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -386,6 +406,7 @@
 				00000000000000000000034F /* ClipboardContentType.swift */,
 				000000000000000000000350 /* ClipboardItem.swift */,
 				000000000000000000000359 /* ClipboardBinaryPayload.swift */,
+				00000000000000000000035E /* ClipboardCapturedContent.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -412,6 +433,11 @@
 			isa = PBXGroup;
 			children = (
 				00000000000000000000035A /* BinaryContentStore.swift */,
+				00000000000000000000035C /* ClipboardMonitor.swift */,
+				00000000000000000000035F /* ClipboardContentReader.swift */,
+				000000000000000000000361 /* ClipboardSourceApplicationProvider.swift */,
+				000000000000000000000362 /* ClipboardContentWriter.swift */,
+				000000000000000000000363 /* ClipboardPasteController.swift */,
 			);
 			path = Clipboard;
 			sourceTree = "<group>";
@@ -559,6 +585,10 @@
 				000000000000000000000356 /* ClipboardDatabaseTests.swift */,
 				000000000000000000000358 /* ClipboardRepositoryTests.swift */,
 				00000000000000000000035B /* BinaryContentStoreTests.swift */,
+				00000000000000000000035D /* ClipboardMonitorTests.swift */,
+				000000000000000000000360 /* ClipboardContentReaderTests.swift */,
+				000000000000000000000364 /* ClipboardPasteControllerTests.swift */,
+				000000000000000000000365 /* ClipboardContentWriterTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -701,6 +731,12 @@
 				00000000000000000000027D /* ClipboardRepository.swift in Sources */,
 				00000000000000000000027F /* ClipboardBinaryPayload.swift in Sources */,
 				000000000000000000000280 /* BinaryContentStore.swift in Sources */,
+				000000000000000000000282 /* ClipboardMonitor.swift in Sources */,
+				000000000000000000000284 /* ClipboardCapturedContent.swift in Sources */,
+				000000000000000000000285 /* ClipboardContentReader.swift in Sources */,
+				000000000000000000000287 /* ClipboardSourceApplicationProvider.swift in Sources */,
+				000000000000000000000288 /* ClipboardContentWriter.swift in Sources */,
+				000000000000000000000289 /* ClipboardPasteController.swift in Sources */,
 				00000000000000000000020F /* SettingsService.swift in Sources */,
 				000000000000000000000210 /* LoggingService.swift in Sources */,
 				000000000000000000000211 /* AppError.swift in Sources */,
@@ -786,6 +822,10 @@
 				00000000000000000000027C /* ClipboardDatabaseTests.swift in Sources */,
 				00000000000000000000027E /* ClipboardRepositoryTests.swift in Sources */,
 				000000000000000000000281 /* BinaryContentStoreTests.swift in Sources */,
+				000000000000000000000283 /* ClipboardMonitorTests.swift in Sources */,
+				000000000000000000000286 /* ClipboardContentReaderTests.swift in Sources */,
+				00000000000000000000028A /* ClipboardPasteControllerTests.swift in Sources */,
+				00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

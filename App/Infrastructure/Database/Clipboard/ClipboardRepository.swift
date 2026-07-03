@@ -96,6 +96,38 @@ public final class ClipboardRepository: @unchecked Sendable {
         }
     }
 
+    /// 按 ID 查询单条记录。默认排除软删记录。
+    public func item(withID id: ClipboardItem.ID, includeDeleted: Bool = false) throws -> ClipboardItem? {
+        try database.withConnection { db in
+            var sql = """
+            SELECT id, content_hash, content_type, text_preview, source_application_id,
+                   is_favorite, is_deleted, times_used, created_at, updated_at
+            FROM clipboard_items
+            WHERE id = ?
+            """
+            if !includeDeleted {
+                sql += " AND is_deleted = 0"
+            }
+            sql += " LIMIT 1;"
+
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+                throw AppError.systemFailure(code: "clipboard_item_prepare")
+            }
+            defer { sqlite3_finalize(statement) }
+            bindText(statement, 1, id.uuidString)
+
+            let stepResult = sqlite3_step(statement)
+            if stepResult == SQLITE_ROW {
+                return try readItem(statement)
+            }
+            guard stepResult == SQLITE_DONE else {
+                throw AppError.systemFailure(code: "clipboard_item_step")
+            }
+            return nil
+        }
+    }
+
     /// 切换收藏。仅对未软删记录生效。
     /// - Returns: 是否实际命中并更新了一条记录。
     @discardableResult

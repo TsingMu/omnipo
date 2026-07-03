@@ -31,7 +31,7 @@ public enum AppDestination: String, CaseIterable, Identifiable, Hashable, Sendab
     public var title: String {
         switch self {
         case .dashboard: return "总览"
-        case .launcher: return "快速启动"
+        case .launcher: return "聚焦搜索"
         case .clipboard: return "剪切板"
         case .cleaner: return "磁盘清理"
         case .uninstaller: return "应用卸载"
@@ -44,7 +44,7 @@ public enum AppDestination: String, CaseIterable, Identifiable, Hashable, Sendab
     public var sidebarSubtitle: String {
         switch self {
         case .dashboard: return "状态与常用入口"
-        case .launcher: return "搜索应用、文件与功能"
+        case .launcher: return "聚焦应用与文件"
         case .clipboard: return "管理最近复制内容"
         case .cleaner: return "分析本机空间占用"
         case .uninstaller: return "移除应用与关联文件"

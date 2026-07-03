@@ -3,7 +3,7 @@ import os
 
 /// 默认搜索聚合服务。
 ///
-/// 命令与应用提供者先并发完成并发布首批结果；文件提供者仅在 debounce 后启动，
+/// 命令与应用提供者先并发完成并发布首批结果；文件提供者仅在 `find ` 前缀后启动，
 /// 完成后把文件结果合并进最终批次。新查询和显式取消都会终止旧生产任务。
 public final class DefaultSearchService: SearchService {
     private final class ActiveSearch: @unchecked Sendable {
@@ -62,10 +62,11 @@ public final class DefaultSearchService: SearchService {
     public func search(query: String) -> AsyncStream<SearchBatch> {
         let generation = nextGeneration()
         let activeSearch = ActiveSearch(generation: generation)
+        let fileQuery = Self.fileQuery(from: query)
         let localProviders = providers.filter { $0.kind != SearchProviderKind.file }
-        let fileProviders = query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
-            ? providers.filter { $0.kind == SearchProviderKind.file }
-            : []
+        let fileProviders = fileQuery == nil
+            ? []
+            : providers.filter { $0.kind == SearchProviderKind.file }
 
         let previous = activeSearchLock.withLock { active -> ActiveSearch? in
             let previous = active
@@ -114,7 +115,7 @@ public final class DefaultSearchService: SearchService {
 
                 let files = await Self.collect(
                     providers: fileProviders,
-                    query: query,
+                    query: fileQuery ?? query,
                     generation: generation
                 )
                 guard !Task.isCancelled else { return }
@@ -192,6 +193,15 @@ public final class DefaultSearchService: SearchService {
             guard active?.generation == generation else { return }
             active = nil
         }
+    }
+
+    private static func fileQuery(from query: String) -> String? {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 5 else { return nil }
+        guard trimmed.lowercased().hasPrefix("find ") else { return nil }
+        let start = trimmed.index(trimmed.startIndex, offsetBy: 5)
+        let fileQuery = trimmed[start...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return fileQuery.isEmpty ? nil : fileQuery
     }
 
     private func logFailures(_ failures: [SearchProviderFailure]) {

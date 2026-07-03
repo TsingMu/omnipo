@@ -15,6 +15,7 @@ struct LauncherPanelView: View {
     let applicationResourceCache: ApplicationResourceCache
     let onExecute: (SearchResult) -> Void
     let onHide: () -> Void
+    let onFileAction: (FileLauncher.Action, SearchResult) -> Void
     var surfaceStyle: SurfaceStyle = .panel
 
     var body: some View {
@@ -84,10 +85,7 @@ struct LauncherPanelView: View {
             }
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(.tertiary.opacity(0.3), lineWidth: 1)
-        )
+        .overlay(panelBorder)
         .frame(
             maxWidth: surfaceStyle == .panel ? 560 : .infinity,
             minHeight: surfaceStyle == .panel ? 420 : 460,
@@ -109,6 +107,14 @@ struct LauncherPanelView: View {
         }
     }
 
+    @ViewBuilder
+    private var panelBorder: some View {
+        if surfaceStyle == .embedded {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
+        }
+    }
+
     private func executeSelection() {
         if let result = store.currentResult() {
             onExecute(result)
@@ -126,7 +132,7 @@ struct LauncherPanelView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
-                Text("输入以开始搜索")
+                Text("输入应用名，或使用 find 搜索文件")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -142,7 +148,8 @@ struct LauncherPanelView: View {
                     LauncherResultRow(
                         result: result,
                         isSelected: result.id == store.selection,
-                        applicationResourceCache: applicationResourceCache
+                        applicationResourceCache: applicationResourceCache,
+                        onFileAction: onFileAction
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -175,6 +182,9 @@ struct LauncherWorkbenchCard: View {
                     store.updateQuery("")
                 }
             },
+            onFileAction: { action, result in
+                container.launcherCoordinator.executeFileAction(action, for: result)
+            },
             surfaceStyle: .embedded
         )
         .task {
@@ -189,6 +199,7 @@ struct LauncherResultRow: View {
     let result: SearchResult
     let isSelected: Bool
     let applicationResourceCache: ApplicationResourceCache
+    let onFileAction: (FileLauncher.Action, SearchResult) -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -211,9 +222,38 @@ struct LauncherResultRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(isSelected ? Color.accentColor.opacity(0.18) : Color.clear)
+        .background(isSelected ? OmnipoTheme.redTint : Color.clear)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
+        .contextMenu {
+            if result.kind == .file {
+                Button {
+                    onFileAction(.open, result)
+                } label: {
+                    Label("打开", systemImage: "arrow.up.forward.app")
+                }
+
+                Button {
+                    onFileAction(.preview, result)
+                } label: {
+                    Label("预览", systemImage: "eye")
+                }
+
+                Button {
+                    onFileAction(.revealInFinder, result)
+                } label: {
+                    Label("打开文件位置", systemImage: "folder")
+                }
+
+                Divider()
+
+                Button {
+                    onFileAction(.copy, result)
+                } label: {
+                    Label("复制", systemImage: "doc.on.doc")
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -221,7 +261,7 @@ struct LauncherResultRow: View {
         switch result.iconDescriptor {
         case .systemSymbol(let name):
             Image(systemName: name)
-                .foregroundStyle(.tint)
+                .foregroundStyle(OmnipoTheme.brandRed)
         case .appBundleIdentifier(let id):
             AppIconView(
                 bundleIdentifier: id,

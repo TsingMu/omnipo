@@ -44,8 +44,26 @@ public final class LauncherCoordinator: LauncherPanelDelegate {
         execute(result, hidesPanelOnSuccess: true)
     }
 
+    public func launcherPanelDidRequestFileAction(_ action: FileLauncher.Action, for result: SearchResult) {
+        executeFileAction(action, for: result)
+    }
+
     public func executeInline(_ result: SearchResult) {
         execute(result, hidesPanelOnSuccess: false)
+    }
+
+    public func executeFileAction(_ action: FileLauncher.Action, for result: SearchResult) {
+        guard result.kind == .file else { return }
+        let captured = result
+        Task { [weak self] in
+            guard let self else { return }
+            let execResult = await self.resultExecutor.executeFileAction(action, for: captured)
+            await MainActor.run {
+                if case .failure(let error) = execResult {
+                    self.store.setTransientError(error)
+                }
+            }
+        }
     }
 
     /// 应用启动时读取保存的快捷键,失败回退到 Option + Space。

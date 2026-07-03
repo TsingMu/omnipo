@@ -19,10 +19,20 @@ public final class ApplicationSearchProvider: SearchProvider {
 
     public func search(query: String, generation: UInt64) async -> SearchProviderResult {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return .success([])
-        }
         let apps = await index.currentRecords()
+        if trimmed.isEmpty {
+            return .success(apps.map { app in
+                SearchResult(
+                    kind: .application,
+                    title: app.displayName,
+                    subtitle: app.bundleIdentifier,
+                    matchScore: 0.5,
+                    sourceIdentifier: app.bundleIdentifier,
+                    iconDescriptor: .appBundleIdentifier(app.bundleIdentifier),
+                    executionPayload: .applicationBundleIdentifier(app.bundleIdentifier)
+                )
+            })
+        }
         let matched = apps.compactMap { app -> SearchResult? in
             guard let best = SearchMatcher.bestMatch(query: trimmed, candidates: app.searchCandidates) else {
                 return nil

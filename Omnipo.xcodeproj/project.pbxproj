@@ -110,6 +110,8 @@
 		000000000000000000000270 /* AppUsageSampling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034A /* AppUsageSampling.swift */; };
 		000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034B /* DefaultAppUsageSampler.swift */; };
 		000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034C /* AppUsageSamplerTests.swift */; };
+		000000000000000000000273 /* StatusBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034D /* StatusBarManager.swift */; };
+		000000000000000000000274 /* OmnipoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034E /* OmnipoTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -229,6 +231,8 @@
 		00000000000000000000034A /* AppUsageSampling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSampling.swift; sourceTree = "<group>"; };
 		00000000000000000000034B /* DefaultAppUsageSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAppUsageSampler.swift; sourceTree = "<group>"; };
 		00000000000000000000034C /* AppUsageSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSamplerTests.swift; sourceTree = "<group>"; };
+		00000000000000000000034D /* StatusBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarManager.swift; sourceTree = "<group>"; };
+		00000000000000000000034E /* OmnipoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnipoTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -321,7 +325,7 @@
 		00000000000000000000000D /* PermissionAudit */ = { isa = PBXGroup; children = ( 00000000000000000000010B /* PermissionAuditView.swift */, ); path = PermissionAudit; sourceTree = "<group>"; };
 		00000000000000000000000E /* WeChatManager */ = { isa = PBXGroup; children = ( 00000000000000000000010C /* WeChatManagerView.swift */, ); path = WeChatManager; sourceTree = "<group>"; };
 		00000000000000000000000F /* SystemMonitor */ = { isa = PBXGroup; children = ( 00000000000000000000010D /* SystemMonitorView.swift */, ); path = SystemMonitor; sourceTree = "<group>"; };
-		000000000000000000000010 /* Shared */ = { isa = PBXGroup; children = ( 00000000000000000000010E /* PlaceholderFeatureView.swift */, ); path = Shared; sourceTree = "<group>"; };
+		000000000000000000000010 /* Shared */ = { isa = PBXGroup; children = ( 00000000000000000000010E /* PlaceholderFeatureView.swift */, 00000000000000000000034E /* OmnipoTheme.swift */, ); path = Shared; sourceTree = "<group>"; };
 		000000000000000000000011 /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -367,8 +371,17 @@
 				000000000000000000000042 /* AppDiscovery */,
 				000000000000000000000043 /* Launcher */,
 				000000000000000000000045 /* Diagnostics */,
+				000000000000000000000046 /* StatusBar */,
 			);
 			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		000000000000000000000046 /* StatusBar */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000034D /* StatusBarManager.swift */,
+			);
+			path = StatusBar;
 			sourceTree = "<group>";
 		};
 		000000000000000000000045 /* Diagnostics */ = {
@@ -610,11 +623,13 @@
 				00000000000000000000026A /* DefaultSystemMonitorService.swift in Sources */,
 				000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */,
 				00000000000000000000026C /* SystemMonitorStore.swift in Sources */,
+				000000000000000000000273 /* StatusBarManager.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
 				00000000000000000000020C /* WeChatManagerView.swift in Sources */,
 				00000000000000000000020D /* SystemMonitorView.swift in Sources */,
 				00000000000000000000020E /* PlaceholderFeatureView.swift in Sources */,
+				000000000000000000000274 /* OmnipoTheme.swift in Sources */,
 				00000000000000000000020F /* SettingsService.swift in Sources */,
 				000000000000000000000210 /* LoggingService.swift in Sources */,
 				000000000000000000000211 /* AppError.swift in Sources */,

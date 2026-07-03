@@ -3,7 +3,8 @@ import SwiftUI
 
 enum MainWindowLayout {
     private static let sidebarContentClearance: CGFloat = 16
-    private static let detailContentClearance: CGFloat = 12
+    private static let detailContentTopPadding: CGFloat = 24
+    private static let detailTitlebarCompensationLimit: CGFloat = 24
 
     static func titlebarInset(safeAreaTop: CGFloat, windowTitlebarHeight: CGFloat) -> CGFloat {
         max(0, safeAreaTop, windowTitlebarHeight)
@@ -22,7 +23,10 @@ enum MainWindowLayout {
             safeAreaTop: safeAreaTop,
             windowTitlebarHeight: windowTitlebarHeight
         )
-        return titlebarInset > 0 ? titlebarInset + detailContentClearance : 0
+        return min(
+            detailTitlebarCompensationLimit,
+            max(0, titlebarInset - detailContentTopPadding)
+        )
     }
 }
 

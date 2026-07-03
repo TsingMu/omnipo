@@ -7,6 +7,7 @@ private final class FakeProvider: SearchProvider, @unchecked Sendable {
     let delay: TimeInterval
     let outcome: SearchProviderResult
     private(set) var calls = OSAllocatedUnfairLock<Int>(initialState: 0)
+    private(set) var queries = OSAllocatedUnfairLock<[String]>(initialState: [])
 
     init(kind: String, outcome: SearchProviderResult, delay: TimeInterval = 0) {
         self.kind = kind
@@ -16,6 +17,7 @@ private final class FakeProvider: SearchProvider, @unchecked Sendable {
 
     func search(query: String, generation: UInt64) async -> SearchProviderResult {
         calls.withLock { $0 += 1 }
+        queries.withLock { $0.append(query) }
         if delay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
@@ -99,7 +101,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
         let service = DefaultSearchService(providers: [good, bad], logger: makeLogger())
 
-        let batch = await collectBatches(from: service, query: "test").last!
+        let batch = await collectBatches(from: service, query: "find test").last!
 
         XCTAssertEqual(batch.results.count, 1, "successful provider results should still appear")
         XCTAssertEqual(batch.failures.count, 1)
@@ -112,7 +114,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
         let service = DefaultSearchService(providers: [unavailable], logger: makeLogger())
 
-        let batch = await collectBatches(from: service, query: "test").last!
+        let batch = await collectBatches(from: service, query: "find test").last!
 
         XCTAssertEqual(batch.failures.count, 1)
         XCTAssertEqual(batch.failures.first?.providerKind, "file")
@@ -152,7 +154,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         XCTAssertLessThan(elapsed, 0.12, "should be parallel, total < 3 * delay")
     }
 
-    func test_search_publishesLocalBatchBeforeDebouncedFiles() async {
+    func test_search_publishesLocalBatchBeforeDebouncedFilesAfterFindPrefix() async {
         let localResult = SearchResult(
             kind: .application,
             title: "Safari",
@@ -178,7 +180,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
 
         let start = ContinuousClock.now
-        var iterator = service.search(query: "safari").makeAsyncIterator()
+        var iterator = service.search(query: "find safari").makeAsyncIterator()
         let first = await iterator.next()
         let firstElapsed = start.duration(to: .now)
         let final = await iterator.next()
@@ -188,6 +190,18 @@ final class DefaultSearchServiceTests: XCTestCase {
         XCTAssertLessThan(firstElapsed, .milliseconds(50))
         XCTAssertEqual(final?.results.map(\.kind), [.application, .file])
         XCTAssertEqual(final?.isFinal, true)
+        XCTAssertEqual(file.queries.withLock { $0 }, ["safari"])
+    }
+
+    func test_search_doesNotRunFileProviderWithoutFindPrefix() async {
+        let local = FakeProvider(kind: "application", outcome: .success([]))
+        let file = FakeProvider(kind: "file", outcome: .success([]))
+        let service = DefaultSearchService(providers: [local, file], logger: makeLogger())
+
+        let batch = await collectBatches(from: service, query: "safari").last!
+
+        XCTAssertEqual(batch.isFinal, true)
+        XCTAssertEqual(file.calls.withLock { $0 }, 0)
     }
 
     func test_newQueryCancelsOldFileSearchDuringDebounce() async {
@@ -200,7 +214,7 @@ final class DefaultSearchServiceTests: XCTestCase {
         )
 
         let oldConsumer = Task {
-            await collectBatches(from: service, query: "old query")
+            await collectBatches(from: service, query: "find old query")
         }
         try? await Task.sleep(for: .milliseconds(20))
         _ = await collectBatches(from: service, query: "x")
@@ -349,7 +363,7 @@ final class LauncherStoreTests: XCTestCase {
         )
         let store = LauncherStore(service: service)
 
-        store.updateQuery("alpha")
+        store.updateQuery("find alpha")
         try? await Task.sleep(for: .milliseconds(30))
         store.moveSelection(by: 1)
         let localSelection = store.selection

@@ -15,6 +15,12 @@ protocol SpotlightMetadataQuery: AnyObject {
 
 extension NSMetadataQuery: SpotlightMetadataQuery {}
 
+protocol SpotlightMetadataItem {
+    func value(forAttribute key: String) -> Any?
+}
+
+extension NSMetadataItem: SpotlightMetadataItem {}
+
 /// 用 `NSMetadataQuery` 实现 Spotlight 文件搜索后端。
 ///
 /// 查询对象与通知生命周期限制在 MainActor。任务取消会显式调用 `stop()`；
@@ -51,18 +57,14 @@ public final class SpotlightFileSearchBackend: FileSearchBackend {
     }
 
     public func search(query: String) async -> FileSearchBackendResult {
-        let escaped = NSPredicate.escape(query: query)
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let cancellation = SpotlightCancellationBox()
 
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                Task { @MainActor [logger, queryFactory, resultLimit, timeout] in
+                Task { @MainActor [logger, queryFactory, resultLimit, timeout, trimmedQuery] in
                     let metadataQuery = queryFactory()
-                    metadataQuery.predicate = NSPredicate(
-                        format: "(kMDItemDisplayName LIKE[cd] %@) OR (kMDItemFSName LIKE[cd] %@)",
-                        "*\(escaped)*",
-                        "*\(escaped)*"
-                    )
+                    metadataQuery.predicate = Self.predicate(for: trimmedQuery)
                     metadataQuery.searchScopes = [NSMetadataQueryUserHomeScope]
                     metadataQuery.sortDescriptors = [
                         NSSortDescriptor(key: "kMDItemFSContentChangeDate", ascending: false)
@@ -70,6 +72,7 @@ public final class SpotlightFileSearchBackend: FileSearchBackend {
 
                     let coordinator = SpotlightCoordinator(
                         query: metadataQuery,
+                        userQuery: trimmedQuery,
                         resultLimit: resultLimit,
                         timeout: timeout,
                         logger: logger
@@ -90,6 +93,43 @@ public final class SpotlightFileSearchBackend: FileSearchBackend {
         } onCancel: {
             cancellation.cancel()
         }
+    }
+
+    static func predicate(for query: String) -> NSPredicate {
+        let attributes = ["kMDItemDisplayName", "kMDItemFSName"]
+        let predicates = searchTerms(for: query).flatMap { term in
+            let escaped = NSPredicate.escape(query: term)
+            return attributes.map { attribute in
+                NSPredicate(format: "%K LIKE[cd] %@", attribute, "*\(escaped)*")
+            }
+        }
+        guard !predicates.isEmpty else {
+            return NSPredicate(value: false)
+        }
+        return NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
+    }
+
+    static func searchTerms(for query: String) -> [String] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        var seen = Set<String>()
+        var terms: [String] = []
+        func append(_ term: String) {
+            guard term.count >= 2, seen.insert(term).inserted else { return }
+            terms.append(term)
+        }
+
+        append(trimmed)
+        if trimmed.containsCJKCharacters {
+            for size in [3, 2] {
+                guard trimmed.count > size else { continue }
+                for term in trimmed.characterWindows(ofSize: size) {
+                    append(term)
+                }
+            }
+        }
+        return terms
     }
 }
 
@@ -132,6 +172,7 @@ private final class SpotlightCancellationBox: @unchecked Sendable {
 @MainActor
 private final class SpotlightCoordinator {
     private let query: any SpotlightMetadataQuery
+    private let userQuery: String
     private let resultLimit: Int
     private let timeout: TimeInterval
     private let logger: any LoggingService
@@ -143,12 +184,14 @@ private final class SpotlightCoordinator {
 
     init(
         query: any SpotlightMetadataQuery,
+        userQuery: String,
         resultLimit: Int,
         timeout: TimeInterval,
         logger: any LoggingService,
         completion: @escaping (FileSearchBackendResult) -> Void
     ) {
         self.query = query
+        self.userQuery = userQuery
         self.resultLimit = resultLimit
         self.timeout = timeout
         self.logger = logger
@@ -199,23 +242,37 @@ private final class SpotlightCoordinator {
 
     private func collectEntries() -> [FileEntry] {
         var entries: [FileEntry] = []
-        let upper = min(query.resultCount, resultLimit)
+        let upper = query.resultCount
         for index in 0..<upper {
-            guard let item = query.result(at: index) as? NSMetadataItem,
+            guard entries.count < resultLimit,
+                  let item = query.result(at: index) as? SpotlightMetadataItem,
                   let path = item.value(forAttribute: "kMDItemPath") as? String else {
                 continue
             }
             let url = URL(fileURLWithPath: path)
+            let displayName = (item.value(forAttribute: "kMDItemDisplayName") as? String) ?? url.lastPathComponent
+            guard Self.fileName(displayName, matches: userQuery) ||
+                    Self.fileName(url.lastPathComponent, matches: userQuery) else {
+                continue
+            }
             guard let bookmark = try? url.bookmarkData(
                 options: [],
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
             ) else { continue }
-            let displayName = (item.value(forAttribute: "kMDItemDisplayName") as? String) ?? url.lastPathComponent
             let ext = url.pathExtension.isEmpty ? nil : url.pathExtension
             entries.append(FileEntry(displayName: displayName, bookmark: bookmark, fileExtension: ext))
         }
         return entries
+    }
+
+    private static func fileName(_ fileName: String, matches query: String) -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return fileName.range(
+            of: trimmed,
+            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
+        ) != nil
     }
 
     private func resume(_ result: FileSearchBackendResult) {
@@ -252,5 +309,39 @@ private extension NSPredicate {
             .replacingOccurrences(of: "_", with: "\\_")
             .replacingOccurrences(of: "*", with: "")
             .replacingOccurrences(of: "?", with: "")
+    }
+}
+
+private extension String {
+    var containsCJKCharacters: Bool {
+        unicodeScalars.contains { scalar in
+            switch scalar.value {
+            case 0x3400...0x4DBF,
+                 0x4E00...0x9FFF,
+                 0xF900...0xFAFF,
+                 0x20000...0x2A6DF,
+                 0x2A700...0x2B73F,
+                 0x2B740...0x2B81F,
+                 0x2B820...0x2CEAF:
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
+    func characterWindows(ofSize size: Int) -> [String] {
+        guard size > 0, count >= size else { return [] }
+        var windows: [String] = []
+        var start = startIndex
+        while let end = index(start, offsetBy: size, limitedBy: endIndex) {
+            windows.append(String(self[start..<end]))
+            guard start < endIndex else { break }
+            formIndex(after: &start)
+            if distance(from: start, to: endIndex) < size {
+                break
+            }
+        }
+        return windows
     }
 }

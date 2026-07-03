@@ -10,6 +10,7 @@ import SwiftUI
 public protocol LauncherPanelDelegate: AnyObject {
     func launcherPanelDidRequestHide()
     func launcherPanelDidRequestExecute(_ result: SearchResult)
+    func launcherPanelDidRequestFileAction(_ action: FileLauncher.Action, for result: SearchResult)
 }
 
 /// 拥有唯一 `NSPanel` 的窄 AppKit 控制器。
@@ -47,12 +48,11 @@ public final class LauncherPanelController {
     public func show() {
         let resolved = ensurePanel()
         store.cancelAll()
-        // 触发空查询,让 CommandSearchProvider 立即返回六个内置命令,
-        // 而不是等用户首次输入才出现内容。
+        // 触发空查询,让应用索引立即返回默认应用列表。
         store.updateQuery("")
         positionAtCurrentScreen(resolved)
-        NSApp.activate(ignoringOtherApps: true)
-        resolved.makeKeyAndOrderFront(nil)
+        resolved.orderFrontRegardless()
+        focusSearchField(in: resolved)
     }
 
     public func hide() {
@@ -71,13 +71,13 @@ public final class LauncherPanelController {
     private func ensurePanel() -> NSPanel {
         if let panel { return panel }
 
-        let panel = NSPanel(
+        let panel = NonActivatingLauncherPanel(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 420),
             styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
-        panel.title = "Omnipo Launcher"
+        panel.title = "Omnipo 聚焦搜索"
         panel.titlebarAppearsTransparent = true
         panel.titleVisibility = .hidden
         panel.isMovableByWindowBackground = true
@@ -97,6 +97,9 @@ public final class LauncherPanelController {
                 },
                 onHide: { [weak self] in
                     self?.delegate?.launcherPanelDidRequestHide()
+                },
+                onFileAction: { [weak self] action, result in
+                    self?.delegate?.launcherPanelDidRequestFileAction(action, for: result)
                 }
             )
         )
@@ -136,6 +139,17 @@ public final class LauncherPanelController {
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
+    private func focusSearchField(in panel: NSPanel) {
+        panel.makeKey()
+        DispatchQueue.main.async { [weak panel] in
+            guard let panel, panel.isVisible else { return }
+            panel.makeKey()
+            if let field = panel.contentView?.firstSubview(ofType: LauncherSearchTextField.self) {
+                panel.makeFirstResponder(field)
+            }
+        }
+    }
+
     deinit {
         if let observer = resignObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -143,9 +157,28 @@ public final class LauncherPanelController {
     }
 }
 
+private final class NonActivatingLauncherPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
 private extension NSScreen {
     /// 屏幕可工作区域(去掉 menu bar 与 Dock)。`visibleFrame` 已是此区域。
     var visibleAreaFrame: NSRect {
         visibleFrame
+    }
+}
+
+private extension NSView {
+    func firstSubview<T: NSView>(ofType type: T.Type) -> T? {
+        if let view = self as? T {
+            return view
+        }
+        for subview in subviews {
+            if let match = subview.firstSubview(ofType: type) {
+                return match
+            }
+        }
+        return nil
     }
 }

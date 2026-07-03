@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct SystemMonitorView: View {
     @Environment(DependencyContainer.self) private var container
@@ -15,8 +16,8 @@ struct SystemMonitorView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color.accentColor.opacity(0.08),
-                    Color.cyan.opacity(0.05),
+                    OmnipoTheme.redWash,
+                    OmnipoTheme.deepBlack.opacity(0.035),
                     Color(nsColor: .windowBackgroundColor)
                 ],
                 startPoint: .topLeading,
@@ -51,6 +52,7 @@ struct SystemMonitorView: View {
                         diskAvailability: appState.startupVolumeCapacity,
                         appUsage: store.appUsage,
                         appUsageRecords: store.sortedAppUsageRecords,
+                        applicationResourceCache: container.applicationResourceCache,
                         onNavigate: onNavigate
                     )
                 }
@@ -95,6 +97,7 @@ private struct SystemMonitorTabContent: View {
     let diskAvailability: DiskCapacityAvailability
     let appUsage: AppUsageAvailability
     let appUsageRecords: [AppUsageRecord]
+    let applicationResourceCache: ApplicationResourceCache
     let onNavigate: @MainActor (AppDestination) -> Void
 
     var body: some View {
@@ -111,6 +114,7 @@ private struct SystemMonitorTabContent: View {
                     SystemMonitorAppUsageList(
                         availability: appUsage,
                         records: appUsageRecords,
+                        applicationResourceCache: applicationResourceCache,
                         ranking: .cpu
                     )
                 }
@@ -120,6 +124,7 @@ private struct SystemMonitorTabContent: View {
                     SystemMonitorAppUsageList(
                         availability: appUsage,
                         records: appUsageRecords,
+                        applicationResourceCache: applicationResourceCache,
                         ranking: .memory
                     )
                 }
@@ -129,6 +134,7 @@ private struct SystemMonitorTabContent: View {
                     SystemMonitorAppUsageList(
                         availability: appUsage,
                         records: appUsageRecords,
+                        applicationResourceCache: applicationResourceCache,
                         ranking: .energy
                     )
                 }
@@ -141,6 +147,7 @@ private struct SystemMonitorTabContent: View {
                     SystemMonitorAppUsageList(
                         availability: appUsage,
                         records: appUsageRecords,
+                        applicationResourceCache: applicationResourceCache,
                         ranking: .disk
                     )
                 }
@@ -150,6 +157,7 @@ private struct SystemMonitorTabContent: View {
                     SystemMonitorAppUsageList(
                         availability: appUsage,
                         records: appUsageRecords,
+                        applicationResourceCache: applicationResourceCache,
                         ranking: .network
                     )
                 }
@@ -230,7 +238,7 @@ private struct SystemMonitorSummaryTile: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.primary.opacity(0.07), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(presentation.title)，\(presentation.value)，\(presentation.subtitle)")
@@ -240,6 +248,7 @@ private struct SystemMonitorSummaryTile: View {
 private struct SystemMonitorAppUsageList: View {
     let availability: AppUsageAvailability
     let records: [AppUsageRecord]
+    let applicationResourceCache: ApplicationResourceCache
     let ranking: SystemMonitorAppUsageRanking
 
     var body: some View {
@@ -303,6 +312,7 @@ private struct SystemMonitorAppUsageList: View {
                             ForEach(rankedRecords) { record in
                                 SystemMonitorAppUsageRow(
                                     record: record,
+                                    applicationResourceCache: applicationResourceCache,
                                     ranking: ranking
                                 )
                                 if record.id != rankedRecords.last?.id {
@@ -320,7 +330,7 @@ private struct SystemMonitorAppUsageList: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.primary.opacity(0.07), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
     }
@@ -349,7 +359,7 @@ private struct SystemMonitorAppUsageList: View {
         switch availability {
         case .available:
             return ranking.hasUsableMetric(in: records) || ranking.metricUnavailableMessage == nil
-                ? .accentColor
+                ? OmnipoTheme.brandRed
                 : .orange
         case .unavailable: return .orange
         case .idle, .loading: return .secondary
@@ -516,18 +526,15 @@ private enum SystemMonitorAppUsageRanking {
 
 private struct SystemMonitorAppUsageRow: View {
     let record: AppUsageRecord
+    @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let ranking: SystemMonitorAppUsageRanking
 
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.12))
-                Image(systemName: "app.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-            }
-            .frame(width: 36, height: 36)
+            SystemMonitorAppIcon(
+                bundleIdentifier: record.bundleIdentifier,
+                resourceCache: applicationResourceCache
+            )
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -584,6 +591,43 @@ private struct SystemMonitorAppUsageRow: View {
         .accessibilityLabel(
             "\(record.displayName)，\(ranking.primaryTitle) \(ranking.primaryValue(for: record))，CPU \(record.cpuPercent.map(SystemMonitorFormatting.appCPUText) ?? "不可用")，内存 \(record.memoryBytes.map(SystemMonitorFormatting.byteCountText) ?? "不可用")"
         )
+    }
+}
+
+private struct SystemMonitorAppIcon: View {
+    let bundleIdentifier: String?
+    @ObservedObject var resourceCache: ApplicationResourceCache
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: 36, height: 36)
+        .task(id: "\(bundleIdentifier ?? "unknown"):\(resourceCache.generation)") {
+            guard let bundleIdentifier else {
+                image = nil
+                return
+            }
+            image = resourceCache.icon(for: bundleIdentifier)
+        }
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(OmnipoTheme.redTint)
+            Image(systemName: "app.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(OmnipoTheme.brandRed)
+        }
     }
 }
 
@@ -719,7 +763,7 @@ private struct SystemMonitorEnergyCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
@@ -760,9 +804,9 @@ private struct SystemMonitorNetworkCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "network")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(OmnipoTheme.brandRed)
                     .frame(width: 40, height: 40)
-                    .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(OmnipoTheme.redTint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("网络")
@@ -808,7 +852,7 @@ private struct SystemMonitorNetworkCard: View {
                 SystemMonitorCPUMetric(
                     value: presentation.totalOutboundValue,
                     title: "总上行",
-                    tint: .cyan
+                    tint: OmnipoTheme.infoCyan
                 )
                 Divider().frame(height: 34)
                 SystemMonitorCPUMetric(
@@ -859,7 +903,7 @@ private struct SystemMonitorNetworkCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
@@ -877,9 +921,9 @@ private struct SystemMonitorMemoryCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "memorychip")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(OmnipoTheme.brandRed)
                     .frame(width: 40, height: 40)
-                    .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(OmnipoTheme.redTint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("内存")
@@ -921,7 +965,7 @@ private struct SystemMonitorMemoryCard: View {
                 SystemMonitorCPUMetric(
                     value: presentation.usedValue,
                     title: "已用",
-                    tint: .accentColor
+                    tint: OmnipoTheme.brandRed
                 )
                 Divider().frame(height: 34)
                 SystemMonitorCPUMetric(
@@ -933,7 +977,7 @@ private struct SystemMonitorMemoryCard: View {
                 SystemMonitorCPUMetric(
                     value: presentation.compressedValue,
                     title: "压缩",
-                    tint: .cyan
+                    tint: OmnipoTheme.infoCyan
                 )
             }
 
@@ -947,7 +991,7 @@ private struct SystemMonitorMemoryCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
@@ -975,7 +1019,7 @@ private struct SystemMonitorDualRateBar: View {
 
                 HStack(spacing: 0) {
                     Rectangle()
-                        .fill(Color.cyan.opacity(0.82))
+                        .fill(OmnipoTheme.infoCyan.opacity(0.82))
                         .frame(width: width * outboundFraction)
                     Spacer(minLength: 0)
                 }
@@ -1001,9 +1045,9 @@ private struct SystemMonitorCPUCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "cpu")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(OmnipoTheme.brandRed)
                     .frame(width: 40, height: 40)
-                    .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(OmnipoTheme.redTint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("CPU")
@@ -1052,13 +1096,13 @@ private struct SystemMonitorCPUCard: View {
                 SystemMonitorCPUMetric(
                     value: presentation.userValue,
                     title: "用户态",
-                    tint: .accentColor
+                    tint: OmnipoTheme.brandRed
                 )
                 Divider().frame(height: 34)
                 SystemMonitorCPUMetric(
                     value: presentation.systemValue,
                     title: "系统态",
-                    tint: .cyan
+                    tint: OmnipoTheme.infoCyan
                 )
                 Divider().frame(height: 34)
                 SystemMonitorCPUMetric(
@@ -1078,7 +1122,7 @@ private struct SystemMonitorCPUCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 18, y: 8)
         .accessibilityElement(children: .contain)
@@ -1098,7 +1142,10 @@ private struct SystemMonitorHero: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [.green.opacity(0.86), .cyan.opacity(0.78)],
+                                colors: [
+                                    OmnipoTheme.brandRed.opacity(0.95),
+                                    OmnipoTheme.deepBlack.opacity(0.88)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -1123,7 +1170,7 @@ private struct SystemMonitorHero: View {
             HStack(spacing: 10) {
                 SystemMonitorBadge(
                     title: "采样间隔 \(Int(intervalSeconds)) 秒",
-                    tint: .accentColor
+                    tint: OmnipoTheme.brandRed
                 )
                 SystemMonitorBadge(
                     title: isActive ? "页面已激活" : "页面未激活",
@@ -1131,7 +1178,7 @@ private struct SystemMonitorHero: View {
                 )
                 SystemMonitorBadge(
                     title: hasSnapshot ? "已有快照" : "等待首帧",
-                    tint: hasSnapshot ? .blue : .orange
+                    tint: hasSnapshot ? OmnipoTheme.brandRed : .orange
                 )
             }
         }
@@ -1139,7 +1186,7 @@ private struct SystemMonitorHero: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
         .accessibilityElement(children: .combine)
@@ -1158,19 +1205,19 @@ private struct SystemMonitorMemoryStackedBar: View {
 
             HStack(spacing: 0) {
                 Rectangle()
-                    .fill(Color.accentColor.opacity(0.9))
+                    .fill(OmnipoTheme.brandRed.opacity(0.9))
                     .frame(width: width * activeUsedFraction)
                 Rectangle()
                     .fill(Color.green.opacity(0.75))
                     .frame(width: width * availableFraction)
                 Rectangle()
-                    .fill(Color.cyan.opacity(0.8))
+                    .fill(OmnipoTheme.infoCyan.opacity(0.8))
                     .frame(width: width * compressedFraction)
             }
             .clipShape(Capsule())
             .overlay {
                 Capsule()
-                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+                    .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
             }
             .background(.quaternary.opacity(0.45), in: Capsule())
         }
@@ -1195,7 +1242,7 @@ private struct SystemMonitorCPURing: View {
                 .trim(from: 0, to: fraction)
                 .stroke(
                     AngularGradient(
-                        colors: [.accentColor, .cyan, .green],
+                        colors: [OmnipoTheme.brandRed, OmnipoTheme.infoCyan, .green],
                         center: .center
                     ),
                     style: StrokeStyle(lineWidth: 12, lineCap: .round)
@@ -1228,10 +1275,10 @@ private struct SystemMonitorCPUStackedBar: View {
 
             HStack(spacing: 0) {
                 Rectangle()
-                    .fill(Color.accentColor.opacity(0.9))
+                    .fill(OmnipoTheme.brandRed.opacity(0.9))
                     .frame(width: width * userFraction)
                 Rectangle()
-                    .fill(Color.cyan.opacity(0.82))
+                    .fill(OmnipoTheme.infoCyan.opacity(0.82))
                     .frame(width: width * systemFraction)
                 Rectangle()
                     .fill(Color.secondary.opacity(0.22))
@@ -1240,7 +1287,7 @@ private struct SystemMonitorCPUStackedBar: View {
             .clipShape(Capsule())
             .overlay {
                 Capsule()
-                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+                    .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
             }
             .background(.quaternary.opacity(0.45), in: Capsule())
         }
@@ -1321,7 +1368,7 @@ private struct SystemMonitorCPUCardPresentation {
         switch cpu {
         case .available(let metrics):
             self.statusText = "已更新"
-            self.statusColor = .accentColor
+            self.statusColor = OmnipoTheme.brandRed
             self.headline = "\(SystemMonitorFormatting.percentText(from: metrics.busyPercent)) 总占用"
             self.busyValue = SystemMonitorFormatting.percentText(from: metrics.busyPercent)
             self.busyFraction = metrics.busyPercent
@@ -1395,7 +1442,7 @@ private struct SystemMonitorEnergyCardPresentation {
             let isCharging = metrics.isCharging ?? false
             let isOnExternalPower = metrics.isOnExternalPower ?? isCharging
             self.statusText = "已更新"
-            self.statusColor = .accentColor
+            self.statusColor = OmnipoTheme.brandRed
             self.accentColor = isOnExternalPower ? .green : .yellow
             self.symbolName = isCharging ? "battery.100.bolt" : (isOnExternalPower ? "powerplug" : "battery.75")
             self.headline = isCharging ? "正在充电" : (isOnExternalPower ? "接入电源适配器" : "使用电池供电")
@@ -1405,7 +1452,7 @@ private struct SystemMonitorEnergyCardPresentation {
             self.summaryText = "电池信息来自 IOKit 公开接口；整机瓦数没有公开 API，因此只展示明确的降级说明。"
             self.machinePowerText = "macOS 未提供公开整机能耗 API。"
             self.machinePowerColor = .orange
-            self.stateTint = isCharging ? .green : (isOnExternalPower ? .blue : .yellow)
+            self.stateTint = isCharging ? .green : (isOnExternalPower ? OmnipoTheme.infoCyan : .yellow)
             self.footerText = "最近更新于 \(snapshot?.capturedAt.formatted(date: .omitted, time: .shortened) ?? "刚刚")。"
             self.footerColor = .secondary
         case .unavailable(let reason):
@@ -1470,7 +1517,7 @@ private struct SystemMonitorMemoryCardPresentation {
             let activeUsedFraction = max(usedFraction - compressedFraction, 0)
 
             self.statusText = "已更新"
-            self.statusColor = .accentColor
+            self.statusColor = OmnipoTheme.brandRed
             self.headline = "总内存 \(SystemMonitorFormatting.byteCountText(from: metrics.totalBytes))"
             self.usedValue = SystemMonitorFormatting.byteCountText(from: metrics.usedBytes)
             self.availableValue = SystemMonitorFormatting.byteCountText(from: metrics.availableBytes)
@@ -1549,7 +1596,7 @@ private struct SystemMonitorNetworkCardPresentation {
             let peak = max(metrics.totalBytesInPerSec, metrics.totalBytesOutPerSec, 1)
 
             self.statusText = "已更新"
-            self.statusColor = .accentColor
+            self.statusColor = OmnipoTheme.brandRed
             self.headline = "总下行 \(SystemMonitorFormatting.rateText(from: metrics.totalBytesInPerSec))"
             self.totalInboundValue = SystemMonitorFormatting.rateText(from: metrics.totalBytesInPerSec)
             self.totalOutboundValue = SystemMonitorFormatting.rateText(from: metrics.totalBytesOutPerSec)
@@ -1601,7 +1648,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "cpu",
                 value: "—",
                 subtitle: "等待首帧",
-                tint: .accentColor
+                tint: OmnipoTheme.brandRed
             )
         }
         switch cpu {
@@ -1611,7 +1658,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "cpu",
                 value: SystemMonitorFormatting.percentText(from: metrics.busyPercent),
                 subtitle: "用户 \(SystemMonitorFormatting.percentText(from: metrics.userPercent)) / 系统 \(SystemMonitorFormatting.percentText(from: metrics.systemPercent))",
-                tint: .accentColor
+                tint: OmnipoTheme.brandRed
             )
         case .unavailable(let reason):
             return .init(
@@ -1631,7 +1678,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "memorychip",
                 value: "—",
                 subtitle: "等待首帧",
-                tint: .blue
+                tint: OmnipoTheme.brandRed
             )
         }
         switch memory {
@@ -1641,7 +1688,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "memorychip",
                 value: SystemMonitorFormatting.byteCountText(from: metrics.usedBytes),
                 subtitle: "可用 \(SystemMonitorFormatting.byteCountText(from: metrics.availableBytes))",
-                tint: .blue
+                tint: OmnipoTheme.brandRed
             )
         case .unavailable(let reason):
             return .init(
@@ -1694,7 +1741,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "internaldrive",
                 value: "—",
                 subtitle: "等待容量读取",
-                tint: .purple
+                tint: OmnipoTheme.brandRed
             )
         case .loading:
             return .init(
@@ -1702,7 +1749,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "internaldrive",
                 value: "—",
                 subtitle: "读取中",
-                tint: .purple
+                tint: OmnipoTheme.brandRed
             )
         case .available(let snapshot):
             return .init(
@@ -1710,7 +1757,7 @@ private struct SystemMonitorSummaryTilePresentation {
                 symbolName: "internaldrive",
                 value: SystemMonitorFormatting.byteCountText(from: snapshot.usedBytes),
                 subtitle: "可用 \(SystemMonitorFormatting.byteCountText(from: snapshot.availableBytes))",
-                tint: .purple
+                tint: OmnipoTheme.brandRed
             )
         case .unavailable(let reason):
             return .init(
@@ -1852,7 +1899,7 @@ private struct SystemMonitorControls: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.primary.opacity(0.06), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
     }

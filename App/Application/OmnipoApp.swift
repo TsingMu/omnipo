@@ -2,11 +2,13 @@ import SwiftUI
 
 @main
 struct OmnipoApp: App {
+    private let statusBarManager: StatusBarManager
     @State private var container: DependencyContainer
     @State private var appState: AppState
 
     init() {
         let container = DependencyContainer.production()
+        statusBarManager = StatusBarManager(container: container)
         container.logging.log(.lifecycleStart())
         var initialState: AppDestination = .dashboard
         if container.settings.readBool(forKey: .reopenLastDestination),
@@ -30,7 +32,11 @@ struct OmnipoApp: App {
             RootView()
                 .environment(container)
                 .environment(appState)
+                .tint(OmnipoTheme.brandRed)
                 .frame(minWidth: 720, minHeight: 480)
+                .task {
+                    statusBarManager.setup()
+                }
         }
         .defaultSize(width: 1040, height: 700)
         .windowResizability(.contentMinSize)
@@ -38,6 +44,7 @@ struct OmnipoApp: App {
         Settings {
             SettingsView()
                 .environment(container)
+                .tint(OmnipoTheme.brandRed)
         }
     }
 }

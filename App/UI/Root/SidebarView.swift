@@ -100,7 +100,7 @@ private struct SidebarDestinationRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: destination.symbol)
-                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+                .foregroundStyle(isSelected ? Color.white : OmnipoTheme.brandRed)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -117,7 +117,7 @@ private struct SidebarDestinationRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            isSelected ? Color.accentColor : Color.clear,
+            isSelected ? OmnipoTheme.brandRed : Color.clear,
             in: RoundedRectangle(cornerRadius: 10, style: .continuous)
         )
         .contentShape(Rectangle())

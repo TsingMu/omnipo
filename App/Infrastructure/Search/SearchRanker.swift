@@ -9,7 +9,7 @@ public enum SearchRanker {
     }
 
     /// 合并多批结果,按 (kind, sourceIdentifier) 去重(保留最高分),
-    /// 然后按分数→kind 优先级→sourceIdentifier 字典序排序。
+    /// 然后按 kind 优先级→分数→sourceIdentifier 字典序排序。
     public static func rank(_ results: [SearchResult]) -> [SearchResult] {
         var bestByKey: [DedupKey: SearchResult] = [:]
         var insertionOrder: [DedupKey] = []
@@ -29,13 +29,13 @@ public enum SearchRanker {
         let unique = insertionOrder.compactMap { bestByKey[$0] }
 
         return unique.sorted { a, b in
-            if a.matchScore != b.matchScore {
-                return a.matchScore > b.matchScore
-            }
             let pa = kindPriority(a.kind)
             let pb = kindPriority(b.kind)
             if pa != pb {
                 return pa < pb
+            }
+            if a.matchScore != b.matchScore {
+                return a.matchScore > b.matchScore
             }
             return a.sourceIdentifier < b.sourceIdentifier
         }
@@ -43,9 +43,9 @@ public enum SearchRanker {
 
     public static func kindPriority(_ kind: SearchResult.Kind) -> Int {
         switch kind {
-        case .command: return 0
-        case .application: return 1
-        case .file: return 2
+        case .application: return 0
+        case .file: return 1
+        case .command: return 2
         }
     }
 }

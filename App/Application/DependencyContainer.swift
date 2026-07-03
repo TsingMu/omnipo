@@ -12,6 +12,7 @@ public final class DependencyContainer {
     public let appUsageSampler: any AppUsageSampling
     public let systemMonitorStore: SystemMonitorStore
     public let authorizedRootManager: AuthorizedRootManager
+    public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
     public let mainNavigator: MainWindowNavigator
 
@@ -24,6 +25,7 @@ public final class DependencyContainer {
         appUsageSampler: any AppUsageSampling,
         systemMonitorStore: SystemMonitorStore,
         authorizedRootManager: AuthorizedRootManager,
+        applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
         mainNavigator: MainWindowNavigator
     ) {
@@ -35,6 +37,7 @@ public final class DependencyContainer {
         self.appUsageSampler = appUsageSampler
         self.systemMonitorStore = systemMonitorStore
         self.authorizedRootManager = authorizedRootManager
+        self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
         self.mainNavigator = mainNavigator
     }
@@ -80,7 +83,11 @@ public final class DependencyContainer {
             logger: logging,
             resourceCache: applicationResourceCache
         )
-        let fileLauncher = FileLauncher(logger: logging)
+        let fileLauncher = FileLauncher(
+            logger: logging,
+            settings: settings,
+            authorizedRootManager: authorizedRootManager
+        )
         let resultExecutor = DefaultLauncherResultExecutor(
             commandExecutor: commandExecutor,
             applicationLauncher: applicationLauncher,
@@ -123,6 +130,7 @@ public final class DependencyContainer {
             appUsageSampler: appUsageSampler,
             systemMonitorStore: systemMonitorStore,
             authorizedRootManager: authorizedRootManager,
+            applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,
             mainNavigator: navigator
         )

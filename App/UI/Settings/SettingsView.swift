@@ -7,31 +7,67 @@ struct SettingsView: View {
     @State private var reopenLastDestination: Bool = false
 
     var body: some View {
-        Form {
-            Section {
-                Toggle("启动时打开 Dashboard", isOn: $launchDashboardAtStart)
-                    .onChange(of: launchDashboardAtStart) { _, value in
-                        container.settings.write(value, forKey: .launchDashboardAtStart)
-                        container.logging.log(.preferenceChanged(key: "launchDashboardAtStart"))
+        ZStack {
+            LinearGradient(
+                colors: [
+                    OmnipoTheme.redWash,
+                    OmnipoTheme.deepBlack.opacity(0.035),
+                    Color(nsColor: .windowBackgroundColor)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(OmnipoTheme.brandGradient)
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .frame(width: 44, height: 44)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("设置")
+                            .font(.title2.bold())
+                        Text("本地偏好与快捷键")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+
+                Form {
+                    Section {
+                        Toggle("启动时打开 Dashboard", isOn: $launchDashboardAtStart)
+                            .onChange(of: launchDashboardAtStart) { _, value in
+                                container.settings.write(value, forKey: .launchDashboardAtStart)
+                                container.logging.log(.preferenceChanged(key: "launchDashboardAtStart"))
+                            }
+
+                        Toggle("下次打开时恢复上次选择", isOn: $reopenLastDestination)
+                            .onChange(of: reopenLastDestination) { _, value in
+                                container.settings.write(value, forKey: .reopenLastDestination)
+                                container.logging.log(.preferenceChanged(key: "reopenLastDestination"))
+                            }
+                    } header: {
+                        Text("通用")
+                    } footer: {
+                        Text("Omnipo 仅在本地保存这些偏好,不上传任何数据。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
 
-                Toggle("下次打开时恢复上次选择", isOn: $reopenLastDestination)
-                    .onChange(of: reopenLastDestination) { _, value in
-                        container.settings.write(value, forKey: .reopenLastDestination)
-                        container.logging.log(.preferenceChanged(key: "reopenLastDestination"))
-                    }
-            } header: {
-                Text("通用")
-            } footer: {
-                Text("Omnipo 仅在本地保存这些偏好,不上传任何数据。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    ShortcutSettingsSection()
+                }
+                .formStyle(.grouped)
+                .scrollContentBackground(.hidden)
             }
-
-            ShortcutSettingsSection()
         }
-        .formStyle(.grouped)
-        .padding()
         .frame(width: 460)
         .task {
             launchDashboardAtStart = container.settings.readBool(forKey: .launchDashboardAtStart)

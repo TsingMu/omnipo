@@ -7,6 +7,14 @@ import Foundation
 @MainActor
 public protocol LauncherResultExecutor: AnyObject {
     func execute(_ result: SearchResult) async -> Result<Void, AppError>
+    func executeFileAction(_ action: FileLauncher.Action, for result: SearchResult) async -> Result<Void, AppError>
+}
+
+public extension LauncherResultExecutor {
+    @MainActor
+    func executeFileAction(_ action: FileLauncher.Action, for result: SearchResult) async -> Result<Void, AppError> {
+        await execute(result)
+    }
 }
 
 @MainActor
@@ -42,6 +50,16 @@ public final class DefaultLauncherResultExecutor: LauncherResultExecutor {
         case .fileBookmark(let bookmark):
             return await fileLauncher.open(bookmark: bookmark)
         }
+    }
+
+    public func executeFileAction(
+        _ action: FileLauncher.Action,
+        for result: SearchResult
+    ) async -> Result<Void, AppError> {
+        guard case .fileBookmark(let bookmark) = result.executionPayload else {
+            return .failure(.invalidArgument(name: "file"))
+        }
+        return await fileLauncher.perform(action, bookmark: bookmark)
     }
 
     private static func logUnknownCommand() -> LogEvent {

@@ -76,7 +76,9 @@ final class ModelTests: XCTestCase {
     func test_mainWindowLayout_usesStableTitlebarInsets() {
         XCTAssertEqual(MainWindowLayout.titlebarInset(safeAreaTop: 58, windowTitlebarHeight: 72), 72)
         XCTAssertEqual(MainWindowLayout.sidebarTopInset(safeAreaTop: 58, windowTitlebarHeight: 72), 88)
-        XCTAssertEqual(MainWindowLayout.detailTopInset(safeAreaTop: 58, windowTitlebarHeight: 44), 70)
+        XCTAssertEqual(MainWindowLayout.detailTopInset(safeAreaTop: 58, windowTitlebarHeight: 44), 24)
+        XCTAssertEqual(MainWindowLayout.detailTopInset(safeAreaTop: 90, windowTitlebarHeight: 100), 24)
+        XCTAssertEqual(MainWindowLayout.detailTopInset(safeAreaTop: 12, windowTitlebarHeight: 20), 0)
         XCTAssertEqual(MainWindowLayout.titlebarInset(safeAreaTop: -1, windowTitlebarHeight: -2), 0)
     }
 

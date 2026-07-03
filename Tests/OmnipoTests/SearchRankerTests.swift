@@ -72,7 +72,7 @@ final class SearchRankerTests: XCTestCase {
         )
     }
 
-    func test_rank_ordersByScoreDescending() {
+    func test_rank_ordersByScoreDescendingWithinSameKind() {
         let ranked = SearchRanker.rank([
             make(.command, "low", 0.4),
             make(.command, "high", 1.0),
@@ -87,7 +87,16 @@ final class SearchRankerTests: XCTestCase {
             make(.application, "a", 0.5),
             make(.command, "c", 0.5)
         ])
-        XCTAssertEqual(ranked.map(\.kind), [.command, .application, .file])
+        XCTAssertEqual(ranked.map(\.kind), [.application, .file, .command])
+    }
+
+    func test_rank_placesCommandsAfterAppsAndFilesEvenWithHigherScore() {
+        let ranked = SearchRanker.rank([
+            make(.command, "c", 1.0),
+            make(.file, "f", 0.4),
+            make(.application, "a", 0.4)
+        ])
+        XCTAssertEqual(ranked.map(\.kind), [.application, .file, .command])
     }
 
     func test_rank_sourceIdentifierBreaksSameKindSameScore() {
@@ -120,24 +129,23 @@ final class SearchRankerTests: XCTestCase {
 
 final class CommandSearchProviderTests: XCTestCase {
 
-    func test_emptyQuery_returnsAllSixCommands() async {
+    func test_emptyQuery_returnsEmpty() async {
         let provider = CommandSearchProvider()
         let result = await provider.search(query: "", generation: 1)
 
         if case .success(let results) = result {
-            XCTAssertEqual(results.count, 6)
-            XCTAssertEqual(Set(results.map { $0.sourceIdentifier }).count, 6)
+            XCTAssertTrue(results.isEmpty)
         } else {
             XCTFail("expected success")
         }
     }
 
-    func test_whitespaceOnlyQuery_returnsAllSixCommands() async {
+    func test_whitespaceOnlyQuery_returnsEmpty() async {
         let provider = CommandSearchProvider()
         let result = await provider.search(query: "   ", generation: 1)
 
         if case .success(let results) = result {
-            XCTAssertEqual(results.count, 6)
+            XCTAssertTrue(results.isEmpty)
         } else {
             XCTFail("expected success")
         }
@@ -179,7 +187,7 @@ final class CommandSearchProviderTests: XCTestCase {
 
     func test_results_carryLauncherCommandPayload() async {
         let provider = CommandSearchProvider()
-        let result = await provider.search(query: "", generation: 1)
+        let result = await provider.search(query: "clipboard", generation: 1)
 
         if case .success(let results) = result {
             for r in results {

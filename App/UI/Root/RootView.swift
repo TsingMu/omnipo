@@ -40,8 +40,8 @@ struct RootView: View {
                     } label: {
                         Image(systemName: "magnifyingglass")
                     }
-                    .help("打开 Launcher")
-                    .accessibilityLabel("打开 Launcher")
+                    .help("打开聚焦搜索")
+                    .accessibilityLabel("打开聚焦搜索")
                 }
             }
             .onChange(of: selection) { _, newValue in

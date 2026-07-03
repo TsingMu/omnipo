@@ -7,17 +7,25 @@ struct DashboardBrandHeader: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [.accentColor.opacity(0.92), .cyan.opacity(0.72)],
+                            colors: [
+                                OmnipoTheme.deepBlack,
+                                OmnipoTheme.deepRed.opacity(0.88)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                Image(systemName: "sparkles")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(.white)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(OmnipoTheme.brandRed.opacity(0.28), lineWidth: 1)
+                Image("DashboardBrandIcon")
+                    .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
+                    .scaledToFit()
+                    .padding(5)
             }
             .frame(width: 76, height: 76)
-            .shadow(color: .accentColor.opacity(0.22), radius: 16, y: 8)
+            .shadow(color: OmnipoTheme.brandRed.opacity(0.24), radius: 18, y: 8)
 
             VStack(spacing: 5) {
                 Text("Omnipo")
@@ -52,13 +60,13 @@ struct DashboardDiskCard: View {
                 DashboardDiskMetric(
                     value: presentation.usedValue,
                     title: "已用空间",
-                    tint: .accentColor
+                    tint: OmnipoTheme.brandRed
                 )
                 Divider().frame(height: 34)
                 DashboardDiskMetric(
                     value: presentation.availableValue,
                     title: "可用空间",
-                    tint: .cyan
+                    tint: OmnipoTheme.infoCyan
                 )
                 Divider().frame(height: 34)
                 DashboardDiskMetric(
@@ -78,7 +86,7 @@ struct DashboardDiskCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+                .stroke(OmnipoTheme.cardStroke, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
     }
@@ -100,7 +108,7 @@ struct DashboardDiskCard: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [.accentColor.opacity(0.88), .cyan.opacity(0.72)],
+                            colors: [OmnipoTheme.brandRed.opacity(0.88), OmnipoTheme.deepRed.opacity(0.76)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -197,7 +205,7 @@ struct DashboardDiskCardPresentation {
         case .loading:
             return .secondary
         case .available:
-            return .accentColor
+            return OmnipoTheme.brandRed
         case .unavailable:
             return .orange
         }
@@ -236,25 +244,26 @@ struct DashboardShortcutGrid: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Image(systemName: shortcut.symbol)
                             .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(OmnipoTheme.brandRed)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(shortcut.title)
                                 .font(.headline)
                             Text(shortcut.subtitle)
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.78))
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, minHeight: 82, alignment: .leading)
                     .padding(16)
                     .background(
-                        LinearGradient(
-                            colors: [.accentColor.opacity(0.88), .blue.opacity(0.74)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
+                        OmnipoTheme.subtleBrandGradient,
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous)
                     )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(OmnipoTheme.brandRed.opacity(0.14), lineWidth: 1)
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("打开\(shortcut.title)页面")

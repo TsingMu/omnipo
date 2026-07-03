@@ -113,12 +113,13 @@ final class ApplicationSearchProviderTests: XCTestCase {
         XCTAssertEqual(counter.withLock { $0 }, 1)
     }
 
-    func test_emptyQuery_returnsEmpty() async {
+    func test_emptyQuery_returnsDefaultApplications() async {
         let provider = ApplicationSearchProvider(discover: { sampleApps })
         let result = await provider.search(query: "", generation: 1)
 
         if case .success(let results) = result {
-            XCTAssertTrue(results.isEmpty)
+            XCTAssertEqual(results.map(\.title), sampleApps.map(\.displayName))
+            XCTAssertTrue(results.allSatisfy { $0.kind == .application })
         } else {
             XCTFail("expected success")
         }
@@ -242,5 +243,53 @@ final class ApplicationSearchProviderTests: XCTestCase {
         XCTAssertTrue(record.aliases.contains("wei xin"))
         XCTAssertTrue(record.aliases.contains("weixin"))
         XCTAssertTrue(record.aliases.contains("wx"))
+    }
+
+    func test_systemDiscoveryIndexesLocalizedInfoPlistStringsNames() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let appURL = root.appendingPathComponent("HUAWEI CLOUD Meeting.app", isDirectory: true)
+        let contentsURL = appURL.appendingPathComponent("Contents", isDirectory: true)
+        let macOSURL = contentsURL.appendingPathComponent("MacOS", isDirectory: true)
+        let zhResourcesURL = contentsURL
+            .appendingPathComponent("Resources", isDirectory: true)
+            .appendingPathComponent("zh-Hans.lproj", isDirectory: true)
+
+        try FileManager.default.createDirectory(at: macOSURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: zhResourcesURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let info: [String: Any] = [
+            "CFBundleIdentifier": "com.huawei.cloudlink.mac",
+            "CFBundleName": "HUAWEI CLOUD Meeting",
+            "CFBundleExecutable": "CloudLink",
+            "CFBundlePackageType": "APPL"
+        ]
+        let infoData = try PropertyListSerialization.data(
+            fromPropertyList: info,
+            format: .xml,
+            options: 0
+        )
+        try infoData.write(to: contentsURL.appendingPathComponent("Info.plist"))
+        try Data().write(to: macOSURL.appendingPathComponent("CloudLink"))
+        try """
+        "CFBundleDisplayName" = "华为云会议";
+        "CFBundleName" = "华为云会议";
+        """.write(
+            to: zhResourcesURL.appendingPathComponent("InfoPlist.strings"),
+            atomically: true,
+            encoding: .utf16
+        )
+
+        let records = await SystemApplicationDiscovery.discover(in: [root])
+        let provider = ApplicationSearchProvider(discover: { records })
+        let result = await provider.search(query: "华为", generation: 1)
+
+        guard case .success(let results) = result else {
+            XCTFail("expected success")
+            return
+        }
+        XCTAssertFalse(results.isEmpty)
+        XCTAssertEqual(results.first?.subtitle, "com.huawei.cloudlink.mac")
     }
 }

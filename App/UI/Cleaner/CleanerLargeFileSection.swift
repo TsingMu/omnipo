@@ -12,7 +12,7 @@ struct CleanerLargeFileSection: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "doc.richtext")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(OmnipoTheme.brandRed)
                 Text("大文件")
                     .font(.headline)
                 Spacer()

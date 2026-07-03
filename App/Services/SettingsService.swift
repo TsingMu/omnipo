@@ -62,6 +62,13 @@ public extension SettingsKey {
         default: .string("")
     )
 
+    /// 聚焦搜索文件操作已授权目录的 security-scoped bookmark 列表。
+    /// 使用换行分隔 base64 字符串;空串表示未授权。
+    static let launcherFileDirectoryBookmarks = SettingsKey(
+        "omnipo.settings.launcher.fileDirectoryBookmarks",
+        default: .string("")
+    )
+
     static let systemMonitorIntervalSeconds = SettingsKey(
         "omnipo.settings.systemMonitor.intervalSeconds",
         default: .double(SystemMonitorInterval.defaultSeconds)
@@ -130,6 +137,27 @@ public extension SettingsService {
         }
         let base64 = data.base64EncodedString()
         write(base64, forKey: .largeFileRootBookmark)
+    }
+
+    func readLauncherFileDirectoryBookmarks() -> [Data] {
+        guard let stored = readString(forKey: .launcherFileDirectoryBookmarks),
+              !stored.isEmpty else {
+            return []
+        }
+        return stored
+            .split(separator: "\n")
+            .compactMap { Data(base64Encoded: String($0)) }
+    }
+
+    func writeLauncherFileDirectoryBookmarks(_ bookmarks: [Data]) {
+        let encoded = bookmarks
+            .filter { !$0.isEmpty }
+            .map { $0.base64EncodedString() }
+        guard !encoded.isEmpty else {
+            remove(forKey: .launcherFileDirectoryBookmarks)
+            return
+        }
+        write(encoded.joined(separator: "\n"), forKey: .launcherFileDirectoryBookmarks)
     }
 
     /// 读取系统监控采样间隔;损坏值回退到默认 5 秒。

@@ -24,13 +24,13 @@ struct LauncherSearchField: NSViewRepresentable {
     func makeNSView(context: Context) -> LauncherSearchTextField {
         let field = LauncherSearchTextField()
         field.delegate = context.coordinator
-        field.placeholderString = "搜索应用、文件、功能…"
+        field.placeholderString = "搜索应用，或输入 find 文件名…"
         field.font = .systemFont(ofSize: 18)
         field.isBezeled = false
         field.drawsBackground = false
         field.focusRingType = .none
         field.lineBreakMode = .byTruncatingTail
-        field.setAccessibilityLabel("Launcher 搜索")
+        field.setAccessibilityLabel("聚焦搜索")
         return field
     }
 

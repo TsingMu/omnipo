@@ -130,7 +130,7 @@ public enum SystemApplicationDiscovery {
                 rawInfo["CFBundleName"] as? String,
                 bundle.executableURL?.lastPathComponent,
                 url.deletingPathExtension().lastPathComponent
-            ].compactMap { $0 }
+            ].compactMap { $0 } + localizedBundleNames(in: url)
             let name = discoveredNames.first ?? bundleId
             results.append(AppRecord(
                 bundleIdentifier: bundleId,
@@ -139,5 +139,30 @@ public enum SystemApplicationDiscovery {
             ))
         }
         return results
+    }
+
+    private static func localizedBundleNames(in appURL: URL) -> [String] {
+        let contentsURL = appURL.appendingPathComponent("Contents", isDirectory: true)
+        let resourcesURL = contentsURL.appendingPathComponent("Resources", isDirectory: true)
+        guard let resourceEntries = try? FileManager.default.contentsOfDirectory(
+            at: resourcesURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        var names: [String] = []
+        for lprojURL in resourceEntries where lprojURL.pathExtension == "lproj" {
+            let stringsURL = lprojURL.appendingPathComponent("InfoPlist.strings")
+            guard let dictionary = NSDictionary(contentsOf: stringsURL) as? [String: Any] else {
+                continue
+            }
+            for key in ["CFBundleDisplayName", "CFBundleName"] {
+                guard let value = dictionary[key] as? String else { continue }
+                names.append(value)
+            }
+        }
+        return names
     }
 }

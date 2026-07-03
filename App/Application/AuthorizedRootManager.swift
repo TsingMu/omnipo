@@ -77,6 +77,12 @@ public final class AuthorizedRootManager {
         releaseScope()
     }
 
+    /// 复用其他功能通过 NSOpenPanel 获得的目录授权,保持磁盘扫描与文件操作授权一致。
+    @discardableResult
+    public func adoptRoot(url: URL) -> URL? {
+        persist(url: url)
+    }
+
     private func releaseScope() {
         if let resolvedURL {
             resolvedURL.stopAccessingSecurityScopedResource()

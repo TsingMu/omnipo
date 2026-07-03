@@ -64,6 +64,20 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertEqual(service.readString(forKey: .lastOpenedDestinationKey), "dashboard")
     }
 
+    func test_launcherFileDirectoryBookmarks_roundTripAndClear() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        let bookmarks = [
+            Data([0x01, 0x02, 0x03]),
+            Data([0x04, 0x05, 0x06])
+        ]
+
+        service.writeLauncherFileDirectoryBookmarks(bookmarks)
+        XCTAssertEqual(service.readLauncherFileDirectoryBookmarks(), bookmarks)
+
+        service.writeLauncherFileDirectoryBookmarks([])
+        XCTAssertTrue(service.readLauncherFileDirectoryBookmarks().isEmpty)
+    }
+
     func test_isolationFromStandardDefaults() {
         UserDefaults.standard.removeObject(forKey: SettingsKey.launchDashboardAtStart.rawValue)
 

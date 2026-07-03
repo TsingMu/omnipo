@@ -12,8 +12,8 @@ struct DashboardView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color.accentColor.opacity(0.08),
-                    Color.cyan.opacity(0.05),
+                    OmnipoTheme.redWash,
+                    OmnipoTheme.deepBlack.opacity(0.035),
                     Color(nsColor: .windowBackgroundColor)
                 ],
                 startPoint: .topLeading,

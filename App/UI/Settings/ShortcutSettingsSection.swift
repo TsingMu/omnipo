@@ -18,9 +18,9 @@ struct ShortcutSettingsSection: View {
         Section {
             HStack(spacing: 12) {
                 Image(systemName: "keyboard")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(OmnipoTheme.brandRed)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Launcher 快捷键")
+                    Text("聚焦搜索快捷键")
                         .font(.headline)
                     Text(currentShortcut.displayText)
                         .font(.system(.body, design: .monospaced))

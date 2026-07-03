@@ -11,6 +11,7 @@ public final class DependencyContainer {
     public let systemMonitorService: any SystemMonitorService
     public let appUsageSampler: any AppUsageSampling
     public let systemMonitorStore: SystemMonitorStore
+    public let clipboardService: any ClipboardService
     public let authorizedRootManager: AuthorizedRootManager
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
@@ -24,6 +25,7 @@ public final class DependencyContainer {
         systemMonitorService: any SystemMonitorService,
         appUsageSampler: any AppUsageSampling,
         systemMonitorStore: SystemMonitorStore,
+        clipboardService: any ClipboardService,
         authorizedRootManager: AuthorizedRootManager,
         applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
@@ -36,6 +38,7 @@ public final class DependencyContainer {
         self.systemMonitorService = systemMonitorService
         self.appUsageSampler = appUsageSampler
         self.systemMonitorStore = systemMonitorStore
+        self.clipboardService = clipboardService
         self.authorizedRootManager = authorizedRootManager
         self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
@@ -67,6 +70,7 @@ public final class DependencyContainer {
             settings: settings,
             intervalSeconds: settings.readSystemMonitorIntervalSeconds()
         )
+        let clipboardService = makeClipboardService(settings: settings)
 
         let navigator = MainWindowNavigator()
         let commandProvider = CommandSearchProvider()
@@ -129,10 +133,35 @@ public final class DependencyContainer {
             systemMonitorService: systemMonitorService,
             appUsageSampler: appUsageSampler,
             systemMonitorStore: systemMonitorStore,
+            clipboardService: clipboardService,
             authorizedRootManager: authorizedRootManager,
             applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,
             mainNavigator: navigator
         )
+    }
+
+    private static func makeClipboardService(settings: any SettingsService) -> any ClipboardService {
+        do {
+            let location = try ClipboardStorageLocation.applicationSupport()
+            let database = try ClipboardDatabase(location: location)
+            try database.initialize()
+            let repository = ClipboardRepository(database: database)
+            let binaryStore = BinaryContentStore(rootDirectory: location.binaryPayloadsDirectory)
+            let writer = SystemClipboardContentWriter()
+            let pasteController = ClipboardPasteController(
+                repository: repository,
+                binaryStore: binaryStore,
+                writer: writer
+            )
+            return DefaultClipboardService(
+                settings: settings,
+                repository: repository,
+                binaryStore: binaryStore,
+                pasteController: pasteController
+            )
+        } catch {
+            preconditionFailure("Clipboard service initialization failed: \(error)")
+        }
     }
 }

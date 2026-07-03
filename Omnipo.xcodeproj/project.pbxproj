@@ -135,6 +135,8 @@
 		000000000000000000000289 /* ClipboardPasteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000363 /* ClipboardPasteController.swift */; };
 		00000000000000000000028A /* ClipboardPasteControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000364 /* ClipboardPasteControllerTests.swift */; };
 		00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000365 /* ClipboardContentWriterTests.swift */; };
+		00000000000000000000028C /* DefaultClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000366 /* DefaultClipboardService.swift */; };
+		00000000000000000000028D /* DefaultClipboardServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000367 /* DefaultClipboardServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -279,6 +281,8 @@
 		000000000000000000000363 /* ClipboardPasteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteController.swift; sourceTree = "<group>"; };
 		000000000000000000000364 /* ClipboardPasteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPasteControllerTests.swift; sourceTree = "<group>"; };
 		000000000000000000000365 /* ClipboardContentWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentWriterTests.swift; sourceTree = "<group>"; };
+		000000000000000000000366 /* DefaultClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultClipboardService.swift; sourceTree = "<group>"; };
+		000000000000000000000367 /* DefaultClipboardServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultClipboardServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -380,6 +384,7 @@
 				000000000000000000000303 /* ShortcutService.swift */,
 				000000000000000000000304 /* SearchService.swift */,
 				000000000000000000000351 /* ClipboardService.swift */,
+				000000000000000000000366 /* DefaultClipboardService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
 				00000000000000000000034A /* AppUsageSampling.swift */,
@@ -589,6 +594,7 @@
 				000000000000000000000360 /* ClipboardContentReaderTests.swift */,
 				000000000000000000000364 /* ClipboardPasteControllerTests.swift */,
 				000000000000000000000365 /* ClipboardContentWriterTests.swift */,
+				000000000000000000000367 /* DefaultClipboardServiceTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -737,6 +743,7 @@
 				000000000000000000000287 /* ClipboardSourceApplicationProvider.swift in Sources */,
 				000000000000000000000288 /* ClipboardContentWriter.swift in Sources */,
 				000000000000000000000289 /* ClipboardPasteController.swift in Sources */,
+				00000000000000000000028C /* DefaultClipboardService.swift in Sources */,
 				00000000000000000000020F /* SettingsService.swift in Sources */,
 				000000000000000000000210 /* LoggingService.swift in Sources */,
 				000000000000000000000211 /* AppError.swift in Sources */,
@@ -826,6 +833,7 @@
 				000000000000000000000286 /* ClipboardContentReaderTests.swift in Sources */,
 				00000000000000000000028A /* ClipboardPasteControllerTests.swift in Sources */,
 				00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */,
+				00000000000000000000028D /* DefaultClipboardServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

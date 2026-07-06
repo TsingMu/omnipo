@@ -31,6 +31,15 @@ final class DefaultClipboardServiceTests: XCTestCase {
         XCTAssertEqual(fixture.monitorFactory.latestMonitor?.startCount, 1)
     }
 
+    func test_startMonitoring_usesConfiguredPollingInterval() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true) { settings in
+            settings.writeClipboardPollingIntervalSeconds(0.4)
+        }
+        defer { fixture.cleanup() }
+
+        XCTAssertEqual(fixture.monitorFactory.latestMonitor?.lastInterval, 0.4)
+    }
+
     func test_setEnabledFalse_stopsMonitoringAndPreventsPersistence() async throws {
         let fixture = try makeFixture(acknowledged: true, enabled: true)
         defer { fixture.cleanup() }
@@ -86,21 +95,198 @@ final class DefaultClipboardServiceTests: XCTestCase {
         XCTAssertTrue(fixture.binaryStore.exists(try XCTUnwrap(payloads.first?.storagePath)))
     }
 
-    private func capturedPlainText(hash: String) -> ClipboardCapturedContent {
-        ClipboardCapturedContent(
-            contentHash: hash,
+    func test_monitorChangePersistsAllSupportedContentTypes() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+
+        let samples: [(ClipboardContentType, ClipboardCapturedContent)] = [
+            (.plainText, capturedContent(
+                hash: "plain-text",
+                type: .plainText,
+                preview: "plain",
+                payloads: [.init(format: .plainText, data: Data("plain".utf8))]
+            )),
+            (.richText, capturedContent(
+                hash: "rtf",
+                type: .richText,
+                preview: "rich",
+                payloads: [
+                    .init(format: .rtf, data: Data("{\\rtf1 rich}".utf8)),
+                    .init(format: .plainText, data: Data("rich".utf8))
+                ]
+            )),
+            (.html, capturedContent(
+                hash: "html",
+                type: .html,
+                preview: "html",
+                payloads: [
+                    .init(format: .html, data: Data("<p>html</p>".utf8)),
+                    .init(format: .plainText, data: Data("html".utf8))
+                ]
+            )),
+            (.image, capturedContent(
+                hash: "image",
+                type: .image,
+                preview: nil,
+                payloads: [.init(format: .image, data: Data([0x01, 0x02, 0x03]))]
+            )),
+            (.fileURL, capturedContent(
+                hash: "file-url",
+                type: .fileURL,
+                preview: "report.pdf",
+                payloads: [
+                    .init(format: .fileURLs, data: try JSONEncoder().encode(["/tmp/report.pdf"])),
+                    .init(format: .plainText, data: Data("/tmp/report.pdf".utf8))
+                ]
+            ))
+        ]
+
+        for (index, sample) in samples.enumerated() {
+            fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+                changeCount: index + 2,
+                capturedContent: sample.1
+            ))
+        }
+
+        let records = try fixture.repository.records(matching: ClipboardQuery(limit: 10))
+        XCTAssertEqual(Set(records.map(\.contentType)), Set(samples.map(\.0)))
+        XCTAssertEqual(records.count, samples.count)
+
+        for record in records {
+            let payloads = try fixture.repository.payloads(for: record.id)
+            XCTAssertFalse(payloads.isEmpty)
+            for payload in payloads {
+                XCTAssertTrue(fixture.binaryStore.exists(payload.storagePath))
+            }
+        }
+    }
+
+    func test_monitorChangePostsHistoryDidChangeAfterPersistence() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let didPostHistoryChange = expectation(
+            forNotification: .clipboardHistoryDidChange,
+            object: fixture.service
+        )
+
+        fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+            changeCount: 2,
+            capturedContent: capturedPlainText(hash: "published")
+        ))
+
+        await fulfillment(of: [didPostHistoryChange], timeout: 1.0)
+    }
+
+    func test_monitorChange_skipsExcludedApplication() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true) { settings in
+            settings.writeClipboardExcludedApplications(["com.example.source"])
+        }
+        defer { fixture.cleanup() }
+
+        fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+            changeCount: 2,
+            capturedContent: capturedPlainText(hash: "excluded-app")
+        ))
+
+        XCTAssertEqual(try fixture.repository.count(), 0)
+    }
+
+    func test_monitorChange_skipsExcludedPattern() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true) { settings in
+            settings.writeClipboardExcludedPatterns(["hello"])
+        }
+        defer { fixture.cleanup() }
+
+        fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+            changeCount: 2,
+            capturedContent: capturedPlainText(hash: "excluded-pattern")
+        ))
+
+        XCTAssertEqual(try fixture.repository.count(), 0)
+    }
+
+    func test_monitorChange_enforcesMaxRecords() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true) { settings in
+            settings.writeClipboardMaxRecords(2)
+        }
+        defer { fixture.cleanup() }
+
+        for index in 0..<3 {
+            fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+                changeCount: index + 2,
+                capturedContent: capturedPlainText(hash: "record-\(index)")
+            ))
+        }
+
+        let records = try fixture.repository.records(matching: ClipboardQuery(limit: 10))
+        XCTAssertEqual(records.count, 2)
+    }
+
+    func test_monitorChange_enforcesRetentionDays() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true) { settings in
+            settings.writeClipboardRetentionDays(1)
+        }
+        defer { fixture.cleanup() }
+        let oldItem = ClipboardItem(
+            contentHash: "old",
             contentType: .plainText,
-            textPreview: "hello",
-            sourceApplicationID: "com.example.source",
+            textPreview: "old",
+            createdAt: Date(timeIntervalSinceNow: -3 * 24 * 60 * 60),
+            updatedAt: Date(timeIntervalSinceNow: -3 * 24 * 60 * 60)
+        )
+        let savedOldItem = try fixture.repository.insert(oldItem)
+        let oldStoragePath = try fixture.binaryStore.write(
+            Data("old".utf8),
+            for: savedOldItem.id,
+            format: .plainText
+        )
+        _ = try fixture.repository.insertPayload(ClipboardBinaryPayload(
+            recordID: savedOldItem.id,
+            format: .plainText,
+            storagePath: oldStoragePath,
+            fileSize: 3,
+            createdAt: oldItem.createdAt
+        ))
+
+        fixture.monitorFactory.latestMonitor?.emit(ClipboardChange(
+            changeCount: 2,
+            capturedContent: capturedPlainText(hash: "new")
+        ))
+
+        XCTAssertEqual(try fixture.repository.count(), 1)
+        XCTAssertFalse(fixture.binaryStore.exists(oldStoragePath))
+    }
+
+    private func capturedPlainText(hash: String) -> ClipboardCapturedContent {
+        capturedContent(
+            hash: hash,
+            type: .plainText,
+            preview: "hello",
             payloads: [
                 ClipboardCapturedPayload(format: .plainText, data: Data("hello".utf8))
             ]
         )
     }
 
+    private func capturedContent(
+        hash: String,
+        type: ClipboardContentType,
+        preview: String?,
+        payloads: [ClipboardCapturedPayload]
+    ) -> ClipboardCapturedContent {
+        ClipboardCapturedContent(
+            contentHash: hash,
+            contentType: type,
+            textPreview: preview,
+            sourceApplicationID: "com.example.source",
+            payloads: payloads
+        )
+    }
+
     private func makeFixture(
         acknowledged: Bool = false,
-        enabled: Bool = false
+        enabled: Bool = false,
+        configureSettings: (UserDefaultsSettingsService) -> Void = { _ in }
     ) throws -> ClipboardServiceFixture {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("omnipo-clipboard-service-\(UUID().uuidString)", isDirectory: true)
@@ -112,6 +298,7 @@ final class DefaultClipboardServiceTests: XCTestCase {
         let settings = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.clipboard.service.\(UUID().uuidString)")
         settings.write(acknowledged, forKey: .clipboardHasAcknowledgedLocalStorageNotice)
         settings.write(enabled, forKey: .clipboardIsEnabled)
+        configureSettings(settings)
 
         let pasteController = ClipboardPasteController(
             repository: repository,
@@ -183,6 +370,7 @@ private final class RecordingClipboardMonitor: ClipboardMonitoring, @unchecked S
     private let handler: ClipboardMonitor.Handler
     private var starts = 0
     private var stops = 0
+    private var interval: TimeInterval?
 
     init(handler: @escaping ClipboardMonitor.Handler) {
         self.handler = handler
@@ -200,9 +388,16 @@ private final class RecordingClipboardMonitor: ClipboardMonitoring, @unchecked S
         return stops
     }
 
+    var lastInterval: TimeInterval? {
+        lock.lock()
+        defer { lock.unlock() }
+        return interval
+    }
+
     func start(interval: TimeInterval) {
         lock.lock()
         starts += 1
+        self.interval = interval
         lock.unlock()
     }
 

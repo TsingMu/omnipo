@@ -152,14 +152,35 @@ final class CarbonShortcutServiceTests: XCTestCase {
             }
         }
 
-        backend.fire()
+        backend.fire(id: ShortcutAction.launcher.rawValue)
 
         await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func test_actionTriggers_areIndependent() async throws {
+        let backend = FakeShortcutBackend(registerResult: { _, _ in true })
+        let service = CarbonShortcutService(backend: backend, logger: makeLogger())
+        let launcherExpectation = expectation(description: "launcher trigger fired")
+        launcherExpectation.isInverted = true
+        let clipboardExpectation = expectation(description: "clipboard trigger fired")
+
+        await MainActor.run {
+            service.onTrigger = {
+                launcherExpectation.fulfill()
+            }
+            service.setTrigger(for: .clipboardPanel) {
+                clipboardExpectation.fulfill()
+            }
+        }
+
+        backend.fire(id: ShortcutAction.clipboardPanel.rawValue)
+
+        await fulfillment(of: [launcherExpectation, clipboardExpectation], timeout: 1.0)
     }
 }
 
 final class FakeShortcutBackend: ShortcutBackend, @unchecked Sendable {
-    var trigger: (@Sendable () -> Void)?
+    var trigger: (@Sendable (UInt32) -> Void)?
     var registerResultProvider: (UInt32, UInt32) -> Bool
     private(set) var registerCount: Int = 0
     private(set) var unregisterCount: Int = 0
@@ -170,14 +191,14 @@ final class FakeShortcutBackend: ShortcutBackend, @unchecked Sendable {
         self.registerResultProvider = registerResult
     }
 
-    func setTrigger(_ trigger: @escaping @Sendable () -> Void) {
+    func setTrigger(_ trigger: @escaping @Sendable (UInt32) -> Void) {
         lock.lock()
         self.trigger = trigger
         lock.unlock()
     }
 
     @discardableResult
-    func register(keyCode: UInt32, modifiers: UInt32) -> Bool {
+    func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) -> Bool {
         lock.lock()
         registerCount += 1
         let provider = registerResultProvider
@@ -185,7 +206,13 @@ final class FakeShortcutBackend: ShortcutBackend, @unchecked Sendable {
         return provider(keyCode, modifiers)
     }
 
-    func unregister() {
+    func unregister(id: UInt32) {
+        lock.lock()
+        unregisterCount += 1
+        lock.unlock()
+    }
+
+    func unregisterAll() {
         lock.lock()
         unregisterCount += 1
         lock.unlock()
@@ -197,10 +224,10 @@ final class FakeShortcutBackend: ShortcutBackend, @unchecked Sendable {
         lock.unlock()
     }
 
-    func fire() {
+    func fire(id: UInt32) {
         lock.lock()
         let t = trigger
         lock.unlock()
-        t?()
+        t?(id)
     }
 }

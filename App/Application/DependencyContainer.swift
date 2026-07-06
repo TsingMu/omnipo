@@ -15,6 +15,7 @@ public final class DependencyContainer {
     public let authorizedRootManager: AuthorizedRootManager
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
+    public let clipboardCoordinator: ClipboardCoordinator
     public let mainNavigator: MainWindowNavigator
 
     public init(
@@ -29,6 +30,7 @@ public final class DependencyContainer {
         authorizedRootManager: AuthorizedRootManager,
         applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
+        clipboardCoordinator: ClipboardCoordinator,
         mainNavigator: MainWindowNavigator
     ) {
         self.settings = settings
@@ -42,6 +44,7 @@ public final class DependencyContainer {
         self.authorizedRootManager = authorizedRootManager
         self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
+        self.clipboardCoordinator = clipboardCoordinator
         self.mainNavigator = mainNavigator
     }
 
@@ -120,6 +123,16 @@ public final class DependencyContainer {
             settings: settings,
             logger: logging
         )
+        let clipboardPanelController = ClipboardPanelController(
+            clipboardService: clipboardService,
+            settings: settings
+        )
+        let clipboardCoordinator = ClipboardCoordinator(
+            shortcutService: shortcut,
+            panelController: clipboardPanelController,
+            settings: settings,
+            logger: logging
+        )
 
         Task(priority: .utility) {
             await applicationIndex.prewarm()
@@ -137,6 +150,7 @@ public final class DependencyContainer {
             authorizedRootManager: authorizedRootManager,
             applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,
+            clipboardCoordinator: clipboardCoordinator,
             mainNavigator: navigator
         )
     }

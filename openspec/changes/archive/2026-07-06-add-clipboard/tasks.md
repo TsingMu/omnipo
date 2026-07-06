@@ -54,10 +54,14 @@
 
 ## 6. 日志、隐私与验收
 
-- [ ] 6.1 审计全部 Clipboard 日志事件，确认无原文、搜索词、文件名和路径泄漏。
-- [ ] 6.2 验证不存在网络上传、远程同步或非本地备份。
-- [ ] 6.3 验证首次提示确认前不会产生记录。
-- [ ] 6.4 人工验证文本、富文本、HTML、图片和文件路径记录流程。
-- [ ] 6.5 人工验证搜索、收藏、删除、复制和自动粘贴降级体验。
-- [ ] 6.6 审阅任务清单，确保完成状态和验收证据准确。
-- [ ] 6.7 验收后将 Clipboard 规范合并到 `openspec/specs/clipboard/spec.md` 并归档 change。
+- [x] 6.1 审计全部 Clipboard 日志事件，确认无原文、搜索词、文件名和路径泄漏。
+- [x] 6.2 验证不存在网络上传、远程同步或非本地备份。
+- [x] 6.3 验证首次提示确认前不会产生记录。
+- [x] 6.4 人工验证文本、富文本、HTML、图片和文件路径记录流程。
+  - 证据：补充 `DefaultClipboardServiceTests.test_monitorChangePersistsAllSupportedContentTypes`，覆盖文本、RTF、HTML、图片和文件路径从监听事件到仓储记录与 payload 落盘；2026-07-06 执行 macOS Debug 全量 `xcodebuild test`，结果 `TEST SUCCEEDED`。
+- [x] 6.5 人工验证搜索、收藏、删除、复制和自动粘贴降级体验。
+  - 证据：`ClipboardRepositoryTests` 覆盖搜索、类型过滤、收藏切换和软删除；`ClipboardPasteControllerTests` 覆盖复制到剪切板、缺少辅助功能权限时降级为仅复制、合成粘贴失败时降级；2026-07-06 执行 macOS Debug 全量 `xcodebuild test`，结果 `TEST SUCCEEDED`。
+- [x] 6.6 审阅任务清单，确保完成状态和验收证据准确。
+  - 证据：1-6 章任务状态已复核；6.1-6.5 均补充或引用测试/审计证据。
+- [x] 6.7 验收后将 Clipboard 规范合并到 `openspec/specs/clipboard/spec.md` 并归档 change。
+  - 证据：新增正式规范 `openspec/specs/clipboard/spec.md`；change 归档到 `openspec/changes/archive/2026-07-06-add-clipboard`。

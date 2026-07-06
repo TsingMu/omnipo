@@ -97,7 +97,14 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
     }
 
     public func copyAndPaste(_ itemID: ClipboardItem.ID) async -> Result<ClipboardPasteOutcome, AppError> {
-        pasteController.copyAndPaste(itemID)
+        await copyAndPaste(itemID, targetProcessIdentifier: nil)
+    }
+
+    public func copyAndPaste(
+        _ itemID: ClipboardItem.ID,
+        targetProcessIdentifier: pid_t?
+    ) async -> Result<ClipboardPasteOutcome, AppError> {
+        pasteController.copyAndPaste(itemID, targetProcessIdentifier: targetProcessIdentifier)
     }
 
     internal func handleClipboardChange(_ change: ClipboardChange) {
@@ -106,10 +113,30 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
               let capturedContent = change.capturedContent else {
             return
         }
+        guard !shouldExclude(capturedContent) else {
+            return
+        }
         do {
             try persist(capturedContent)
         } catch {
             // Clipboard capture is best-effort; the next pasteboard tick can still succeed.
+        }
+    }
+
+    private func shouldExclude(_ capturedContent: ClipboardCapturedContent) -> Bool {
+        if let sourceApplicationID = capturedContent.sourceApplicationID,
+           settings.readClipboardExcludedApplications().contains(sourceApplicationID) {
+            return true
+        }
+        guard let textPreview = capturedContent.textPreview, !textPreview.isEmpty else {
+            return false
+        }
+        return settings.readClipboardExcludedPatterns().contains { pattern in
+            guard let regex = try? NSRegularExpression(pattern: pattern) else {
+                return false
+            }
+            let range = NSRange(textPreview.startIndex..., in: textPreview)
+            return regex.firstMatch(in: textPreview, range: range) != nil
         }
     }
 
@@ -138,6 +165,59 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
                 createdAt: now
             ))
         }
+        try enforceStoragePolicy(now: now)
+        NotificationCenter.default.post(name: .clipboardHistoryDidChange, object: self)
+    }
+
+    private func enforceStoragePolicy(now: Date) throws {
+        let visibleItems = try repository.records(matching: ClipboardQuery(limit: 10_000))
+        var itemsToDelete: [ClipboardItem] = []
+
+        let retentionCutoff = now.addingTimeInterval(-settings.readClipboardRetentionDays() * 24 * 60 * 60)
+        itemsToDelete.append(contentsOf: visibleItems.filter { $0.updatedAt < retentionCutoff })
+
+        let retainedByDate = visibleItems.filter { $0.updatedAt >= retentionCutoff }
+        let maxRecords = Int(settings.readClipboardMaxRecords())
+        if retainedByDate.count > maxRecords {
+            itemsToDelete.append(contentsOf: retainedByDate.dropFirst(maxRecords))
+        }
+
+        let uniqueDateAndCountDeletes = Dictionary(grouping: itemsToDelete, by: \.id)
+            .compactMap { $0.value.first }
+        for item in uniqueDateAndCountDeletes {
+            try deletePayloadFilesAndMetadata(for: item.id)
+            _ = try repository.softDelete(item.id)
+        }
+
+        try enforceStorageSize()
+    }
+
+    private func enforceStorageSize() throws {
+        let maxBytes = Int(settings.readClipboardMaxStorageMB() * 1_024 * 1_024)
+        var items = try repository.records(matching: ClipboardQuery(limit: 10_000))
+        var payloadsByRecord: [ClipboardItem.ID: [ClipboardBinaryPayload]] = [:]
+        var totalBytes = 0
+        for item in items {
+            let payloads = try repository.payloads(for: item.id)
+            payloadsByRecord[item.id] = payloads
+            totalBytes += payloads.reduce(0) { $0 + $1.fileSize }
+        }
+
+        while totalBytes > maxBytes, let item = items.popLast() {
+            let payloads = payloadsByRecord[item.id] ?? []
+            totalBytes -= payloads.reduce(0) { $0 + $1.fileSize }
+            try deletePayloadFilesAndMetadata(for: item.id)
+            _ = try repository.softDelete(item.id)
+        }
+    }
+
+    private func deletePayloadFilesAndMetadata(for itemID: ClipboardItem.ID) throws {
+        let payloads = try repository.payloads(for: itemID)
+        for payload in payloads {
+            try? binaryStore.delete(payload.storagePath)
+        }
+        try binaryStore.deleteAll(for: itemID)
+        _ = try repository.deletePayloads(for: itemID)
     }
 
     private func startMonitoringIfAllowed() {
@@ -154,7 +234,7 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
             self?.handleClipboardChange(change)
         }
         monitor = newMonitor
-        newMonitor.start(interval: 0.8)
+        newMonitor.start(interval: settings.readClipboardPollingIntervalSeconds())
     }
 
     private func stopMonitoring() {

@@ -119,6 +119,23 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertNil(service.readLauncherShortcut())
     }
 
+    func test_writeAndRead_clipboardPanelShortcut_roundTrips() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        let shortcut = KeyboardShortcut(keyCode: KeyCodes.c, modifierFlags: [.option, .command])
+
+        service.writeClipboardPanelShortcut(shortcut)
+
+        XCTAssertEqual(service.readClipboardPanelShortcut(), shortcut)
+    }
+
+    func test_clearClipboardPanelShortcut_resetsToDefault() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        service.writeClipboardPanelShortcut(.defaultClipboardPanel)
+        service.clearClipboardPanelShortcut()
+
+        XCTAssertNil(service.readClipboardPanelShortcut())
+    }
+
     // MARK: - System Monitor
 
     func test_systemMonitorInterval_roundTripsAndClampsInvalidValue() {
@@ -138,10 +155,14 @@ final class SettingsServiceTests: XCTestCase {
 
         XCTAssertFalse(service.readBool(forKey: .clipboardIsEnabled))
         XCTAssertFalse(service.readBool(forKey: .clipboardHasAcknowledgedLocalStorageNotice))
-        XCTAssertFalse(service.readBool(forKey: .clipboardAutoPaste))
+        XCTAssertTrue(service.readBool(forKey: .clipboardAutoPaste))
         XCTAssertEqual(service.readClipboardMaxRecords(), ClipboardSettingsDefaults.maxRecords)
         XCTAssertEqual(service.readClipboardRetentionDays(), ClipboardSettingsDefaults.retentionDays)
         XCTAssertEqual(service.readClipboardMaxStorageMB(), ClipboardSettingsDefaults.maxStorageMB)
+        XCTAssertEqual(service.readClipboardPollingIntervalSeconds(), ClipboardSettingsDefaults.pollingIntervalSeconds)
+        XCTAssertEqual(service.readClipboardImageQuality(), ClipboardSettingsDefaults.imageQuality)
+        XCTAssertTrue(service.readBool(forKey: .showMenuBarIcon))
+        XCTAssertEqual(service.readClipboardPanelPosition(), .center)
     }
 
     func test_clipboardSettings_roundTripBooleans() {
@@ -166,5 +187,67 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertEqual(service.readClipboardMaxRecords(), 10_000)
         XCTAssertEqual(service.readClipboardRetentionDays(), 1)
         XCTAssertEqual(service.readClipboardMaxStorageMB(), 16)
+    }
+
+    func test_clipboardSettings_clampAdvancedValues() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.writeClipboardPollingIntervalSeconds(9)
+        service.writeClipboardImageQuality(-1)
+
+        XCTAssertEqual(service.readClipboardPollingIntervalSeconds(), 2.0)
+        XCTAssertEqual(service.readClipboardImageQuality(), 0.1)
+    }
+
+    func test_clipboardSettings_stringLists_roundTripAndClear() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.writeClipboardExcludedApplications(["com.example.app", "", " com.example.other "])
+        service.writeClipboardExcludedPatterns(["password", "\\d{6}"])
+
+        XCTAssertEqual(service.readClipboardExcludedApplications(), ["com.example.app", "com.example.other"])
+        XCTAssertEqual(service.readClipboardExcludedPatterns(), ["password", "\\d{6}"])
+
+        service.writeClipboardExcludedApplications([])
+        service.writeClipboardExcludedPatterns([])
+
+        XCTAssertEqual(service.readClipboardExcludedApplications(), [])
+        XCTAssertEqual(service.readClipboardExcludedPatterns(), [])
+    }
+
+    func test_clipboardPanelPosition_roundTripsAndFallsBack() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.writeClipboardPanelPosition(.followMouse)
+        XCTAssertEqual(service.readClipboardPanelPosition(), .followMouse)
+
+        service.write("unknown", forKey: .clipboardPanelPosition)
+        XCTAssertEqual(service.readClipboardPanelPosition(), .center)
+    }
+
+    func test_resetClippyStyleSettingsToDefaults_restoresImportedDefaults() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+
+        service.write(false, forKey: .clipboardAutoPaste)
+        service.writeClipboardMaxRecords(20)
+        service.writeClipboardExcludedApplications(["com.example.app"])
+        service.writeClipboardExcludedPatterns(["secret"])
+        service.writeClipboardPollingIntervalSeconds(2)
+        service.writeClipboardImageQuality(0.1)
+        service.write(false, forKey: .showMenuBarIcon)
+        service.writeClipboardPanelPosition(.lastPosition)
+
+        service.resetClippyStyleSettingsToDefaults()
+
+        XCTAssertTrue(service.readBool(forKey: .clipboardAutoPaste))
+        XCTAssertEqual(service.readClipboardMaxRecords(), 1_000)
+        XCTAssertEqual(service.readClipboardRetentionDays(), 30)
+        XCTAssertEqual(service.readClipboardMaxStorageMB(), 500)
+        XCTAssertEqual(service.readClipboardExcludedApplications(), [])
+        XCTAssertEqual(service.readClipboardExcludedPatterns(), [])
+        XCTAssertEqual(service.readClipboardPollingIntervalSeconds(), 0.3)
+        XCTAssertEqual(service.readClipboardImageQuality(), 0.8)
+        XCTAssertTrue(service.readBool(forKey: .showMenuBarIcon))
+        XCTAssertEqual(service.readClipboardPanelPosition(), .center)
     }
 }

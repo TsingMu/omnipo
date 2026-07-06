@@ -79,3 +79,29 @@ Clipboard MUST NOT include clipboard raw content, search queries, file paths, or
 - **When** the app writes operational logs
 - **Then** the logs contain only stable codes or sanitized context
 - **And** the logs do not contain clipboard raw content, search queries, file paths, or file names
+
+### Requirement: Clipboard Floating Panel Shortcut
+
+Clipboard SHOULD support a clippy-style shortcut-invoked floating panel as a follow-up entry point. If the floating panel is present, it MUST reuse Omnipo's unified shortcut service and Clipboard data/action services rather than migrating clippy's `HotKeyManager`, `HotKeyConfig`, or a parallel clipboard stack.
+
+#### Scenario: User invokes the Clipboard panel shortcut after acknowledgement
+
+- **Given** the user has acknowledged local Clipboard storage
+- **And** Clipboard monitoring is enabled
+- **When** the user presses the configured Clipboard panel shortcut
+- **Then** the system SHOULD show or toggle the Clipboard floating panel
+- **And** the panel SHOULD focus search input by default
+- **And** the panel MUST list history through the same Clipboard service/repository used by the main Clipboard page
+
+#### Scenario: User invokes the shortcut before acknowledgement
+
+- **Given** the user has not acknowledged local Clipboard storage
+- **When** the user presses the configured Clipboard panel shortcut
+- **Then** the system MAY open a first-run acknowledgement entry point or route to the Clipboard page
+- **And** Clipboard monitoring and persistence MUST NOT start before acknowledgement
+
+#### Scenario: User dismisses the Clipboard floating panel
+
+- **Given** the Clipboard floating panel is visible
+- **When** the user presses the same Clipboard panel shortcut again or presses Escape
+- **Then** the panel SHOULD hide without mutating Clipboard history

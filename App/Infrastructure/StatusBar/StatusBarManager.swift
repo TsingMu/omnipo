@@ -4,14 +4,23 @@ import AppKit
 public final class StatusBarManager: NSObject {
     private var statusItem: NSStatusItem?
     private let container: DependencyContainer
+    nonisolated(unsafe) private var visibilityObserver: NSObjectProtocol?
 
     public init(container: DependencyContainer) {
         self.container = container
     }
 
+    deinit {
+        if let visibilityObserver {
+            NotificationCenter.default.removeObserver(visibilityObserver)
+        }
+    }
+
     public func setup() {
         createStatusItemIfNeeded()
+        applyVisibilitySetting()
         refreshMenu()
+        observeVisibilitySetting()
     }
 
     private func createStatusItemIfNeeded() {
@@ -29,7 +38,6 @@ public final class StatusBarManager: NSObject {
             }
         }
         item.length = NSStatusItem.squareLength
-        item.isVisible = true
         statusItem = item
     }
 
@@ -45,6 +53,23 @@ public final class StatusBarManager: NSObject {
 
     private func refreshMenu() {
         statusItem?.menu = buildMenu()
+    }
+
+    private func applyVisibilitySetting() {
+        statusItem?.isVisible = container.settings.readBool(forKey: .showMenuBarIcon)
+    }
+
+    private func observeVisibilitySetting() {
+        guard visibilityObserver == nil else { return }
+        visibilityObserver = NotificationCenter.default.addObserver(
+            forName: .menuBarVisibilitySettingDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.applyVisibilitySetting()
+            }
+        }
     }
 
     private func buildMenu() -> NSMenu {

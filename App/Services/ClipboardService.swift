@@ -1,5 +1,9 @@
 import Foundation
 
+public extension Notification.Name {
+    static let clipboardHistoryDidChange = Notification.Name("com.omnipo.clipboard.historyDidChange")
+}
+
 public protocol ClipboardService: AnyObject, Sendable {
     var isEnabled: Bool { get async }
     var hasAcknowledgedLocalStorageNotice: Bool { get async }
@@ -11,4 +15,11 @@ public protocol ClipboardService: AnyObject, Sendable {
     func delete(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError>
     func copyToPasteboard(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError>
     func copyAndPaste(_ itemID: ClipboardItem.ID) async -> Result<ClipboardPasteOutcome, AppError>
+    func copyAndPaste(_ itemID: ClipboardItem.ID, targetProcessIdentifier: pid_t?) async -> Result<ClipboardPasteOutcome, AppError>
+}
+
+public extension ClipboardService {
+    func copyAndPaste(_ itemID: ClipboardItem.ID) async -> Result<ClipboardPasteOutcome, AppError> {
+        await copyAndPaste(itemID, targetProcessIdentifier: nil)
+    }
 }

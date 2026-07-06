@@ -66,6 +66,10 @@
 		00000000000000000000023D /* LauncherCommandExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000031D /* LauncherCommandExecutor.swift */; };
 		00000000000000000000023E /* LauncherResultExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000031E /* LauncherResultExecutor.swift */; };
 		00000000000000000000023F /* LauncherCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000031F /* LauncherCoordinator.swift */; };
+		0000000000000000000002A0 /* ClipboardCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A0 /* ClipboardCoordinator.swift */; };
+		0000000000000000000002A1 /* ClipboardPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A1 /* ClipboardPanelController.swift */; };
+		0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A2 /* ClipboardPanelView.swift */; };
+		0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A3 /* ClipboardContentType+Presentation.swift */; };
 		000000000000000000000240 /* MainWindowNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* MainWindowNavigator.swift */; };
 		000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* LauncherCommandExecutorTests.swift */; };
 		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
@@ -212,6 +216,10 @@
 		00000000000000000000031D /* LauncherCommandExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutor.swift; sourceTree = "<group>"; };
 		00000000000000000000031E /* LauncherResultExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherResultExecutor.swift; sourceTree = "<group>"; };
 		00000000000000000000031F /* LauncherCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCoordinator.swift; sourceTree = "<group>"; };
+		0000000000000000000003A0 /* ClipboardCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCoordinator.swift; sourceTree = "<group>"; };
+		0000000000000000000003A1 /* ClipboardPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPanelController.swift; sourceTree = "<group>"; };
+		0000000000000000000003A2 /* ClipboardPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPanelView.swift; sourceTree = "<group>"; };
+		0000000000000000000003A3 /* ClipboardContentType+Presentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardContentType+Presentation.swift"; sourceTree = "<group>"; };
 		000000000000000000000320 /* MainWindowNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowNavigator.swift; sourceTree = "<group>"; };
 		000000000000000000000321 /* LauncherCommandExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutorTests.swift; sourceTree = "<group>"; };
 		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
@@ -340,6 +348,7 @@
 				00000000000000000000031D /* LauncherCommandExecutor.swift */,
 				00000000000000000000031E /* LauncherResultExecutor.swift */,
 				00000000000000000000031F /* LauncherCoordinator.swift */,
+				0000000000000000000003A0 /* ClipboardCoordinator.swift */,
 				000000000000000000000320 /* MainWindowNavigator.swift */,
 				000000000000000000000338 /* AuthorizedRootManager.swift */,
 				000000000000000000000346 /* SystemMonitorStore.swift */,
@@ -369,7 +378,7 @@
 		000000000000000000000007 /* Settings */ = { isa = PBXGroup; children = ( 000000000000000000000105 /* SettingsView.swift */, 00000000000000000000030A /* ShortcutSettingsSection.swift */, ); path = Settings; sourceTree = "<group>"; };
 		000000000000000000000008 /* Dashboard */ = { isa = PBXGroup; children = ( 000000000000000000000106 /* DashboardView.swift */, 000000000000000000000329 /* DashboardComponents.swift */, ); path = Dashboard; sourceTree = "<group>"; };
 		000000000000000000000009 /* Launcher */ = { isa = PBXGroup; children = ( 000000000000000000000107 /* LauncherView.swift */, 000000000000000000000318 /* LauncherStore.swift */, 000000000000000000000324 /* LauncherSearchField.swift */, 00000000000000000000031A /* LauncherPanelView.swift */, ); path = Launcher; sourceTree = "<group>"; };
-		00000000000000000000000A /* Clipboard */ = { isa = PBXGroup; children = ( 000000000000000000000108 /* ClipboardView.swift */, ); path = Clipboard; sourceTree = "<group>"; };
+		00000000000000000000000A /* Clipboard */ = { isa = PBXGroup; children = ( 000000000000000000000108 /* ClipboardView.swift */, 0000000000000000000003A2 /* ClipboardPanelView.swift */, 0000000000000000000003A3 /* ClipboardContentType+Presentation.swift */, ); path = Clipboard; sourceTree = "<group>"; };
 		00000000000000000000000B /* Cleaner */ = { isa = PBXGroup; children = ( 000000000000000000000109 /* CleanerView.swift */, 000000000000000000000336 /* CleanerLargeFileSection.swift */, ); path = Cleaner; sourceTree = "<group>"; };
 		00000000000000000000000C /* Uninstaller */ = { isa = PBXGroup; children = ( 00000000000000000000010A /* UninstallerView.swift */, ); path = Uninstaller; sourceTree = "<group>"; };
 		00000000000000000000000D /* PermissionAudit */ = { isa = PBXGroup; children = ( 00000000000000000000010B /* PermissionAuditView.swift */, ); path = PermissionAudit; sourceTree = "<group>"; };
@@ -443,6 +452,7 @@
 				000000000000000000000361 /* ClipboardSourceApplicationProvider.swift */,
 				000000000000000000000362 /* ClipboardContentWriter.swift */,
 				000000000000000000000363 /* ClipboardPasteController.swift */,
+				0000000000000000000003A1 /* ClipboardPanelController.swift */,
 			);
 			path = Clipboard;
 			sourceTree = "<group>";
@@ -732,6 +742,8 @@
 				000000000000000000000275 /* ClipboardContentType.swift in Sources */,
 				000000000000000000000276 /* ClipboardItem.swift in Sources */,
 				000000000000000000000277 /* ClipboardService.swift in Sources */,
+				0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */,
+				0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */,
 				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,
 				00000000000000000000027B /* ClipboardDatabase.swift in Sources */,
 				00000000000000000000027D /* ClipboardRepository.swift in Sources */,
@@ -743,6 +755,7 @@
 				000000000000000000000287 /* ClipboardSourceApplicationProvider.swift in Sources */,
 				000000000000000000000288 /* ClipboardContentWriter.swift in Sources */,
 				000000000000000000000289 /* ClipboardPasteController.swift in Sources */,
+				0000000000000000000002A1 /* ClipboardPanelController.swift in Sources */,
 				00000000000000000000028C /* DefaultClipboardService.swift in Sources */,
 				00000000000000000000020F /* SettingsService.swift in Sources */,
 				000000000000000000000210 /* LoggingService.swift in Sources */,
@@ -779,6 +792,7 @@
 				00000000000000000000023D /* LauncherCommandExecutor.swift in Sources */,
 				00000000000000000000023E /* LauncherResultExecutor.swift in Sources */,
 				00000000000000000000023F /* LauncherCoordinator.swift in Sources */,
+				0000000000000000000002A0 /* ClipboardCoordinator.swift in Sources */,
 				000000000000000000000240 /* MainWindowNavigator.swift in Sources */,
 				000000000000000000000242 /* LauncherInputState.swift in Sources */,
 				000000000000000000000244 /* LauncherSearchField.swift in Sources */,

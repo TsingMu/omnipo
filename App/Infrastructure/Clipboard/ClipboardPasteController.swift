@@ -1,12 +1,14 @@
-import ApplicationServices
+@preconcurrency import ApplicationServices
+import AppKit
 import Foundation
 
 public protocol AccessibilityPermissionChecking: Sendable {
     var isTrustedForSyntheticPaste: Bool { get }
+    func requestSyntheticPasteAuthorization()
 }
 
 public protocol SyntheticPastePerforming: Sendable {
-    func performPaste() -> Bool
+    func performPaste(targetProcessIdentifier: pid_t?) -> Bool
 }
 
 public struct SystemAccessibilityPermissionChecker: AccessibilityPermissionChecking {
@@ -15,12 +17,26 @@ public struct SystemAccessibilityPermissionChecker: AccessibilityPermissionCheck
     public var isTrustedForSyntheticPaste: Bool {
         AXIsProcessTrusted()
     }
+
+    public func requestSyntheticPasteAuthorization() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        guard let accessibilityURL = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ) else {
+            return
+        }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            NSWorkspace.shared.open(accessibilityURL)
+        }
+    }
 }
 
 public struct CGEventSyntheticPastePerformer: SyntheticPastePerforming {
     public init() {}
 
-    public func performPaste() -> Bool {
+    public func performPaste(targetProcessIdentifier: pid_t? = nil) -> Bool {
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
@@ -28,8 +44,13 @@ public struct CGEventSyntheticPastePerformer: SyntheticPastePerforming {
         }
         keyDown.flags = .maskCommand
         keyUp.flags = .maskCommand
-        keyDown.post(tap: .cghidEventTap)
-        keyUp.post(tap: .cghidEventTap)
+        if let targetProcessIdentifier {
+            keyDown.postToPid(targetProcessIdentifier)
+            keyUp.postToPid(targetProcessIdentifier)
+        } else {
+            keyDown.post(tap: .cghidEventTap)
+            keyUp.post(tap: .cghidEventTap)
+        }
         return true
     }
 }
@@ -68,14 +89,22 @@ public final class ClipboardPasteController: @unchecked Sendable {
     }
 
     public func copyAndPaste(_ itemID: ClipboardItem.ID) -> Result<ClipboardPasteOutcome, AppError> {
+        copyAndPaste(itemID, targetProcessIdentifier: nil)
+    }
+
+    public func copyAndPaste(
+        _ itemID: ClipboardItem.ID,
+        targetProcessIdentifier: pid_t?
+    ) -> Result<ClipboardPasteOutcome, AppError> {
         switch copyToPasteboard(itemID) {
         case .failure(let error):
             return .failure(error)
         case .success:
             guard accessibility.isTrustedForSyntheticPaste else {
+                accessibility.requestSyntheticPasteAuthorization()
                 return .success(.copiedOnly(reason: "accessibility-permission-missing"))
             }
-            guard pastePerformer.performPaste() else {
+            guard pastePerformer.performPaste(targetProcessIdentifier: targetProcessIdentifier) else {
                 return .success(.copiedOnly(reason: "synthetic-paste-failed"))
             }
             return .success(.pasted)

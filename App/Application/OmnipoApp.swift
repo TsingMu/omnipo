@@ -24,6 +24,7 @@ struct OmnipoApp: App {
 
         Task { @MainActor in
             await container.launcherCoordinator.registerShortcutOnLaunch()
+            await container.clipboardCoordinator.registerShortcutOnLaunch()
         }
     }
 

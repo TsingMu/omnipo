@@ -115,12 +115,34 @@ private final class FakeResultExecutor: LauncherResultExecutor {
 
 private final class FakeShortcutService: ShortcutService, @unchecked Sendable {
     nonisolated(unsafe) var onTrigger: (@MainActor () -> Void)?
+    nonisolated(unsafe) var triggers: [ShortcutAction: @MainActor () -> Void] = [:]
 
-    nonisolated func currentShortcut() async -> KeyboardShortcut { .default }
-    nonisolated func defaultShortcut() -> KeyboardShortcut { .default }
-    nonisolated func register(_ shortcut: KeyboardShortcut) async -> ShortcutRegistrationResult { .success(shortcut) }
-    nonisolated func unregister() async {}
-    nonisolated func restoreDefault() async -> ShortcutRegistrationResult { .success(.default) }
+    nonisolated func currentShortcut(for action: ShortcutAction) async -> KeyboardShortcut {
+        defaultShortcut(for: action)
+    }
+
+    nonisolated func defaultShortcut(for action: ShortcutAction) -> KeyboardShortcut {
+        switch action {
+        case .launcher:
+            return .default
+        case .clipboardPanel:
+            return .defaultClipboardPanel
+        }
+    }
+
+    nonisolated func register(_ shortcut: KeyboardShortcut, for action: ShortcutAction) async -> ShortcutRegistrationResult {
+        .success(shortcut)
+    }
+
+    nonisolated func unregister(for action: ShortcutAction) async {}
+
+    nonisolated func restoreDefault(for action: ShortcutAction) async -> ShortcutRegistrationResult {
+        .success(defaultShortcut(for: action))
+    }
+
+    nonisolated func setTrigger(for action: ShortcutAction, _ trigger: (@MainActor () -> Void)?) {
+        triggers[action] = trigger
+    }
 }
 
 private final class FakeSettingsService: SettingsService {

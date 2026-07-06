@@ -74,10 +74,17 @@ public struct KeyboardShortcut: Sendable, Hashable, Codable {
         keyCode: KeyCodes.space,
         modifierFlags: .option
     )
+
+    public static let defaultClipboardPanel = KeyboardShortcut(
+        keyCode: KeyCodes.c,
+        modifierFlags: [.option, .command]
+    )
 }
 
 public enum KeyCodes {
     public static let space: UInt32 = 49
+    public static let c: UInt32 = 8
+    public static let v: UInt32 = 9
 
     public static func displayName(for keyCode: UInt32) -> String {
         switch keyCode {

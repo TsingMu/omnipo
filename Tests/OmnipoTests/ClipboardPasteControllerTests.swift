@@ -47,6 +47,7 @@ final class ClipboardPasteControllerTests: XCTestCase {
         XCTAssertEqual(result, .success(.copiedOnly(reason: "accessibility-permission-missing")))
         XCTAssertEqual(fixture.writer.writes.count, 1)
         XCTAssertEqual(fixture.pastePerformer.performCount, 0)
+        XCTAssertEqual(fixture.accessibility.authorizationRequestCount, 1)
     }
 
     func test_copyAndPaste_performsSyntheticPasteWhenPermissionAllows() throws {
@@ -63,6 +64,33 @@ final class ClipboardPasteControllerTests: XCTestCase {
         XCTAssertEqual(fixture.writer.writes.count, 1)
         XCTAssertEqual(fixture.writer.writes.first?.contentType, .html)
         XCTAssertEqual(fixture.pastePerformer.performCount, 1)
+        XCTAssertEqual(fixture.accessibility.authorizationRequestCount, 0)
+    }
+
+    func test_copyAndPaste_postsSyntheticPasteToTargetProcess() throws {
+        let fixture = try makeFixture(accessibilityTrusted: true, pasteSucceeds: true)
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let item = try fixture.insertItem(type: .plainText, payloads: [
+            .init(format: .plainText, data: Data("hello".utf8))
+        ])
+
+        let result = fixture.controller.copyAndPaste(item.id, targetProcessIdentifier: 1234)
+
+        XCTAssertEqual(result, .success(.pasted))
+        XCTAssertEqual(fixture.pastePerformer.targetProcessIdentifiers, [1234])
+    }
+
+    func test_copyAndPaste_postsSyntheticPasteWithoutTargetWhenUnavailable() throws {
+        let fixture = try makeFixture(accessibilityTrusted: true, pasteSucceeds: true)
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let item = try fixture.insertItem(type: .plainText, payloads: [
+            .init(format: .plainText, data: Data("hello".utf8))
+        ])
+
+        let result = fixture.controller.copyAndPaste(item.id)
+
+        XCTAssertEqual(result, .success(.pasted))
+        XCTAssertEqual(fixture.pastePerformer.targetProcessIdentifiers, [nil])
     }
 
     func test_copyAndPaste_degradesWhenSyntheticPasteFails() throws {
@@ -94,11 +122,12 @@ final class ClipboardPasteControllerTests: XCTestCase {
         let binaryStore = BinaryContentStore(rootDirectory: root.appendingPathComponent("Payloads", isDirectory: true))
         let writer = RecordingClipboardContentWriter()
         let pastePerformer = RecordingSyntheticPastePerformer(result: pasteSucceeds)
+        let accessibility = RecordingAccessibilityPermissionChecker(isTrusted: accessibilityTrusted)
         let controller = ClipboardPasteController(
             repository: repository,
             binaryStore: binaryStore,
             writer: writer,
-            accessibility: FixedAccessibilityPermissionChecker(isTrusted: accessibilityTrusted),
+            accessibility: accessibility,
             pastePerformer: pastePerformer
         )
         return ClipboardPasteControllerFixture(
@@ -106,6 +135,7 @@ final class ClipboardPasteControllerTests: XCTestCase {
             repository: repository,
             binaryStore: binaryStore,
             writer: writer,
+            accessibility: accessibility,
             pastePerformer: pastePerformer,
             controller: controller
         )
@@ -117,6 +147,7 @@ private struct ClipboardPasteControllerFixture {
     let repository: ClipboardRepository
     let binaryStore: BinaryContentStore
     let writer: RecordingClipboardContentWriter
+    let accessibility: RecordingAccessibilityPermissionChecker
     let pastePerformer: RecordingSyntheticPastePerformer
     let controller: ClipboardPasteController
 
@@ -168,11 +199,29 @@ private final class RecordingClipboardContentWriter: ClipboardContentWriting, @u
     }
 }
 
-private struct FixedAccessibilityPermissionChecker: AccessibilityPermissionChecking {
+private final class RecordingAccessibilityPermissionChecker: AccessibilityPermissionChecking, @unchecked Sendable {
+    private let lock = NSLock()
     let isTrusted: Bool
+    private var storedAuthorizationRequestCount = 0
+
+    init(isTrusted: Bool) {
+        self.isTrusted = isTrusted
+    }
 
     var isTrustedForSyntheticPaste: Bool {
         isTrusted
+    }
+
+    var authorizationRequestCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedAuthorizationRequestCount
+    }
+
+    func requestSyntheticPasteAuthorization() {
+        lock.lock()
+        storedAuthorizationRequestCount += 1
+        lock.unlock()
     }
 }
 
@@ -180,6 +229,7 @@ private final class RecordingSyntheticPastePerformer: SyntheticPastePerforming, 
     private let lock = NSLock()
     private let result: Bool
     private var storedPerformCount = 0
+    private var storedTargetProcessIdentifiers: [pid_t?] = []
 
     init(result: Bool) {
         self.result = result
@@ -191,9 +241,16 @@ private final class RecordingSyntheticPastePerformer: SyntheticPastePerforming, 
         return storedPerformCount
     }
 
-    func performPaste() -> Bool {
+    var targetProcessIdentifiers: [pid_t?] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedTargetProcessIdentifiers
+    }
+
+    func performPaste(targetProcessIdentifier: pid_t?) -> Bool {
         lock.lock()
         storedPerformCount += 1
+        storedTargetProcessIdentifiers.append(targetProcessIdentifier)
         lock.unlock()
         return result
     }

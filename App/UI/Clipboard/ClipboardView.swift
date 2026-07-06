@@ -73,6 +73,12 @@ struct ClipboardView: View {
                 await loadRecords()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .clipboardHistoryDidChange)) { _ in
+            guard hasAcknowledgedNotice, isEnabled else { return }
+            Task {
+                await loadRecords()
+            }
+        }
     }
 
     private var header: some View {
@@ -573,18 +579,6 @@ private struct ClipboardHistoryRow: View {
             components.append(source)
         }
         return components.joined(separator: ",")
-    }
-}
-
-private extension ClipboardContentType {
-    var symbolName: String {
-        switch self {
-        case .plainText: return "text.alignleft"
-        case .richText: return "doc.richtext"
-        case .html: return "chevron.left.forwardslash.chevron.right"
-        case .image: return "photo"
-        case .fileURL: return "doc"
-        }
     }
 }
 

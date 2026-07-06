@@ -7,10 +7,11 @@ import os
 ///
 /// 真实实现用 Carbon `RegisterEventHotKey`;测试中用 `FakeShortcutBackend` 直接控制结果。
 public protocol ShortcutBackend: AnyObject, Sendable {
-    func setTrigger(_ trigger: @escaping @Sendable () -> Void)
+    func setTrigger(_ trigger: @escaping @Sendable (UInt32) -> Void)
     @discardableResult
-    func register(keyCode: UInt32, modifiers: UInt32) -> Bool
-    func unregister()
+    func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) -> Bool
+    func unregister(id: UInt32)
+    func unregisterAll()
     func removeHandler()
 }
 
@@ -22,14 +23,14 @@ final class CarbonShortcutBackend: ShortcutBackend, @unchecked Sendable {
     static let shared = CarbonShortcutBackend()
 
     private let lock = NSLock()
-    private var trigger: (@Sendable () -> Void)?
-    private var hotKeyRef: EventHotKeyRef?
+    private var trigger: (@Sendable (UInt32) -> Void)?
+    private var hotKeyRefs: [UInt32: EventHotKeyRef] = [:]
     private var handlerRef: EventHandlerRef?
     private var handlerInstalled: Bool = false
 
     private init() {}
 
-    func setTrigger(_ trigger: @escaping @Sendable () -> Void) {
+    func setTrigger(_ trigger: @escaping @Sendable (UInt32) -> Void) {
         lock.lock()
         self.trigger = trigger
         let needInstall = !handlerInstalled
@@ -43,32 +44,42 @@ final class CarbonShortcutBackend: ShortcutBackend, @unchecked Sendable {
     }
 
     @discardableResult
-    func register(keyCode: UInt32, modifiers: UInt32) -> Bool {
+    func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) -> Bool {
         lock.lock()
-        if let existing = hotKeyRef {
+        if let existing = hotKeyRefs[id] {
             UnregisterEventHotKey(existing)
-            hotKeyRef = nil
+            hotKeyRefs[id] = nil
         }
         lock.unlock()
 
         let target = GetApplicationEventTarget()
-        let hotKeyId = EventHotKeyID(signature: Self.fourCharCode("OMNO"), id: UInt32(1))
+        let hotKeyId = EventHotKeyID(signature: Self.fourCharCode("OMNO"), id: id)
         var newRef: EventHotKeyRef?
         let status = RegisterEventHotKey(keyCode, modifiers, hotKeyId, target, 0, &newRef)
         guard status == noErr, let newRef else { return false }
 
         lock.lock()
-        hotKeyRef = newRef
+        hotKeyRefs[id] = newRef
         lock.unlock()
         return true
     }
 
-    func unregister() {
+    func unregister(id: UInt32) {
         lock.lock()
-        let ref = hotKeyRef
-        hotKeyRef = nil
+        let ref = hotKeyRefs[id]
+        hotKeyRefs[id] = nil
         lock.unlock()
         if let ref {
+            UnregisterEventHotKey(ref)
+        }
+    }
+
+    func unregisterAll() {
+        lock.lock()
+        let refs = Array(hotKeyRefs.values)
+        hotKeyRefs.removeAll()
+        lock.unlock()
+        for ref in refs {
             UnregisterEventHotKey(ref)
         }
     }
@@ -93,8 +104,22 @@ final class CarbonShortcutBackend: ShortcutBackend, @unchecked Sendable {
     }
 
     private func installHandler() {
-        let callback: EventHandlerUPP = { _, _, _ in
-            CarbonShortcutBackend.shared.fire()
+        let callback: EventHandlerUPP = { _, event, _ in
+            var hotKeyID = EventHotKeyID()
+            if let event {
+                let status = GetEventParameter(
+                    event,
+                    EventParamName(kEventParamDirectObject),
+                    EventParamType(typeEventHotKeyID),
+                    nil,
+                    MemoryLayout<EventHotKeyID>.size,
+                    nil,
+                    &hotKeyID
+                )
+                if status == noErr {
+                    CarbonShortcutBackend.shared.fire(id: hotKeyID.id)
+                }
+            }
             return noErr
         }
 
@@ -118,11 +143,11 @@ final class CarbonShortcutBackend: ShortcutBackend, @unchecked Sendable {
         }
     }
 
-    fileprivate func fire() {
+    fileprivate func fire(id: UInt32) {
         lock.lock()
         let trigger = self.trigger
         lock.unlock()
-        trigger?()
+        trigger?(id)
     }
 }
 
@@ -130,15 +155,20 @@ final class CarbonShortcutBackend: ShortcutBackend, @unchecked Sendable {
 ///
 /// 注册采用"先注销旧→注册新→失败回滚旧"流程,确保任何分支下都保留一个有效快捷键。
 public final class CarbonShortcutService: ShortcutService, @unchecked Sendable {
-    public var onTrigger: (@MainActor () -> Void)?
+    public var onTrigger: (@MainActor () -> Void)? {
+        get { trigger(for: .launcher) }
+        set { setTrigger(for: .launcher, newValue) }
+    }
 
     private let backend: any ShortcutBackend
     private let logger: any LoggingService
     private let stateLock = OSAllocatedUnfairLock<ServiceState>(initialState: ServiceState())
+    private let triggerLock = NSLock()
+    private var triggers: [ShortcutAction: @MainActor () -> Void] = [:]
 
     private struct ServiceState: Sendable {
-        var current: KeyboardShortcut = .default
-        var registered: Bool = false
+        var current: [ShortcutAction: KeyboardShortcut] = [:]
+        var registered: Set<ShortcutAction> = []
     }
 
     public init(
@@ -149,35 +179,41 @@ public final class CarbonShortcutService: ShortcutService, @unchecked Sendable {
         let resolved = backend ?? CarbonShortcutBackend.shared
         self.backend = resolved
         self.logger = logger
-        if initial != ServiceState().current {
+        if initial != defaultShortcut(for: .launcher) {
             stateLock.withLock { state in
-                state.current = initial
+                state.current[.launcher] = initial
             }
         }
-        resolved.setTrigger { [weak self] in
+        resolved.setTrigger { [weak self] rawAction in
             guard let self else { return }
+            guard let action = ShortcutAction(rawValue: rawAction) else { return }
             Task { @MainActor [weak self] in
-                self?.onTrigger?()
+                self?.trigger(for: action)?()
             }
         }
     }
 
-    public func currentShortcut() async -> KeyboardShortcut {
-        stateLock.withLock { $0.current }
+    public func currentShortcut(for action: ShortcutAction) async -> KeyboardShortcut {
+        stateLock.withLock { $0.current[action] ?? defaultShortcut(for: action) }
     }
 
-    public func defaultShortcut() -> KeyboardShortcut {
-        .default
+    public func defaultShortcut(for action: ShortcutAction) -> KeyboardShortcut {
+        switch action {
+        case .launcher:
+            return .default
+        case .clipboardPanel:
+            return .defaultClipboardPanel
+        }
     }
 
-    public func register(_ shortcut: KeyboardShortcut) async -> ShortcutRegistrationResult {
+    public func register(_ shortcut: KeyboardShortcut, for action: ShortcutAction) async -> ShortcutRegistrationResult {
         guard shortcut.isValid else {
             logger.log(Self.logInvalid())
             return .failure(.invalidShortcut)
         }
 
         let snapshot = stateLock.withLock { state -> (KeyboardShortcut, Bool) in
-            return (state.current, state.registered)
+            return (state.current[action] ?? defaultShortcut(for: action), state.registered.contains(action))
         }
         let old = snapshot.0
         let alreadyRegistered = snapshot.1
@@ -186,21 +222,23 @@ public final class CarbonShortcutService: ShortcutService, @unchecked Sendable {
             return .success(shortcut)
         }
 
-        backend.unregister()
+        backend.unregister(id: action.rawValue)
         let ok = backend.register(
+            id: action.rawValue,
             keyCode: shortcut.keyCode,
             modifiers: shortcut.modifierFlags.carbonModifierFlags
         )
         if !ok {
             if alreadyRegistered {
                 let recovered = backend.register(
+                    id: action.rawValue,
                     keyCode: old.keyCode,
                     modifiers: old.modifierFlags.carbonModifierFlags
                 )
                 if !recovered {
                     logger.log(Self.logRollbackFailed())
                     stateLock.withLock { state in
-                        state.registered = false
+                        state.registered.remove(action)
                     }
                     return .failure(.systemFailure)
                 }
@@ -210,27 +248,39 @@ public final class CarbonShortcutService: ShortcutService, @unchecked Sendable {
         }
 
         stateLock.withLock { state in
-            state.current = shortcut
-            state.registered = true
+            state.current[action] = shortcut
+            state.registered.insert(action)
         }
 
         logger.log(Self.logRegistered())
         return .success(shortcut)
     }
 
-    public func unregister() async {
-        backend.unregister()
+    public func unregister(for action: ShortcutAction) async {
+        backend.unregister(id: action.rawValue)
         stateLock.withLock { state in
-            state.registered = false
+            state.registered.remove(action)
         }
     }
 
-    public func restoreDefault() async -> ShortcutRegistrationResult {
-        await register(.default)
+    public func restoreDefault(for action: ShortcutAction) async -> ShortcutRegistrationResult {
+        await register(defaultShortcut(for: action), for: action)
+    }
+
+    public func setTrigger(for action: ShortcutAction, _ trigger: (@MainActor () -> Void)?) {
+        triggerLock.lock()
+        triggers[action] = trigger
+        triggerLock.unlock()
+    }
+
+    private func trigger(for action: ShortcutAction) -> (@MainActor () -> Void)? {
+        triggerLock.lock()
+        defer { triggerLock.unlock() }
+        return triggers[action]
     }
 
     deinit {
-        backend.unregister()
+        backend.unregisterAll()
         backend.removeHandler()
     }
 

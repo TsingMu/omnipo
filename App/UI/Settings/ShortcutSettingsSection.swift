@@ -8,45 +8,31 @@ import AppKit
 struct ShortcutSettingsSection: View {
     @Environment(DependencyContainer.self) private var container
 
-    @State private var currentShortcut: KeyboardShortcut = .default
+    @State private var launcherShortcut: KeyboardShortcut = .default
+    @State private var clipboardPanelShortcut: KeyboardShortcut = .defaultClipboardPanel
     @State private var isRecording: Bool = false
+    @State private var recordingAction: ShortcutAction?
     @State private var statusMessage: String = ""
     @State private var hasError: Bool = false
     @State private var monitor: Any?
 
     var body: some View {
         Section {
-            HStack(spacing: 12) {
-                Image(systemName: "keyboard")
-                    .foregroundStyle(OmnipoTheme.brandRed)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("聚焦搜索快捷键")
-                        .font(.headline)
-                    Text(currentShortcut.displayText)
-                        .font(.system(.body, design: .monospaced))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-                }
+            shortcutRow(
+                title: "聚焦搜索快捷键",
+                subtitle: "打开 Launcher 悬浮面板",
+                symbolName: "keyboard",
+                shortcut: launcherShortcut,
+                action: .launcher
+            )
 
-                Spacer()
-
-                if isRecording {
-                    Button("取消") {
-                        stopRecording()
-                    }
-                    .keyboardShortcut(.cancelAction)
-                } else {
-                    Button("录制...") {
-                        startRecording()
-                    }
-                }
-
-                Button("恢复默认") {
-                    Task { await restoreDefault() }
-                }
-                .disabled(isRecording)
-            }
+            shortcutRow(
+                title: "剪切板面板快捷键",
+                subtitle: "打开 Clipboard 悬浮面板",
+                symbolName: "doc.on.clipboard",
+                shortcut: clipboardPanelShortcut,
+                action: .clipboardPanel
+            )
 
             if !statusMessage.isEmpty {
                 Text(statusMessage)
@@ -61,23 +47,65 @@ struct ShortcutSettingsSection: View {
                 .foregroundStyle(.secondary)
         }
         .onAppear {
-            currentShortcut = persistedOrFallback()
+            launcherShortcut = container.settings.readLauncherShortcut() ?? container.shortcutService.defaultShortcut(for: .launcher)
+            clipboardPanelShortcut = container.settings.readClipboardPanelShortcut() ?? container.shortcutService.defaultShortcut(for: .clipboardPanel)
         }
         .onDisappear {
             stopRecording()
         }
     }
 
-    private func persistedOrFallback() -> KeyboardShortcut {
-        if let stored = container.settings.readLauncherShortcut() {
-            return stored
+    private func shortcutRow(
+        title: String,
+        subtitle: String,
+        symbolName: String,
+        shortcut: KeyboardShortcut,
+        action: ShortcutAction
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbolName)
+                .foregroundStyle(OmnipoTheme.brandRed)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(shortcut.displayText)
+                    .font(.system(.body, design: .monospaced))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+            }
+
+            Spacer()
+
+            if isRecording && recordingAction == action {
+                Button("取消") {
+                    stopRecording()
+                    statusMessage = "已取消录制"
+                    hasError = false
+                }
+                .keyboardShortcut(.cancelAction)
+            } else {
+                Button("录制...") {
+                    startRecording(action)
+                }
+                .disabled(isRecording)
+            }
+
+            Button("恢复默认") {
+                Task { await restoreDefault(for: action) }
+            }
+            .disabled(isRecording)
         }
-        return .default
     }
 
-    private func startRecording() {
+    private func startRecording(_ action: ShortcutAction) {
         statusMessage = ""
         hasError = false
+        recordingAction = action
         isRecording = true
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
             handleKeyEvent(event)
@@ -90,6 +118,7 @@ struct ShortcutSettingsSection: View {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
         }
+        recordingAction = nil
         isRecording = false
     }
 
@@ -122,17 +151,18 @@ struct ShortcutSettingsSection: View {
             return
         }
 
+        guard let action = recordingAction else { return }
         stopRecording()
-        Task { await tryRegister(candidate) }
+        Task { await tryRegister(candidate, for: action) }
     }
 
-    private func tryRegister(_ shortcut: KeyboardShortcut) async {
-        let result = await container.shortcutService.register(shortcut)
+    private func tryRegister(_ shortcut: KeyboardShortcut, for action: ShortcutAction) async {
+        let result = await container.shortcutService.register(shortcut, for: action)
         switch result {
         case .success(let registered):
-            currentShortcut = registered
-            container.settings.writeLauncherShortcut(registered)
-            statusMessage = "已保存,可使用 \(registered.displayText) 唤起。"
+            updateDisplayedShortcut(registered, for: action)
+            writeShortcut(registered, for: action)
+            statusMessage = "已保存,可使用 \(registered.displayText) 唤起\(actionDisplayName(action))。"
             hasError = false
         case .failure(let error):
             statusMessage = error.userDescription
@@ -140,17 +170,44 @@ struct ShortcutSettingsSection: View {
         }
     }
 
-    private func restoreDefault() async {
-        let result = await container.shortcutService.restoreDefault()
+    private func restoreDefault(for action: ShortcutAction) async {
+        let result = await container.shortcutService.restoreDefault(for: action)
         switch result {
-        case .success:
-            currentShortcut = .default
-            container.settings.writeLauncherShortcut(.default)
-            statusMessage = "已恢复默认 Option + Space。"
+        case .success(let shortcut):
+            updateDisplayedShortcut(shortcut, for: action)
+            writeShortcut(shortcut, for: action)
+            statusMessage = "已恢复默认 \(shortcut.displayText)。"
             hasError = false
         case .failure(let error):
             statusMessage = error.userDescription
             hasError = true
+        }
+    }
+
+    private func updateDisplayedShortcut(_ shortcut: KeyboardShortcut, for action: ShortcutAction) {
+        switch action {
+        case .launcher:
+            launcherShortcut = shortcut
+        case .clipboardPanel:
+            clipboardPanelShortcut = shortcut
+        }
+    }
+
+    private func writeShortcut(_ shortcut: KeyboardShortcut, for action: ShortcutAction) {
+        switch action {
+        case .launcher:
+            container.settings.writeLauncherShortcut(shortcut)
+        case .clipboardPanel:
+            container.settings.writeClipboardPanelShortcut(shortcut)
+        }
+    }
+
+    private func actionDisplayName(_ action: ShortcutAction) -> String {
+        switch action {
+        case .launcher:
+            return "聚焦搜索"
+        case .clipboardPanel:
+            return "剪切板面板"
         }
     }
 

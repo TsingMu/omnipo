@@ -9,10 +9,11 @@
 - [`main-dashboard`](main-dashboard/spec.md) — 分组侧栏导航、启动磁盘状态卡(真实容量摘要)、快捷入口纯导航、外观适配、侧栏焦点反馈。完成于 2026-06-20(重设计)+ 2026-06-24(容量摘要升级)。
 - [`disk-analysis`](disk-analysis/spec.md) — 启动卷只读容量概览、显式刷新、大文件列表(NSOpenPanel 授权 + security-scoped bookmark)、保守扫描边界(跳过 Library/Caches/node_modules 等)、未实现能力标注。完成于 2026-06-24。
 - [`system-monitor`](system-monitor/spec.md) — 五维度只读系统概览(CPU/内存/能耗/磁盘/网络)、受控采样与显式刷新、页面活跃期采样、公开 API 边界、隐私保护与无障碍适配。完成于 2026-06-26。
+- [`clipboard`](clipboard/spec.md) — 本地剪切板历史、首次确认、文本/RTF/HTML/图片/文件路径记录、搜索/收藏/删除/写回、自动粘贴降级、快捷键悬浮面板和 clippy-style 设置。完成于 2026-07-06。
 
 ## 计划中能力
 
-后续 Clipboard、App Uninstaller、Permission Audit、WeChat Manager 与清理执行等仍遵循相同流程:
+后续 App Uninstaller、Permission Audit、WeChat Manager 与清理执行等仍遵循相同流程:
 
 1. 在 `openspec/changes/<change-id>/` 下完成 `proposal.md`、`design.md`、`tasks.md` 和 `specs/<capability>/spec.md`。
 2. 按 `tasks.md` 顺序实施,每完成一项把 `[ ]` 改为 `[x]`,并保持工程可编译。

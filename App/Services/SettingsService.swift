@@ -1,5 +1,9 @@
 import Foundation
 
+public extension Notification.Name {
+    static let menuBarVisibilitySettingDidChange = Notification.Name("com.omnipo.settings.menuBarVisibilityDidChange")
+}
+
 public protocol SettingsService: AnyObject, Sendable {
     func readBool(forKey key: SettingsKey) -> Bool
     func readString(forKey key: SettingsKey) -> String?
@@ -32,10 +36,14 @@ public enum SettingsValue: Sendable, Hashable {
 public enum ClipboardSettingsDefaults {
     public static let isEnabled = false
     public static let hasAcknowledgedLocalStorageNotice = false
-    public static let autoPaste = false
-    public static let maxRecords = 500.0
+    public static let autoPaste = true
+    public static let maxRecords = 1_000.0
     public static let retentionDays = 30.0
-    public static let maxStorageMB = 512.0
+    public static let maxStorageMB = 500.0
+    public static let pollingIntervalSeconds = 0.3
+    public static let imageQuality = 0.8
+    public static let showMenuBarIcon = true
+    public static let panelPosition = ClipboardPanelPosition.center.rawValue
 
     public static func clampMaxRecords(_ value: Double) -> Double {
         min(max(value.rounded(), 1), 10_000)
@@ -48,11 +56,41 @@ public enum ClipboardSettingsDefaults {
     public static func clampMaxStorageMB(_ value: Double) -> Double {
         min(max(value.rounded(), 16), 10_240)
     }
+
+    public static func clampPollingIntervalSeconds(_ value: Double) -> Double {
+        min(max((value * 10).rounded() / 10, 0.1), 2.0)
+    }
+
+    public static func clampImageQuality(_ value: Double) -> Double {
+        min(max((value * 10).rounded() / 10, 0.1), 1.0)
+    }
+}
+
+public enum ClipboardPanelPosition: String, CaseIterable, Sendable, Hashable {
+    case center
+    case followMouse
+    case lastPosition
+
+    public var displayName: String {
+        switch self {
+        case .center:
+            return "居中"
+        case .followMouse:
+            return "跟随鼠标"
+        case .lastPosition:
+            return "上次位置"
+        }
+    }
 }
 
 public extension SettingsKey {
     static let launchDashboardAtStart = SettingsKey(
         "omnipo.settings.launchDashboardAtStart",
+        default: .bool(true)
+    )
+
+    static let launchAtLogin = SettingsKey(
+        "omnipo.settings.launchAtLogin",
         default: .bool(true)
     )
 
@@ -73,6 +111,16 @@ public extension SettingsKey {
 
     static let launcherShortcutModifiers = SettingsKey(
         "omnipo.settings.launcher.shortcut.modifiers",
+        default: .double(0)
+    )
+
+    static let clipboardPanelShortcutKeyCode = SettingsKey(
+        "omnipo.settings.clipboard.panel.shortcut.keyCode",
+        default: .double(0)
+    )
+
+    static let clipboardPanelShortcutModifiers = SettingsKey(
+        "omnipo.settings.clipboard.panel.shortcut.modifiers",
         default: .double(0)
     )
 
@@ -124,6 +172,36 @@ public extension SettingsKey {
         "omnipo.settings.clipboard.maxStorageMB",
         default: .double(ClipboardSettingsDefaults.maxStorageMB)
     )
+
+    static let clipboardExcludedApplications = SettingsKey(
+        "omnipo.settings.clipboard.excludedApplications",
+        default: .string("")
+    )
+
+    static let clipboardExcludedPatterns = SettingsKey(
+        "omnipo.settings.clipboard.excludedPatterns",
+        default: .string("")
+    )
+
+    static let clipboardPollingIntervalSeconds = SettingsKey(
+        "omnipo.settings.clipboard.pollingIntervalSeconds",
+        default: .double(ClipboardSettingsDefaults.pollingIntervalSeconds)
+    )
+
+    static let clipboardImageQuality = SettingsKey(
+        "omnipo.settings.clipboard.imageQuality",
+        default: .double(ClipboardSettingsDefaults.imageQuality)
+    )
+
+    static let showMenuBarIcon = SettingsKey(
+        "omnipo.settings.showMenuBarIcon",
+        default: .bool(ClipboardSettingsDefaults.showMenuBarIcon)
+    )
+
+    static let clipboardPanelPosition = SettingsKey(
+        "omnipo.settings.clipboard.panelPosition",
+        default: .string(ClipboardSettingsDefaults.panelPosition)
+    )
 }
 
 public extension SettingsService {
@@ -168,6 +246,43 @@ public extension SettingsService {
     func clearLauncherShortcut() {
         remove(forKey: .launcherShortcutKeyCode)
         remove(forKey: .launcherShortcutModifiers)
+    }
+
+    /// 读取已保存的 Clipboard 悬浮面板快捷键;键不存在或损坏时返回 nil。
+    func readClipboardPanelShortcut() -> KeyboardShortcut? {
+        readShortcut(keyCodeKey: .clipboardPanelShortcutKeyCode, modifiersKey: .clipboardPanelShortcutModifiers)
+    }
+
+    /// 仅在调用方确认新组合注册成功后调用。
+    func writeClipboardPanelShortcut(_ shortcut: KeyboardShortcut) {
+        writeShortcut(shortcut, keyCodeKey: .clipboardPanelShortcutKeyCode, modifiersKey: .clipboardPanelShortcutModifiers)
+    }
+
+    func clearClipboardPanelShortcut() {
+        remove(forKey: .clipboardPanelShortcutKeyCode)
+        remove(forKey: .clipboardPanelShortcutModifiers)
+    }
+
+    private func readShortcut(keyCodeKey: SettingsKey, modifiersKey: SettingsKey) -> KeyboardShortcut? {
+        let keyCodeRaw = readDouble(forKey: keyCodeKey)
+        let modifiersRaw = readDouble(forKey: modifiersKey)
+        if keyCodeRaw == 0 && modifiersRaw == 0 {
+            return nil
+        }
+        guard keyCodeRaw >= 0, keyCodeRaw <= Double(UInt32.max),
+              modifiersRaw >= 0, modifiersRaw <= Double(UInt32.max) else {
+            return nil
+        }
+        let keyCode = UInt32(keyCodeRaw)
+        let modifiers = UInt32(modifiersRaw)
+        let flags = KeyboardShortcut.ModifierFlags(rawValue: modifiers)
+        let shortcut = KeyboardShortcut(keyCode: keyCode, modifierFlags: flags)
+        return shortcut.isValid ? shortcut : nil
+    }
+
+    private func writeShortcut(_ shortcut: KeyboardShortcut, keyCodeKey: SettingsKey, modifiersKey: SettingsKey) {
+        write(Double(shortcut.keyCode), forKey: keyCodeKey)
+        write(Double(shortcut.modifierFlags.rawValue), forKey: modifiersKey)
     }
 
     /// 读取已保存的大文件根 bookmark;未授权或损坏返回 nil。
@@ -245,5 +360,83 @@ public extension SettingsService {
 
     func writeClipboardMaxStorageMB(_ value: Double) {
         write(ClipboardSettingsDefaults.clampMaxStorageMB(value), forKey: .clipboardMaxStorageMB)
+    }
+
+    func readClipboardExcludedApplications() -> [String] {
+        readStringList(forKey: .clipboardExcludedApplications)
+    }
+
+    func writeClipboardExcludedApplications(_ bundleIDs: [String]) {
+        writeStringList(bundleIDs, forKey: .clipboardExcludedApplications)
+    }
+
+    func readClipboardExcludedPatterns() -> [String] {
+        readStringList(forKey: .clipboardExcludedPatterns)
+    }
+
+    func writeClipboardExcludedPatterns(_ patterns: [String]) {
+        writeStringList(patterns, forKey: .clipboardExcludedPatterns)
+    }
+
+    func readClipboardPollingIntervalSeconds() -> Double {
+        ClipboardSettingsDefaults.clampPollingIntervalSeconds(readDouble(forKey: .clipboardPollingIntervalSeconds))
+    }
+
+    func writeClipboardPollingIntervalSeconds(_ value: Double) {
+        write(ClipboardSettingsDefaults.clampPollingIntervalSeconds(value), forKey: .clipboardPollingIntervalSeconds)
+    }
+
+    func readClipboardImageQuality() -> Double {
+        ClipboardSettingsDefaults.clampImageQuality(readDouble(forKey: .clipboardImageQuality))
+    }
+
+    func writeClipboardImageQuality(_ value: Double) {
+        write(ClipboardSettingsDefaults.clampImageQuality(value), forKey: .clipboardImageQuality)
+    }
+
+    func readClipboardPanelPosition() -> ClipboardPanelPosition {
+        guard let stored = readString(forKey: .clipboardPanelPosition),
+              let position = ClipboardPanelPosition(rawValue: stored) else {
+            return .center
+        }
+        return position
+    }
+
+    func writeClipboardPanelPosition(_ position: ClipboardPanelPosition) {
+        write(position.rawValue, forKey: .clipboardPanelPosition)
+    }
+
+    func resetClippyStyleSettingsToDefaults() {
+        write(true, forKey: .launchDashboardAtStart)
+        write(ClipboardSettingsDefaults.autoPaste, forKey: .clipboardAutoPaste)
+        writeClipboardPanelPosition(.center)
+        writeClipboardMaxRecords(ClipboardSettingsDefaults.maxRecords)
+        writeClipboardRetentionDays(ClipboardSettingsDefaults.retentionDays)
+        writeClipboardMaxStorageMB(ClipboardSettingsDefaults.maxStorageMB)
+        writeClipboardExcludedApplications([])
+        writeClipboardExcludedPatterns([])
+        writeClipboardPollingIntervalSeconds(ClipboardSettingsDefaults.pollingIntervalSeconds)
+        writeClipboardImageQuality(ClipboardSettingsDefaults.imageQuality)
+        write(ClipboardSettingsDefaults.showMenuBarIcon, forKey: .showMenuBarIcon)
+    }
+
+    private func readStringList(forKey key: SettingsKey) -> [String] {
+        guard let stored = readString(forKey: key), !stored.isEmpty else {
+            return []
+        }
+        return stored
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map(String.init)
+    }
+
+    private func writeStringList(_ values: [String], forKey key: SettingsKey) {
+        let normalized = values
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !normalized.isEmpty else {
+            remove(forKey: key)
+            return
+        }
+        write(normalized.joined(separator: "\n"), forKey: key)
     }
 }

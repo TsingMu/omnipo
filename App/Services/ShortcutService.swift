@@ -7,12 +7,40 @@ import Foundation
 /// - 注册失败时保留上一次有效快捷键。
 /// - 多次注册幂等,不重复安装事件处理器。
 public protocol ShortcutService: AnyObject, Sendable {
-    func currentShortcut() async -> KeyboardShortcut
-    func defaultShortcut() -> KeyboardShortcut
-    func register(_ shortcut: KeyboardShortcut) async -> ShortcutRegistrationResult
-    func unregister() async
-    func restoreDefault() async -> ShortcutRegistrationResult
+    func currentShortcut(for action: ShortcutAction) async -> KeyboardShortcut
+    func defaultShortcut(for action: ShortcutAction) -> KeyboardShortcut
+    func register(_ shortcut: KeyboardShortcut, for action: ShortcutAction) async -> ShortcutRegistrationResult
+    func unregister(for action: ShortcutAction) async
+    func restoreDefault(for action: ShortcutAction) async -> ShortcutRegistrationResult
+    func setTrigger(for action: ShortcutAction, _ trigger: (@MainActor () -> Void)?)
     var onTrigger: (@MainActor () -> Void)? { get set }
+}
+
+public extension ShortcutService {
+    func currentShortcut() async -> KeyboardShortcut {
+        await currentShortcut(for: .launcher)
+    }
+
+    func defaultShortcut() -> KeyboardShortcut {
+        defaultShortcut(for: .launcher)
+    }
+
+    func register(_ shortcut: KeyboardShortcut) async -> ShortcutRegistrationResult {
+        await register(shortcut, for: .launcher)
+    }
+
+    func unregister() async {
+        await unregister(for: .launcher)
+    }
+
+    func restoreDefault() async -> ShortcutRegistrationResult {
+        await restoreDefault(for: .launcher)
+    }
+}
+
+public enum ShortcutAction: UInt32, Sendable, CaseIterable {
+    case launcher = 1
+    case clipboardPanel = 2
 }
 
 public enum ShortcutRegistrationResult: Sendable, Equatable {

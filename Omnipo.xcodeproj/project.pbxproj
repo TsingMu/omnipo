@@ -70,6 +70,9 @@
 		0000000000000000000002A1 /* ClipboardPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A1 /* ClipboardPanelController.swift */; };
 		0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A2 /* ClipboardPanelView.swift */; };
 		0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A3 /* ClipboardContentType+Presentation.swift */; };
+		0000000000000000000002A4 /* PermissionAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A4 /* PermissionAudit.swift */; };
+		0000000000000000000002A5 /* PermissionAuditService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A5 /* PermissionAuditService.swift */; };
+		0000000000000000000002A6 /* PermissionAuditModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A6 /* PermissionAuditModelsTests.swift */; };
 		000000000000000000000240 /* MainWindowNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* MainWindowNavigator.swift */; };
 		000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* LauncherCommandExecutorTests.swift */; };
 		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
@@ -220,6 +223,9 @@
 		0000000000000000000003A1 /* ClipboardPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPanelController.swift; sourceTree = "<group>"; };
 		0000000000000000000003A2 /* ClipboardPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPanelView.swift; sourceTree = "<group>"; };
 		0000000000000000000003A3 /* ClipboardContentType+Presentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardContentType+Presentation.swift"; sourceTree = "<group>"; };
+		0000000000000000000003A4 /* PermissionAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAudit.swift; sourceTree = "<group>"; };
+		0000000000000000000003A5 /* PermissionAuditService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditService.swift; sourceTree = "<group>"; };
+		0000000000000000000003A6 /* PermissionAuditModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditModelsTests.swift; sourceTree = "<group>"; };
 		000000000000000000000320 /* MainWindowNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowNavigator.swift; sourceTree = "<group>"; };
 		000000000000000000000321 /* LauncherCommandExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutorTests.swift; sourceTree = "<group>"; };
 		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
@@ -393,6 +399,7 @@
 				000000000000000000000303 /* ShortcutService.swift */,
 				000000000000000000000304 /* SearchService.swift */,
 				000000000000000000000351 /* ClipboardService.swift */,
+				0000000000000000000003A5 /* PermissionAuditService.swift */,
 				000000000000000000000366 /* DefaultClipboardService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
@@ -419,6 +426,7 @@
 				000000000000000000000349 /* AppUsage.swift */,
 				00000000000000000000034F /* ClipboardContentType.swift */,
 				000000000000000000000350 /* ClipboardItem.swift */,
+				0000000000000000000003A4 /* PermissionAudit.swift */,
 				000000000000000000000359 /* ClipboardBinaryPayload.swift */,
 				00000000000000000000035E /* ClipboardCapturedContent.swift */,
 			);
@@ -605,6 +613,7 @@
 				000000000000000000000364 /* ClipboardPasteControllerTests.swift */,
 				000000000000000000000365 /* ClipboardContentWriterTests.swift */,
 				000000000000000000000367 /* DefaultClipboardServiceTests.swift */,
+				0000000000000000000003A6 /* PermissionAuditModelsTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -741,7 +750,9 @@
 				000000000000000000000274 /* OmnipoTheme.swift in Sources */,
 				000000000000000000000275 /* ClipboardContentType.swift in Sources */,
 				000000000000000000000276 /* ClipboardItem.swift in Sources */,
+				0000000000000000000002A4 /* PermissionAudit.swift in Sources */,
 				000000000000000000000277 /* ClipboardService.swift in Sources */,
+				0000000000000000000002A5 /* PermissionAuditService.swift in Sources */,
 				0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */,
 				0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */,
 				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,
@@ -848,6 +859,7 @@
 				00000000000000000000028A /* ClipboardPasteControllerTests.swift in Sources */,
 				00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */,
 				00000000000000000000028D /* DefaultClipboardServiceTests.swift in Sources */,
+				0000000000000000000002A6 /* PermissionAuditModelsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

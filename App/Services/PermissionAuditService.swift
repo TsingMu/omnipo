@@ -21,4 +21,3 @@ public protocol PermissionAuditService: AnyObject, Sendable {
     /// 执行一次全量本地权限审计。`query` 仅影响返回结果的过滤,不改变底层系统状态。
     func auditPermissions(matching query: PermissionAuditQuery) async -> Result<PermissionAuditResult, AppError>
 }
-

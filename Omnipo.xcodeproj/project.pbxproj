@@ -73,6 +73,12 @@
 		0000000000000000000002A4 /* PermissionAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A4 /* PermissionAudit.swift */; };
 		0000000000000000000002A5 /* PermissionAuditService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A5 /* PermissionAuditService.swift */; };
 		0000000000000000000002A6 /* PermissionAuditModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003A6 /* PermissionAuditModelsTests.swift */; };
+		0000000000000000000003C0 /* PermissionAuditAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B0 /* PermissionAuditAggregator.swift */; };
+		0000000000000000000003C1 /* DefaultPermissionAuditService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B1 /* DefaultPermissionAuditService.swift */; };
+		0000000000000000000003C2 /* TCCReadOnlySnapshotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B2 /* TCCReadOnlySnapshotProvider.swift */; };
+		0000000000000000000003C3 /* TCCPermissionCategoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B3 /* TCCPermissionCategoryProvider.swift */; };
+		0000000000000000000003C4 /* SystemPermissionApplicationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B4 /* SystemPermissionApplicationResolver.swift */; };
+		0000000000000000000003C5 /* PermissionAuditStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003B5 /* PermissionAuditStore.swift */; };
 		000000000000000000000240 /* MainWindowNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* MainWindowNavigator.swift */; };
 		000000000000000000000241 /* LauncherCommandExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* LauncherCommandExecutorTests.swift */; };
 		000000000000000000000242 /* LauncherInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000322 /* LauncherInputState.swift */; };
@@ -226,6 +232,12 @@
 		0000000000000000000003A4 /* PermissionAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAudit.swift; sourceTree = "<group>"; };
 		0000000000000000000003A5 /* PermissionAuditService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditService.swift; sourceTree = "<group>"; };
 		0000000000000000000003A6 /* PermissionAuditModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditModelsTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003B0 /* PermissionAuditAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditAggregator.swift; sourceTree = "<group>"; };
+		0000000000000000000003B1 /* DefaultPermissionAuditService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultPermissionAuditService.swift; sourceTree = "<group>"; };
+		0000000000000000000003B2 /* TCCReadOnlySnapshotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCCReadOnlySnapshotProvider.swift; sourceTree = "<group>"; };
+		0000000000000000000003B3 /* TCCPermissionCategoryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCCPermissionCategoryProvider.swift; sourceTree = "<group>"; };
+		0000000000000000000003B4 /* SystemPermissionApplicationResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionApplicationResolver.swift; sourceTree = "<group>"; };
+		0000000000000000000003B5 /* PermissionAuditStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuditStore.swift; sourceTree = "<group>"; };
 		000000000000000000000320 /* MainWindowNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowNavigator.swift; sourceTree = "<group>"; };
 		000000000000000000000321 /* LauncherCommandExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCommandExecutorTests.swift; sourceTree = "<group>"; };
 		000000000000000000000322 /* LauncherInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherInputState.swift; sourceTree = "<group>"; };
@@ -358,6 +370,7 @@
 				000000000000000000000320 /* MainWindowNavigator.swift */,
 				000000000000000000000338 /* AuthorizedRootManager.swift */,
 				000000000000000000000346 /* SystemMonitorStore.swift */,
+				0000000000000000000003B5 /* PermissionAuditStore.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -445,10 +458,23 @@
 				000000000000000000000041 /* Search */,
 				000000000000000000000042 /* AppDiscovery */,
 				000000000000000000000043 /* Launcher */,
+				00000000000000000000004A /* Permissions */,
 				000000000000000000000045 /* Diagnostics */,
 				000000000000000000000046 /* StatusBar */,
 			);
 			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		00000000000000000000004A /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000003B0 /* PermissionAuditAggregator.swift */,
+				0000000000000000000003B1 /* DefaultPermissionAuditService.swift */,
+				0000000000000000000003B2 /* TCCReadOnlySnapshotProvider.swift */,
+				0000000000000000000003B3 /* TCCPermissionCategoryProvider.swift */,
+				0000000000000000000003B4 /* SystemPermissionApplicationResolver.swift */,
+			);
+			path = Permissions;
 			sourceTree = "<group>";
 		};
 		000000000000000000000049 /* Clipboard */ = {
@@ -753,6 +779,12 @@
 				0000000000000000000002A4 /* PermissionAudit.swift in Sources */,
 				000000000000000000000277 /* ClipboardService.swift in Sources */,
 				0000000000000000000002A5 /* PermissionAuditService.swift in Sources */,
+				0000000000000000000003C0 /* PermissionAuditAggregator.swift in Sources */,
+				0000000000000000000003C1 /* DefaultPermissionAuditService.swift in Sources */,
+				0000000000000000000003C2 /* TCCReadOnlySnapshotProvider.swift in Sources */,
+				0000000000000000000003C3 /* TCCPermissionCategoryProvider.swift in Sources */,
+				0000000000000000000003C4 /* SystemPermissionApplicationResolver.swift in Sources */,
+				0000000000000000000003C5 /* PermissionAuditStore.swift in Sources */,
 				0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */,
 				0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */,
 				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,

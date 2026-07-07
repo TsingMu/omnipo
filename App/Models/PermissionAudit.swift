@@ -52,7 +52,7 @@ public enum PermissionCategory: String, CaseIterable, Codable, Sendable, Hashabl
     }
 }
 
-public enum PermissionUnavailableReason: String, CaseIterable, Codable, Sendable, Hashable {
+public enum PermissionUnavailableReason: String, CaseIterable, Codable, Sendable, Hashable, Error {
     case databaseUnreadable
     case permissionLimited
     case unsupportedOnCurrentSystem
@@ -123,6 +123,7 @@ public struct AppPermissionGrant: Identifiable, Codable, Sendable, Hashable {
     public let status: PermissionGrantStatus
     public let source: String
     public let lastUpdatedAt: Date?
+    public let iconIdentifier: String?
 
     public init(
         id: String? = nil,
@@ -131,7 +132,8 @@ public struct AppPermissionGrant: Identifiable, Codable, Sendable, Hashable {
         category: PermissionCategory,
         status: PermissionGrantStatus,
         source: String,
-        lastUpdatedAt: Date? = nil
+        lastUpdatedAt: Date? = nil,
+        iconIdentifier: String? = nil
     ) {
         let normalizedBundleIdentifier = bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -144,6 +146,14 @@ public struct AppPermissionGrant: Identifiable, Codable, Sendable, Hashable {
         self.status = status
         self.source = source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "unknown" : source.trimmingCharacters(in: .whitespacesAndNewlines)
         self.lastUpdatedAt = lastUpdatedAt
+        self.iconIdentifier = iconIdentifier?.nonEmptyValue
+    }
+}
+
+private extension String {
+    var nonEmptyValue: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
@@ -208,4 +218,3 @@ public struct PermissionAuditResult: Codable, Sendable, Hashable {
         grants.isEmpty && unavailableCategories.isEmpty
     }
 }
-

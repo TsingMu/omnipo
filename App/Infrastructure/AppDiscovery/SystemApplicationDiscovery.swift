@@ -6,6 +6,8 @@ public struct AppRecord: Sendable, Hashable {
     public let bundleIdentifier: String
     public let displayName: String
     public let aliases: [String]
+    public let searchCandidates: [String]
+    public let searchCandidateForms: [SearchMatcher.CandidateForms]
 
     public init(
         bundleIdentifier: String,
@@ -14,14 +16,14 @@ public struct AppRecord: Sendable, Hashable {
     ) {
         self.bundleIdentifier = bundleIdentifier
         self.displayName = displayName
-        self.aliases = ApplicationSearchAliasBuilder.makeAliases(
+        let builtAliases = ApplicationSearchAliasBuilder.makeAliases(
             displayName: displayName,
             explicitAliases: aliases
         )
-    }
-
-    public var searchCandidates: [String] {
-        [displayName, bundleIdentifier] + aliases
+        let candidates = [displayName, bundleIdentifier] + builtAliases
+        self.aliases = builtAliases
+        self.searchCandidates = candidates
+        self.searchCandidateForms = SearchMatcher.preparedCandidates(for: candidates)
     }
 }
 

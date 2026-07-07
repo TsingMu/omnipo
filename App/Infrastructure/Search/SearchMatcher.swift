@@ -15,23 +15,36 @@ public enum SearchMatcher {
         public let matchedText: String
     }
 
+    public struct CandidateForms: Sendable, Hashable {
+        public let text: String
+        public let forms: [String]
+    }
+
     /// 对多个候选文本返回最高分。
     public static func bestMatch(query: String, candidates: [String]) -> Best? {
+        bestMatch(query: query, preparedCandidates: preparedCandidates(for: candidates))
+    }
+
+    /// 对预先规范化的候选文本返回最高分。
+    public static func bestMatch(query: String, preparedCandidates: [CandidateForms]) -> Best? {
         let queryForms = forms(for: query)
         guard !queryForms.isEmpty else { return nil }
         var best: Best?
-        for c in candidates {
-            let candidateForms = forms(for: c)
+        for candidate in preparedCandidates {
             for queryForm in queryForms {
-                for candidateForm in candidateForms {
+                for candidateForm in candidate.forms {
                     let matchScore = score(query: queryForm, against: candidateForm)
                     if matchScore > 0, best == nil || matchScore > best!.score {
-                        best = Best(score: matchScore, matchedText: c)
+                        best = Best(score: matchScore, matchedText: candidate.text)
                     }
                 }
             }
         }
         return best
+    }
+
+    public static func preparedCandidates(for candidates: [String]) -> [CandidateForms] {
+        candidates.map { CandidateForms(text: $0, forms: forms(for: $0)) }
     }
 
     public static func score(query: String, against text: String) -> Double {
@@ -72,12 +85,31 @@ public enum SearchMatcher {
 
     /// 检查 query 是否在 text 的单词边界后出现(开头或非字母数字字符之后)。
     public static func atWordBoundary(text: String, query: String) -> Bool {
-        let escaped = NSRegularExpression.escapedPattern(for: query)
-        let pattern = "(?:^|[^a-z0-9])" + escaped
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+        var searchRange = text.startIndex..<text.endIndex
+        while let range = text.range(of: query, range: searchRange) {
+            if range.lowerBound == text.startIndex {
+                return true
+            }
+
+            let previous = text.index(before: range.lowerBound)
+            if !isASCIILetterOrDigit(text[previous]) {
+                return true
+            }
+
+            searchRange = range.upperBound..<text.endIndex
+        }
+        return false
+    }
+
+    private static func isASCIILetterOrDigit(_ character: Character) -> Bool {
+        guard character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first else {
             return false
         }
-        let range = NSRange(text.startIndex..., in: text)
-        return regex.firstMatch(in: text, range: range) != nil
+        switch scalar.value {
+        case 48...57, 65...90, 97...122:
+            return true
+        default:
+            return false
+        }
     }
 }

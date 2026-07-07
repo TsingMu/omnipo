@@ -34,7 +34,10 @@ public final class ApplicationSearchProvider: SearchProvider {
             })
         }
         let matched = apps.compactMap { app -> SearchResult? in
-            guard let best = SearchMatcher.bestMatch(query: trimmed, candidates: app.searchCandidates) else {
+            guard let best = SearchMatcher.bestMatch(
+                query: trimmed,
+                preparedCandidates: app.searchCandidateForms
+            ) else {
                 return nil
             }
             return SearchResult(

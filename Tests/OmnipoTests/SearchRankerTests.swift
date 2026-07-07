@@ -17,6 +17,12 @@ final class SearchMatcherTests: XCTestCase {
         XCTAssertEqual(word, 0.6)
     }
 
+    func test_wordBoundaryMatch_usesStartOrNonAlphanumericBoundary() {
+        XCTAssertTrue(SearchMatcher.atWordBoundary(text: "open clipboard", query: "open"))
+        XCTAssertTrue(SearchMatcher.atWordBoundary(text: "open-clipboard", query: "clipboard"))
+        XCTAssertFalse(SearchMatcher.atWordBoundary(text: "openclipboard", query: "clipboard"))
+    }
+
     func test_substringMatch_scoresLowest() {
         let sub = SearchMatcher.score(query: "lip", against: "clipboard")
         XCTAssertEqual(sub, 0.4)

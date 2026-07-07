@@ -243,6 +243,14 @@ final class ApplicationSearchProviderTests: XCTestCase {
         XCTAssertTrue(record.aliases.contains("wei xin"))
         XCTAssertTrue(record.aliases.contains("weixin"))
         XCTAssertTrue(record.aliases.contains("wx"))
+        XCTAssertEqual(record.searchCandidates, [
+            "微信",
+            "com.tencent.xinWeChat",
+            "wei xin",
+            "weixin",
+            "wx"
+        ])
+        XCTAssertEqual(record.searchCandidateForms.map(\.text), record.searchCandidates)
     }
 
     func test_systemDiscoveryIndexesLocalizedInfoPlistStringsNames() async throws {

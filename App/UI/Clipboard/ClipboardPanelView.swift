@@ -402,6 +402,10 @@ private struct ClipboardPanelRow: View {
                     .lineLimit(2)
                 HStack(spacing: 6) {
                     Text(item.contentType.displayName)
+                    if let sourceDisplayName {
+                        Text(sourceDisplayName)
+                            .lineLimit(1)
+                    }
                     Text(item.updatedAt, style: .relative)
                 }
                 .font(.caption)
@@ -439,5 +443,12 @@ private struct ClipboardPanelRow: View {
             return item.contentType.displayName
         }
         return textPreview
+    }
+
+    private var sourceDisplayName: String? {
+        guard let source = item.sourceApplicationID, !source.isEmpty else {
+            return nil
+        }
+        return ApplicationDisplayNameResolver.displayName(forBundleIdentifier: source)
     }
 }

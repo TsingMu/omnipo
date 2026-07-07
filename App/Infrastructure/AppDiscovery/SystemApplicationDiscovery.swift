@@ -123,11 +123,9 @@ public enum SystemApplicationDiscovery {
             guard url.pathExtension == "app" else { continue }
             guard let bundle = Bundle(url: url),
                   let bundleId = bundle.bundleIdentifier else { continue }
-            let localizedInfo = bundle.localizedInfoDictionary ?? [:]
             let rawInfo = bundle.infoDictionary ?? [:]
             let discoveredNames = [
-                localizedInfo["CFBundleDisplayName"] as? String,
-                localizedInfo["CFBundleName"] as? String,
+                bundle.omnipoDisplayName,
                 rawInfo["CFBundleDisplayName"] as? String,
                 rawInfo["CFBundleName"] as? String,
                 bundle.executableURL?.lastPathComponent,

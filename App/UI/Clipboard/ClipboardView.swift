@@ -512,8 +512,8 @@ private struct ClipboardHistoryRow: View {
                 HStack(spacing: 8) {
                     Text(item.contentType.displayName)
                     Text(item.updatedAt, style: .relative)
-                    if let source = item.sourceApplicationID, !source.isEmpty {
-                        Text(source)
+                    if let sourceDisplayName {
+                        Text(sourceDisplayName)
                             .lineLimit(1)
                     }
                 }
@@ -575,10 +575,17 @@ private struct ClipboardHistoryRow: View {
         if item.isFavorite {
             components.append("已收藏")
         }
-        if let source = item.sourceApplicationID, !source.isEmpty {
-            components.append(source)
+        if let sourceDisplayName {
+            components.append(sourceDisplayName)
         }
         return components.joined(separator: ",")
+    }
+
+    private var sourceDisplayName: String? {
+        guard let source = item.sourceApplicationID, !source.isEmpty else {
+            return nil
+        }
+        return ApplicationDisplayNameResolver.displayName(forBundleIdentifier: source)
     }
 }
 

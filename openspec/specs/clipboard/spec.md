@@ -63,6 +63,13 @@ Clipboard MUST allow users to search history, filter by content type, favorite r
 - **When** the user chooses to copy that item
 - **Then** the app writes that record back to the system pasteboard
 
+#### Scenario: User views a record with source application metadata
+
+- **Given** a clipboard history item has a source application bundle identifier
+- **When** the Clipboard page or floating panel shows that item
+- **Then** the app prefers the localized Chinese application name or application display name
+- **And** the app uses the bundle identifier only when no application name can be resolved
+
 ### Requirement: Auto-Paste Permission Downgrade
 
 Clipboard MUST degrade auto-paste to copy-only behavior when the app does not have required accessibility permission.

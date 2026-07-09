@@ -211,6 +211,19 @@ App Uninstaller MUST report per-item results so that partial success does not hi
 - **And** failed or skipped items include user-readable reasons
 - **And** successfully removed items remain marked as removed
 
+### Requirement: Post-Execution Feedback
+
+App Uninstaller MUST make the outcome of a confirmed uninstall visible after execution and MUST refresh the displayed application state so that users do not mistake a completed action for no-op behavior.
+
+#### Scenario: Uninstall execution completes
+
+- **Given** the user confirms an uninstall plan
+- **When** deletion execution finishes
+- **Then** the app shows a prominent completion notice for completed, partially completed, failed, or skipped outcomes
+- **And** the result details remain visible after the application list or uninstall preview refreshes
+- **And** the app refreshes the installed application list
+- **And** an application removed from its original location no longer remains selected as if it were still installed
+
 ### Requirement: Running Application Handling
 
 App Uninstaller MUST avoid forcefully terminating applications in the first implementation.

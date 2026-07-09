@@ -133,14 +133,23 @@ final class UninstallerExecutionTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }
 
-    func test_finderAutomationExecutor_withoutHandlerReportsPermissionLimited() async {
+    func test_finderAutomationExecutor_defaultCanDeleteEligibleItems() async {
         let executor = FinderAutomationDeletionExecutor()
         let item = associatedFile(id: "app", url: URL(fileURLWithPath: "/Applications/Test.app"))
 
-        let results = await executor.delete([item])
+        let canDelete = await executor.canDelete(item)
 
-        XCTAssertEqual(results.first?.status, .insufficientPermission)
-        XCTAssertEqual(results.first?.reasonCode, AssociatedFileUnavailableReason.permissionLimited.stableCode)
+        XCTAssertTrue(canDelete)
+    }
+
+    func test_finderAutomationExecutor_escapesAppleScriptPathLiterals() {
+        let url = URL(fileURLWithPath: "/Applications/Test\"; delete POSIX file \"/tmp/no.app")
+
+        let script = FinderAutomationDeletionExecutor.finderDeleteScript(for: [url])
+
+        XCTAssertTrue(script.contains("tell application id \"com.apple.finder\""))
+        XCTAssertTrue(script.contains("POSIX file \"/Applications/Test\\\"; delete POSIX file \\\"/tmp/no.app\""))
+        XCTAssertFalse(script.contains("POSIX file \"/Applications/Test\"; delete"))
     }
 
     func test_finderAutomationExecutor_usesStructuredURLs() async {

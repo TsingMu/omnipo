@@ -67,9 +67,15 @@
 - [x] 6.2 验证完全删除预览中的路径只显示在 UI，不进入日志。
 - [x] 6.3 验证权限不足、系统保护、归属不明确和共享容器风险均有明确 UI 状态。
 - [x] 6.4 人工验证普通卸载预览和确认流程。
+  - 2026-07-09 使用临时应用 `Omnipo卸载测试.app` 验证普通卸载：确认后触发真实 Finder 删除，应用本体进入废纸篓，完成后 UI 显示完成提示并刷新应用列表。
 - [x] 6.5 人工验证完全删除预览按分类展示，并且每个分类都注明删除后果。
+  - 2026-07-09 使用 `com.omnipo.uninstall-test` 验证完全删除预览：应用本体、缓存、Application Support、Preferences 分类可见，分类后果文案可见。
 - [x] 6.6 人工验证完全删除预览、取消选择关联文件和删除结果。
+  - 2026-07-09 验证删除完成后保留结果明细；成功、失败/权限不足、跳过状态不会被列表刷新吞掉。
 - [x] 6.7 人工验证 Trash 失败时不会自动永久删除。
+  - 2026-07-09 验证 Finder automation 授权不足时返回权限不足并显示授权入口，不做永久删除兜底。
 - [x] 6.8 执行全量 `./script/build_and_run.sh verify`。
+  - 2026-07-09 执行全量 `./script/build_and_run.sh verify` 通过；另执行 `UninstallerExecutionTests` focused test 通过。
 - [x] 6.9 审阅任务清单，确保完成状态和验收证据准确。
+  - 2026-07-09 复核代码、规格和人工验证结果，补充 post-execution feedback 规格与验收证据。
 - [x] 6.10 验收后将 App Uninstaller 规范合并到 `openspec/specs/app-uninstaller/spec.md` 并归档 change。

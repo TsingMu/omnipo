@@ -50,6 +50,8 @@ private final class UninstallerStore {
     var plan: AppUninstallPlan?
     var loadState: LoadState = .idle
     var executionState: ExecutionState = .idle
+    var lastExecutionResult: UninstallExecutionResult?
+    var executionNotice: UninstallerExecutionNotice?
     var isConfirmationPresented = false
 
     private let service: any UninstallerService
@@ -73,7 +75,7 @@ private final class UninstallerStore {
 
     func refresh() async {
         loadState = .loading
-        executionState = .idle
+        clearExecutionFeedback()
         let result = await service.installedApplications(matching: query)
         switch result {
         case .success(let applications):
@@ -96,13 +98,13 @@ private final class UninstallerStore {
 
     func select(_ application: InstalledApplication) async {
         selectedApplicationID = application.id
-        executionState = .idle
+        clearExecutionFeedback()
         await rebuildPlan()
     }
 
     func setMode(_ mode: UninstallMode) async {
         self.mode = mode
-        executionState = .idle
+        clearExecutionFeedback()
         await rebuildPlan()
     }
 
@@ -115,14 +117,20 @@ private final class UninstallerStore {
             ids.remove(item.id)
         }
         self.plan = plan.selecting(itemIDs: ids)
+        lastExecutionResult = nil
+        executionNotice = nil
         executionState = .ready
     }
 
-    func rebuildPlan() async {
+    func rebuildPlan(preservingExecutionFeedback: Bool = false) async {
         guard let selectedApplication else {
             plan = nil
             executionState = .idle
             return
+        }
+        if !preservingExecutionFeedback {
+            lastExecutionResult = nil
+            executionNotice = nil
         }
         executionState = .buildingPlan
         let result = await service.buildPlan(for: selectedApplication, mode: mode)
@@ -138,14 +146,102 @@ private final class UninstallerStore {
 
     func executeConfirmedPlan() async {
         guard let plan else { return }
+        let executedApplicationID = plan.application.id
+        lastExecutionResult = nil
         executionState = .executing
         let result = await service.execute(plan: plan)
         switch result {
         case .success(let result):
+            lastExecutionResult = result
+            executionNotice = UninstallerExecutionNotice(result: result, applicationName: plan.application.displayName)
             executionState = .completed(result)
+            await refreshAfterExecution(executedApplicationID: executedApplicationID)
         case .failure(let error):
             executionState = .failed(error)
         }
+    }
+
+    private func refreshAfterExecution(executedApplicationID: InstalledApplication.ID) async {
+        loadState = .loading
+        let result = await service.installedApplications(matching: query)
+        switch result {
+        case .success(let applications):
+            self.applications = applications
+            if applications.contains(where: { $0.id == selectedApplicationID }) == false {
+                selectedApplicationID = applications.first?.id
+            }
+            loadState = .loaded
+
+            let appWasRemovedFromList = applications.contains(where: { $0.id == executedApplicationID }) == false
+            executionNotice = executionNotice?.withApplicationListRefresh(appWasRemovedFromList: appWasRemovedFromList)
+
+            if selectedApplication == nil {
+                plan = nil
+                executionState = .idle
+            } else {
+                await rebuildPlan(preservingExecutionFeedback: true)
+            }
+        case .failure(let error):
+            loadState = .failed(error)
+            executionState = .failed(error)
+        }
+    }
+
+    private func clearExecutionFeedback() {
+        lastExecutionResult = nil
+        executionNotice = nil
+        executionState = .idle
+    }
+}
+
+private struct UninstallerExecutionNotice {
+    let title: String
+    let message: String
+    let symbolName: String
+    let tint: Color
+
+    init(result: UninstallExecutionResult, applicationName: String) {
+        let total = result.itemResults.count
+        if result.failedCount == 0 && result.succeededCount > 0 {
+            title = "卸载已完成"
+            message = "“\(applicationName)”的 \(result.succeededCount) 个项目已移到废纸篓。"
+            symbolName = "checkmark.circle.fill"
+            tint = .green
+        } else if result.failedCount == 0 {
+            title = "卸载已跳过"
+            message = "“\(applicationName)”没有项目被移到废纸篓,\(result.skippedCount) 个项目已跳过。"
+            symbolName = "forward.circle.fill"
+            tint = .secondary
+        } else if result.succeededCount > 0 {
+            title = "卸载部分完成"
+            message = "“\(applicationName)”已处理 \(result.succeededCount) 个项目,\(result.failedCount) 个项目需要检查权限或状态。"
+            symbolName = "exclamationmark.triangle.fill"
+            tint = .orange
+        } else {
+            title = "卸载未完成"
+            message = "“\(applicationName)”的 \(total) 个项目未能移到废纸篓,请查看下方结果。"
+            symbolName = "xmark.circle.fill"
+            tint = .red
+        }
+    }
+
+    private init(title: String, message: String, symbolName: String, tint: Color) {
+        self.title = title
+        self.message = message
+        self.symbolName = symbolName
+        self.tint = tint
+    }
+
+    func withApplicationListRefresh(appWasRemovedFromList: Bool) -> Self {
+        let refreshMessage = appWasRemovedFromList
+            ? "应用列表已刷新,该应用不再显示。"
+            : "应用列表已刷新;如果应用仍显示,请检查下方未完成项目。"
+        return Self(
+            title: title,
+            message: "\(message) \(refreshMessage)",
+            symbolName: symbolName,
+            tint: tint
+        )
     }
 }
 
@@ -367,6 +463,9 @@ private struct UninstallerDetailPane: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if let notice = store.executionNotice {
+                    UninstallerExecutionNoticeBanner(notice: notice)
+                }
                 if let application = store.selectedApplication {
                     UninstallerAppSummary(application: application)
                     UninstallerModePicker(store: store)
@@ -501,6 +600,21 @@ private struct UninstallerPrivacyStatusPanel: View {
                     message: "未获得控制 Finder 授权时,相关删除会逐项返回权限不足;首版不会自动永久删除。"
                 )
             }
+
+            HStack(spacing: 10) {
+                Button {
+                    UninstallerSettingsOpener.openAutomationSettings()
+                } label: {
+                    Label("自动化设置", systemImage: "switch.2")
+                }
+
+                Button {
+                    UninstallerSettingsOpener.openFullDiskAccessSettings()
+                } label: {
+                    Label("完全磁盘访问", systemImage: "externaldrive.badge.checkmark")
+                }
+            }
+            .controlSize(.small)
         }
         .padding(14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -537,6 +651,21 @@ private struct UninstallerStatusLine: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+}
+
+private enum UninstallerSettingsOpener {
+    static func openAutomationSettings() {
+        openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+    }
+
+    static func openFullDiskAccessSettings() {
+        openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
+    }
+
+    private static func openSystemSettingsPane(_ string: String) {
+        guard let url = URL(string: string) else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 
@@ -788,12 +917,12 @@ private struct UninstallerExecutionPanel: View {
             }
 
             switch store.executionState {
-            case .completed(let result):
-                UninstallerExecutionResultView(result: result)
             case .failed(let error):
                 UninstallerErrorView(title: "卸载执行失败", error: error)
             default:
-                EmptyView()
+                if let result = store.lastExecutionResult {
+                    UninstallerExecutionResultView(result: result)
+                }
             }
         }
         .padding(14)
@@ -839,6 +968,37 @@ private struct UninstallerExecutionResultView: View {
                 }
                 .font(.callout)
             }
+        }
+    }
+}
+
+private struct UninstallerExecutionNoticeBanner: View {
+    let notice: UninstallerExecutionNotice
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: notice.symbolName)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(notice.tint)
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(notice.title)
+                    .font(.headline)
+                Text(notice.message)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 12)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(notice.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(notice.tint.opacity(0.35), lineWidth: 1)
         }
     }
 }

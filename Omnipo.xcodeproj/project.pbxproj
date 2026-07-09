@@ -151,6 +151,17 @@
 		00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000365 /* ClipboardContentWriterTests.swift */; };
 		00000000000000000000028C /* DefaultClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000366 /* DefaultClipboardService.swift */; };
 		00000000000000000000028D /* DefaultClipboardServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000367 /* DefaultClipboardServiceTests.swift */; };
+		00000000000000000000028E /* AppUninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000368 /* AppUninstaller.swift */; };
+		00000000000000000000028F /* UninstallerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000369 /* UninstallerService.swift */; };
+		000000000000000000000290 /* AppUninstallerModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036A /* AppUninstallerModelsTests.swift */; };
+		000000000000000000000291 /* InstalledApplicationScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036B /* InstalledApplicationScanner.swift */; };
+		000000000000000000000292 /* InstalledApplicationScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036C /* InstalledApplicationScannerTests.swift */; };
+		000000000000000000000293 /* AssociatedFileScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036D /* AssociatedFileScanner.swift */; };
+		000000000000000000000294 /* AssociatedFileScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036E /* AssociatedFileScannerTests.swift */; };
+		000000000000000000000295 /* DefaultUninstallerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000036F /* DefaultUninstallerService.swift */; };
+		000000000000000000000296 /* SandboxTrashDeletionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000370 /* SandboxTrashDeletionExecutor.swift */; };
+		000000000000000000000297 /* FinderAutomationDeletionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000371 /* FinderAutomationDeletionExecutor.swift */; };
+		000000000000000000000298 /* UninstallerExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000372 /* UninstallerExecutionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -311,6 +322,17 @@
 		000000000000000000000365 /* ClipboardContentWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentWriterTests.swift; sourceTree = "<group>"; };
 		000000000000000000000366 /* DefaultClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultClipboardService.swift; sourceTree = "<group>"; };
 		000000000000000000000367 /* DefaultClipboardServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultClipboardServiceTests.swift; sourceTree = "<group>"; };
+		000000000000000000000368 /* AppUninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUninstaller.swift; sourceTree = "<group>"; };
+		000000000000000000000369 /* UninstallerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerService.swift; sourceTree = "<group>"; };
+		00000000000000000000036A /* AppUninstallerModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUninstallerModelsTests.swift; sourceTree = "<group>"; };
+		00000000000000000000036B /* InstalledApplicationScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstalledApplicationScanner.swift; sourceTree = "<group>"; };
+		00000000000000000000036C /* InstalledApplicationScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstalledApplicationScannerTests.swift; sourceTree = "<group>"; };
+		00000000000000000000036D /* AssociatedFileScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssociatedFileScanner.swift; sourceTree = "<group>"; };
+		00000000000000000000036E /* AssociatedFileScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssociatedFileScannerTests.swift; sourceTree = "<group>"; };
+		00000000000000000000036F /* DefaultUninstallerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultUninstallerService.swift; sourceTree = "<group>"; };
+		000000000000000000000370 /* SandboxTrashDeletionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandboxTrashDeletionExecutor.swift; sourceTree = "<group>"; };
+		000000000000000000000371 /* FinderAutomationDeletionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderAutomationDeletionExecutor.swift; sourceTree = "<group>"; };
+		000000000000000000000372 /* UninstallerExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerExecutionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -415,6 +437,7 @@
 				000000000000000000000304 /* SearchService.swift */,
 				000000000000000000000351 /* ClipboardService.swift */,
 				0000000000000000000003A5 /* PermissionAuditService.swift */,
+				000000000000000000000369 /* UninstallerService.swift */,
 				000000000000000000000366 /* DefaultClipboardService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
@@ -444,6 +467,7 @@
 				0000000000000000000003A4 /* PermissionAudit.swift */,
 				000000000000000000000359 /* ClipboardBinaryPayload.swift */,
 				00000000000000000000035E /* ClipboardCapturedContent.swift */,
+				000000000000000000000368 /* AppUninstaller.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -461,6 +485,7 @@
 				000000000000000000000042 /* AppDiscovery */,
 				000000000000000000000043 /* Launcher */,
 				00000000000000000000004A /* Permissions */,
+				00000000000000000000004B /* Uninstaller */,
 				000000000000000000000045 /* Diagnostics */,
 				000000000000000000000046 /* StatusBar */,
 			);
@@ -477,6 +502,18 @@
 				0000000000000000000003B4 /* SystemPermissionApplicationResolver.swift */,
 			);
 			path = Permissions;
+			sourceTree = "<group>";
+		};
+		00000000000000000000004B /* Uninstaller */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000036F /* DefaultUninstallerService.swift */,
+				00000000000000000000036B /* InstalledApplicationScanner.swift */,
+				00000000000000000000036D /* AssociatedFileScanner.swift */,
+				000000000000000000000370 /* SandboxTrashDeletionExecutor.swift */,
+				000000000000000000000371 /* FinderAutomationDeletionExecutor.swift */,
+			);
+			path = Uninstaller;
 			sourceTree = "<group>";
 		};
 		000000000000000000000049 /* Clipboard */ = {
@@ -643,6 +680,10 @@
 				000000000000000000000365 /* ClipboardContentWriterTests.swift */,
 				000000000000000000000367 /* DefaultClipboardServiceTests.swift */,
 				0000000000000000000003A6 /* PermissionAuditModelsTests.swift */,
+				00000000000000000000036A /* AppUninstallerModelsTests.swift */,
+				00000000000000000000036C /* InstalledApplicationScannerTests.swift */,
+				00000000000000000000036E /* AssociatedFileScannerTests.swift */,
+				000000000000000000000372 /* UninstallerExecutionTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -782,6 +823,13 @@
 				0000000000000000000002A4 /* PermissionAudit.swift in Sources */,
 				000000000000000000000277 /* ClipboardService.swift in Sources */,
 				0000000000000000000002A5 /* PermissionAuditService.swift in Sources */,
+				00000000000000000000028E /* AppUninstaller.swift in Sources */,
+				00000000000000000000028F /* UninstallerService.swift in Sources */,
+				000000000000000000000291 /* InstalledApplicationScanner.swift in Sources */,
+				000000000000000000000293 /* AssociatedFileScanner.swift in Sources */,
+				000000000000000000000295 /* DefaultUninstallerService.swift in Sources */,
+				000000000000000000000296 /* SandboxTrashDeletionExecutor.swift in Sources */,
+				000000000000000000000297 /* FinderAutomationDeletionExecutor.swift in Sources */,
 				0000000000000000000003C0 /* PermissionAuditAggregator.swift in Sources */,
 				0000000000000000000003C1 /* DefaultPermissionAuditService.swift in Sources */,
 				0000000000000000000003C2 /* TCCReadOnlySnapshotProvider.swift in Sources */,
@@ -896,6 +944,10 @@
 				00000000000000000000028B /* ClipboardContentWriterTests.swift in Sources */,
 				00000000000000000000028D /* DefaultClipboardServiceTests.swift in Sources */,
 				0000000000000000000002A6 /* PermissionAuditModelsTests.swift in Sources */,
+				000000000000000000000290 /* AppUninstallerModelsTests.swift in Sources */,
+				000000000000000000000292 /* InstalledApplicationScannerTests.swift in Sources */,
+				000000000000000000000294 /* AssociatedFileScannerTests.swift in Sources */,
+				000000000000000000000298 /* UninstallerExecutionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

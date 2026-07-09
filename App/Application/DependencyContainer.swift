@@ -13,6 +13,7 @@ public final class DependencyContainer {
     public let systemMonitorStore: SystemMonitorStore
     public let clipboardService: any ClipboardService
     public let permissionAuditService: any PermissionAuditService
+    public let uninstallerService: any UninstallerService
     public let authorizedRootManager: AuthorizedRootManager
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
@@ -29,6 +30,7 @@ public final class DependencyContainer {
         systemMonitorStore: SystemMonitorStore,
         clipboardService: any ClipboardService,
         permissionAuditService: any PermissionAuditService,
+        uninstallerService: any UninstallerService,
         authorizedRootManager: AuthorizedRootManager,
         applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
@@ -44,6 +46,7 @@ public final class DependencyContainer {
         self.systemMonitorStore = systemMonitorStore
         self.clipboardService = clipboardService
         self.permissionAuditService = permissionAuditService
+        self.uninstallerService = uninstallerService
         self.authorizedRootManager = authorizedRootManager
         self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
@@ -78,6 +81,7 @@ public final class DependencyContainer {
         )
         let clipboardService = makeClipboardService(settings: settings)
         let permissionAuditService = DefaultPermissionAuditService(logger: logging)
+        let uninstallerService = DefaultUninstallerService()
 
         let navigator = MainWindowNavigator()
         let commandProvider = CommandSearchProvider()
@@ -152,6 +156,7 @@ public final class DependencyContainer {
             systemMonitorStore: systemMonitorStore,
             clipboardService: clipboardService,
             permissionAuditService: permissionAuditService,
+            uninstallerService: uninstallerService,
             authorizedRootManager: authorizedRootManager,
             applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,

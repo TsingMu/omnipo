@@ -165,6 +165,12 @@
 		0000000000000000000002B0 /* WeChatStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E0 /* WeChatStorage.swift */; };
 		0000000000000000000002B1 /* WeChatStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E1 /* WeChatStorageService.swift */; };
 		0000000000000000000002B2 /* WeChatStorageModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E2 /* WeChatStorageModelsTests.swift */; };
+		0000000000000000000002B3 /* WeChatStorageRootResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E3 /* WeChatStorageRootResolver.swift */; };
+		0000000000000000000002B4 /* WeChatStorageScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E4 /* WeChatStorageScanner.swift */; };
+		0000000000000000000002B5 /* WeChatStorageRootResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E5 /* WeChatStorageRootResolverTests.swift */; };
+		0000000000000000000002B6 /* WeChatStorageScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E6 /* WeChatStorageScannerTests.swift */; };
+		0000000000000000000002B7 /* DefaultWeChatStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E7 /* DefaultWeChatStorageService.swift */; };
+		0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -339,6 +345,12 @@
 		0000000000000000000003E0 /* WeChatStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorage.swift; sourceTree = "<group>"; };
 		0000000000000000000003E1 /* WeChatStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageService.swift; sourceTree = "<group>"; };
 		0000000000000000000003E2 /* WeChatStorageModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageModelsTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003E3 /* WeChatStorageRootResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageRootResolver.swift; sourceTree = "<group>"; };
+		0000000000000000000003E4 /* WeChatStorageScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageScanner.swift; sourceTree = "<group>"; };
+		0000000000000000000003E5 /* WeChatStorageRootResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageRootResolverTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003E6 /* WeChatStorageScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageScannerTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003E7 /* DefaultWeChatStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultWeChatStorageService.swift; sourceTree = "<group>"; };
+		0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultWeChatStorageServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -494,10 +506,21 @@
 				000000000000000000000043 /* Launcher */,
 				00000000000000000000004A /* Permissions */,
 				00000000000000000000004B /* Uninstaller */,
+				00000000000000000000004C /* WeChat */,
 				000000000000000000000045 /* Diagnostics */,
 				000000000000000000000046 /* StatusBar */,
 			);
 			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		00000000000000000000004C /* WeChat */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000003E3 /* WeChatStorageRootResolver.swift */,
+				0000000000000000000003E4 /* WeChatStorageScanner.swift */,
+				0000000000000000000003E7 /* DefaultWeChatStorageService.swift */,
+			);
+			path = WeChat;
 			sourceTree = "<group>";
 		};
 		00000000000000000000004A /* Permissions */ = {
@@ -693,6 +716,9 @@
 				00000000000000000000036E /* AssociatedFileScannerTests.swift */,
 				000000000000000000000372 /* UninstallerExecutionTests.swift */,
 				0000000000000000000003E2 /* WeChatStorageModelsTests.swift */,
+				0000000000000000000003E5 /* WeChatStorageRootResolverTests.swift */,
+				0000000000000000000003E6 /* WeChatStorageScannerTests.swift */,
+				0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -835,6 +861,9 @@
 				00000000000000000000028E /* AppUninstaller.swift in Sources */,
 				0000000000000000000002B0 /* WeChatStorage.swift in Sources */,
 				0000000000000000000002B1 /* WeChatStorageService.swift in Sources */,
+				0000000000000000000002B3 /* WeChatStorageRootResolver.swift in Sources */,
+				0000000000000000000002B4 /* WeChatStorageScanner.swift in Sources */,
+				0000000000000000000002B7 /* DefaultWeChatStorageService.swift in Sources */,
 				00000000000000000000028F /* UninstallerService.swift in Sources */,
 				000000000000000000000291 /* InstalledApplicationScanner.swift in Sources */,
 				000000000000000000000293 /* AssociatedFileScanner.swift in Sources */,
@@ -960,6 +989,9 @@
 				000000000000000000000294 /* AssociatedFileScannerTests.swift in Sources */,
 				000000000000000000000298 /* UninstallerExecutionTests.swift in Sources */,
 				0000000000000000000002B2 /* WeChatStorageModelsTests.swift in Sources */,
+				0000000000000000000002B5 /* WeChatStorageRootResolverTests.swift in Sources */,
+				0000000000000000000002B6 /* WeChatStorageScannerTests.swift in Sources */,
+				0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

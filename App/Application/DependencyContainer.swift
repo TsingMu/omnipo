@@ -14,6 +14,7 @@ public final class DependencyContainer {
     public let clipboardService: any ClipboardService
     public let permissionAuditService: any PermissionAuditService
     public let uninstallerService: any UninstallerService
+    public let weChatStorageService: any WeChatStorageService
     public let authorizedRootManager: AuthorizedRootManager
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
@@ -31,6 +32,7 @@ public final class DependencyContainer {
         clipboardService: any ClipboardService,
         permissionAuditService: any PermissionAuditService,
         uninstallerService: any UninstallerService,
+        weChatStorageService: any WeChatStorageService,
         authorizedRootManager: AuthorizedRootManager,
         applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
@@ -47,6 +49,7 @@ public final class DependencyContainer {
         self.clipboardService = clipboardService
         self.permissionAuditService = permissionAuditService
         self.uninstallerService = uninstallerService
+        self.weChatStorageService = weChatStorageService
         self.authorizedRootManager = authorizedRootManager
         self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
@@ -82,6 +85,10 @@ public final class DependencyContainer {
         let clipboardService = makeClipboardService(settings: settings)
         let permissionAuditService = DefaultPermissionAuditService(logger: logging)
         let uninstallerService = DefaultUninstallerService()
+        let weChatStorageService = DefaultWeChatStorageService(
+            resolver: WeChatStorageRootResolver(),
+            scanner: WeChatStorageScanner()
+        )
 
         let navigator = MainWindowNavigator()
         let commandProvider = CommandSearchProvider()
@@ -157,6 +164,7 @@ public final class DependencyContainer {
             clipboardService: clipboardService,
             permissionAuditService: permissionAuditService,
             uninstallerService: uninstallerService,
+            weChatStorageService: weChatStorageService,
             authorizedRootManager: authorizedRootManager,
             applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,

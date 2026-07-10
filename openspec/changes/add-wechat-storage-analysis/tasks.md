@@ -17,19 +17,19 @@
 
 ## 3. 根发现与扫描
 
-- [ ] 3.1 实现 `WeChatStorageRootResolver`，只检查窄范围候选路径和用户授权目录；动态发现已安装微信的 `bundleIdentifier`（`NSWorkspace`/`/Applications`）作为候选键，覆盖 3.x/4.0/渠道差异，`com.tencent.xinWeChat` 作 fallback；将 `~/Library/Group Containers/*<bundle-id>*` 纳入候选并标注 shared/group kind。
-- [ ] 3.2 实现 `WeChatStorageScanner`，只读取文件系统元数据，不打开或解析文件内容；符号链接先解析真实路径并按真实路径去重，拒绝跟随指向候选 root 并集之外的链接并作为 skipped/permission-limited issue。
-- [ ] 3.3 实现路径分类推断：缓存、媒体与文件、日志、数据库与本地状态、备份、配置、其他。
-- [ ] 3.4 实现部分失败降级：不可读根生成 issue，不阻塞其他可读根。
-- [ ] 3.5 实现扫描取消和 top group 数量限制。
-- [ ] 3.6 使用临时 fixture 目录测试根发现、动态 bundle id 发现与 fallback、Group Container shared 标注、符号链接去重、越界拒绝与 issue 脱敏、分类汇总、不可读降级、取消和空状态。
+- [x] 3.1 实现 `WeChatStorageRootResolver`，只检查窄范围候选路径和用户授权目录；动态发现已安装微信的 `bundleIdentifier`（`NSWorkspace`/`/Applications`）作为候选键，覆盖 3.x/4.0/渠道差异，`com.tencent.xinWeChat` 作 fallback；将 `~/Library/Group Containers/*<bundle-id>*` 纳入候选并标注 shared/group kind。
+- [x] 3.2 实现 `WeChatStorageScanner`，只读取文件系统元数据，不打开或解析文件内容；符号链接先解析真实路径并按真实路径去重，拒绝跟随指向候选 root 并集之外的链接并作为 skipped/permission-limited issue。
+- [x] 3.3 实现路径分类推断：缓存、媒体与文件、日志、数据库与本地状态、备份、配置、其他。
+- [x] 3.4 实现部分失败降级：不可读根生成 issue，不阻塞其他可读根。
+- [x] 3.5 实现扫描取消和 top group 数量限制。
+- [x] 3.6 使用临时 fixture 目录测试根发现、动态 bundle id 发现与 fallback、Group Container shared 标注、符号链接去重、越界拒绝与 issue 脱敏、分类汇总、不可读降级、取消和空状态。
 
 ## 4. 服务实现与依赖装配
 
-- [ ] 4.1 实现 `DefaultWeChatStorageService`，串联根发现、扫描、聚合和错误映射。
-- [ ] 4.2 接入 `DependencyContainer`，让 UI 依赖服务协议。
-- [ ] 4.3 确认扫描不写入任何 WeChat 数据目录、不创建索引数据库、不产生删除动作。
-- [ ] 4.4 执行 focused tests 并更新任务状态。
+- [x] 4.1 实现 `DefaultWeChatStorageService`，串联根发现、扫描、聚合和错误映射。
+- [x] 4.2 接入 `DependencyContainer`，让 UI 依赖服务协议。
+- [x] 4.3 确认扫描不写入任何 WeChat 数据目录、不创建索引数据库、不产生删除动作。
+- [x] 4.4 执行 focused tests 并更新任务状态。
 
 ## 5. WeChat Manager UI
 

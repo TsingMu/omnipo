@@ -4,10 +4,10 @@
 
 ## 1. 规范与边界
 
-- [ ] 1.1 定义 `wechat-storage` capability 规范，明确只读、元数据扫描和不解析聊天内容。
-- [ ] 1.2 明确非目标：不删除、不清理、不解析数据库、不读取文件内容、不上传数据。
-- [ ] 1.3 定义 WeChat 根、分类、扫描结果、不可用原因和隐私日志边界。
-- [ ] 1.4 审阅已存在日志脱敏禁止字段，确认覆盖微信账号、消息、联系人、路径和文件名。
+- [x] 1.1 定义 `wechat-storage` capability 规范，明确只读、元数据扫描和不解析聊天内容。
+- [x] 1.2 明确非目标：不删除、不清理、不解析数据库、不读取文件内容、不上传数据。
+- [x] 1.3 定义 WeChat 根、分类、扫描结果、不可用原因和隐私日志边界。
+- [x] 1.4 审阅已存在日志脱敏禁止字段，确认覆盖微信账号、消息、联系人、路径和文件名。
 
 ## 2. 模型与服务协议
 
@@ -17,12 +17,12 @@
 
 ## 3. 根发现与扫描
 
-- [ ] 3.1 实现 `WeChatStorageRootResolver`，只检查窄范围候选路径和用户授权目录。
-- [ ] 3.2 实现 `WeChatStorageScanner`，只读取文件系统元数据，不打开或解析文件内容。
+- [ ] 3.1 实现 `WeChatStorageRootResolver`，只检查窄范围候选路径和用户授权目录；动态发现已安装微信的 `bundleIdentifier`（`NSWorkspace`/`/Applications`）作为候选键，覆盖 3.x/4.0/渠道差异，`com.tencent.xinWeChat` 作 fallback；将 `~/Library/Group Containers/*<bundle-id>*` 纳入候选并标注 shared/group kind。
+- [ ] 3.2 实现 `WeChatStorageScanner`，只读取文件系统元数据，不打开或解析文件内容；符号链接先解析真实路径并按真实路径去重，拒绝跟随指向候选 root 并集之外的链接并作为 skipped/permission-limited issue。
 - [ ] 3.3 实现路径分类推断：缓存、媒体与文件、日志、数据库与本地状态、备份、配置、其他。
 - [ ] 3.4 实现部分失败降级：不可读根生成 issue，不阻塞其他可读根。
 - [ ] 3.5 实现扫描取消和 top group 数量限制。
-- [ ] 3.6 使用临时 fixture 目录测试根发现、分类汇总、不可读降级、取消和空状态。
+- [ ] 3.6 使用临时 fixture 目录测试根发现、动态 bundle id 发现与 fallback、Group Container shared 标注、符号链接去重、越界拒绝与 issue 脱敏、分类汇总、不可读降级、取消和空状态。
 
 ## 4. 服务实现与依赖装配
 

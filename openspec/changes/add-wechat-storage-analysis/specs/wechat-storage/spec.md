@@ -16,15 +16,28 @@ WeChat Storage MUST analyze local WeChat disk usage using file-system metadata o
 
 ### Requirement: Narrow Root Discovery
 
-WeChat Storage MUST search only known macOS WeChat storage candidates and user-authorized roots. It MUST NOT recursively search the whole disk or the whole home directory for WeChat-like names in the first implementation.
+WeChat Storage MUST search only known macOS WeChat storage candidates and user-authorized roots. It MUST resolve the installed WeChat bundle identifier dynamically to cover version and channel differences. It MUST NOT recursively search the whole disk or the whole home directory for WeChat-like names in the first implementation.
 
 #### Scenario: Resolve candidate roots
 
 - **Given** the user starts a WeChat storage scan
 - **When** the app resolves storage roots
-- **Then** it checks only known candidate locations and explicitly authorized user roots
+- **Then** it resolves the installed WeChat bundle identifier via the system workspace and uses it as the candidate key
+- **And** it falls back to known bundle identifiers when WeChat is not resolvable
+- **And** it checks Containers, Application Support, Caches, and Group Containers candidate locations
+- **And** Group Containers are tagged as shared and their children use conservative categorization
 - **And** missing candidate roots are treated as absent, not failures
 - **And** unreadable existing roots are reported as unavailable
+
+#### Scenario: Symbolic links are deduplicated and bounded
+
+- **Given** candidate roots contain symbolic links
+- **When** the app scans metadata
+- **Then** it resolves each link to its real path and de-duplicates by real path
+- **And** it does not follow links whose real path resolves outside the union of candidate roots
+- **And** out-of-scope links are reported as skipped or permission-limited
+- **And** symlink issues include only stable reason codes, root identifiers or kinds, and sanitized display names
+- **And** symlink issues do not log or emphasize raw source paths, target paths, file names, or account-like path components
 
 ### Requirement: Categorized Storage Summary
 

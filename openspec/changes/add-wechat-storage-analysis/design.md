@@ -48,7 +48,7 @@ Represents a discovered or user-authorized root:
 
 - `id`
 - `url`
-- `kind`: application container, application support, cache, logs, user-selected, other
+- `kind`: application container, application support, cache, shared/group container, user-selected, other
 - `displayName`
 - `availability`
 
@@ -95,10 +95,18 @@ Contains:
 
 The resolver should inspect only narrow, known macOS locations and optional user-authorized directories. Candidate roots may include:
 
-- `~/Library/Containers/com.tencent.xinWeChat`
-- `~/Library/Application Support/com.tencent.xinWeChat`
-- `~/Library/Caches/com.tencent.xinWeChat`
+- `~/Library/Containers/<wechat-bundle-id>`
+- `~/Library/Application Support/<wechat-bundle-id>`
+- `~/Library/Caches/<wechat-bundle-id>`
+- `~/Library/Group Containers/*<wechat-bundle-id>*` (shared containers; see below)
 - user-selected directories that the user explicitly grants
+
+`<wechat-bundle-id>` MUST be resolved dynamically, not hard-coded:
+
+- Primary: discover the installed WeChat application via `NSWorkspace` / `/Applications` and read its `bundleIdentifier`. This covers WeChat 3.x (`com.tencent.xinWeChat`), 4.0, and channel variants whose bundle id may differ across versions.
+- Fallback: if discovery fails (WeChat not installed or not resolvable), use the known `com.tencent.xinWeChat` candidate plus any version-specific ids confirmed at implementation time.
+
+Group Containers are included as candidates because a large share of WeChat data (multi-account state, extensions) lives there. They MUST be tagged with a shared/group kind; category inference on their children stays conservative (lean toward `other`), and display names are sanitized. Inclusion is read-only metadata scanning and does not relax the no-content-parse boundary.
 
 The resolver must tolerate missing locations. Missing roots are not errors. Unreadable existing roots produce issues.
 
@@ -112,6 +120,13 @@ The scanner walks visible candidate roots and reads only resource metadata:
 - file size or allocated size where available
 - last modified date
 - path components for category inference
+
+Symbolic links MUST be handled explicitly:
+
+- Resolve each symlink to its real path before accounting.
+- De-duplicate by real path so the same physical directory is not counted twice across roots or via self-referential links.
+- Do not follow links whose real path resolves outside the union of candidate roots; surface them as a skipped or permission-limited issue rather than reading foreign metadata.
+- Symlink issues must remain privacy-safe: include only stable reason codes, root id/kind, and sanitized display names. Do not log or emphasize raw symlink source paths, target real paths, file names, or account-like path components.
 
 The scanner must not:
 

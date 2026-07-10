@@ -162,6 +162,9 @@
 		000000000000000000000296 /* SandboxTrashDeletionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000370 /* SandboxTrashDeletionExecutor.swift */; };
 		000000000000000000000297 /* FinderAutomationDeletionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000371 /* FinderAutomationDeletionExecutor.swift */; };
 		000000000000000000000298 /* UninstallerExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000372 /* UninstallerExecutionTests.swift */; };
+		0000000000000000000002B0 /* WeChatStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E0 /* WeChatStorage.swift */; };
+		0000000000000000000002B1 /* WeChatStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E1 /* WeChatStorageService.swift */; };
+		0000000000000000000002B2 /* WeChatStorageModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E2 /* WeChatStorageModelsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -333,6 +336,9 @@
 		000000000000000000000370 /* SandboxTrashDeletionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandboxTrashDeletionExecutor.swift; sourceTree = "<group>"; };
 		000000000000000000000371 /* FinderAutomationDeletionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderAutomationDeletionExecutor.swift; sourceTree = "<group>"; };
 		000000000000000000000372 /* UninstallerExecutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerExecutionTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003E0 /* WeChatStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorage.swift; sourceTree = "<group>"; };
+		0000000000000000000003E1 /* WeChatStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageService.swift; sourceTree = "<group>"; };
+		0000000000000000000003E2 /* WeChatStorageModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageModelsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -438,6 +444,7 @@
 				000000000000000000000351 /* ClipboardService.swift */,
 				0000000000000000000003A5 /* PermissionAuditService.swift */,
 				000000000000000000000369 /* UninstallerService.swift */,
+				0000000000000000000003E1 /* WeChatStorageService.swift */,
 				000000000000000000000366 /* DefaultClipboardService.swift */,
 				00000000000000000000032C /* DiskUsageService.swift */,
 				00000000000000000000033A /* SystemMonitorService.swift */,
@@ -468,6 +475,7 @@
 				000000000000000000000359 /* ClipboardBinaryPayload.swift */,
 				00000000000000000000035E /* ClipboardCapturedContent.swift */,
 				000000000000000000000368 /* AppUninstaller.swift */,
+				0000000000000000000003E0 /* WeChatStorage.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -684,6 +692,7 @@
 				00000000000000000000036C /* InstalledApplicationScannerTests.swift */,
 				00000000000000000000036E /* AssociatedFileScannerTests.swift */,
 				000000000000000000000372 /* UninstallerExecutionTests.swift */,
+				0000000000000000000003E2 /* WeChatStorageModelsTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -824,6 +833,8 @@
 				000000000000000000000277 /* ClipboardService.swift in Sources */,
 				0000000000000000000002A5 /* PermissionAuditService.swift in Sources */,
 				00000000000000000000028E /* AppUninstaller.swift in Sources */,
+				0000000000000000000002B0 /* WeChatStorage.swift in Sources */,
+				0000000000000000000002B1 /* WeChatStorageService.swift in Sources */,
 				00000000000000000000028F /* UninstallerService.swift in Sources */,
 				000000000000000000000291 /* InstalledApplicationScanner.swift in Sources */,
 				000000000000000000000293 /* AssociatedFileScanner.swift in Sources */,
@@ -948,6 +959,7 @@
 				000000000000000000000292 /* InstalledApplicationScannerTests.swift in Sources */,
 				000000000000000000000294 /* AssociatedFileScannerTests.swift in Sources */,
 				000000000000000000000298 /* UninstallerExecutionTests.swift in Sources */,
+				0000000000000000000002B2 /* WeChatStorageModelsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

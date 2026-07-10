@@ -11,9 +11,9 @@
 
 ## 2. 模型与服务协议
 
-- [ ] 2.1 创建 `WeChatStorageRoot`、`WeChatStorageCategory`、`WeChatStorageGroup`、`WeChatStorageScanResult` 等模型。
-- [ ] 2.2 创建 `WeChatStorageService` 协议，覆盖扫描、刷新和取消。
-- [ ] 2.3 为分类展示名、隐私说明、排序、汇总大小和不可用原因编写模型测试。
+- [x] 2.1 创建 `WeChatStorageRoot`、`WeChatStorageCategory`、`WeChatStorageGroup`、`WeChatStorageScanResult` 等模型。
+- [x] 2.2 创建 `WeChatStorageService` 协议，覆盖扫描、刷新和取消。
+- [x] 2.3 为分类展示名、隐私说明、排序、汇总大小和不可用原因编写模型测试。
 
 ## 3. 根发现与扫描
 

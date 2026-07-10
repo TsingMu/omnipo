@@ -17,8 +17,15 @@ It does not answer:
 
 - Who the user chatted with.
 - What messages, files, images, videos, or contacts contain.
-- Which conversation owns a file.
 - Whether a specific file is safe to delete.
+
+The expanded metadata view may additionally answer:
+
+- Which file types account for visible usage, based on filename extensions and system type metadata.
+- Which privacy-safe large-file summaries account for the most space.
+- Which anonymous conversation-like directory buckets account for the most space when the installed WeChat layout can be recognized conservatively.
+
+Conversation attribution is a best-effort directory inference, not message-database analysis. Unknown files remain explicitly unattributed. After explicit consent, the UI may display real filenames and let the user assign an in-memory local name to an anonymous conversation. It must not claim that a user-assigned alias came from WeChat. Automatic contact/group names require a safely readable, versioned identity provider; encrypted WeChat databases must remain unsupported rather than decrypted or bypassed.
 
 ## Architecture
 
@@ -120,12 +127,13 @@ The scanner walks visible candidate roots and reads only resource metadata:
 - file size or allocated size where available
 - last modified date
 - path components for category inference
+- filename extensions for system file-type inference
 
 Symbolic links MUST be handled explicitly:
 
 - Resolve each symlink to its real path before accounting.
 - De-duplicate by real path so the same physical directory is not counted twice across roots or via self-referential links.
-- Do not follow links whose real path resolves outside the union of candidate roots; surface them as a skipped or permission-limited issue rather than reading foreign metadata.
+- Do not follow links whose real path resolves outside the union of candidate roots; surface one privacy-safe `externalLinkSkipped` issue per affected root rather than misreporting a permission failure.
 - Symlink issues must remain privacy-safe: include only stable reason codes, root id/kind, and sanitized display names. Do not log or emphasize raw symlink source paths, target real paths, file names, or account-like path components.
 
 The scanner must not:
@@ -137,6 +145,21 @@ The scanner must not:
 - read plist contents unless the design is explicitly expanded later
 
 Large scans must support cancellation and should cap top group count.
+The scanner also caps retained large-file summaries and per-conversation top files. Retained summaries use generated labels by default. A real last-path component may be retained only when the sensitive-name consent is enabled; raw parent paths are never included.
+
+## Sensitive Name Consent
+
+Sensitive names are disabled by default. Enabling them requires an explicit warning that distinguishes real filenames from user-assigned local conversation names. Disabling the capability triggers an anonymous rescan and clears every in-memory conversation alias. Conversation aliases are not persisted to settings, caches, or logs.
+
+## Large Files and Conversation Buckets
+
+Each regular file contributes once to total visible usage and once to each independent projection:
+
+- asset type summary (video, image, audio, document, archive, database, other)
+- bounded large-file ranking
+- anonymous conversation usage when a conservative path-layout rule succeeds
+
+Dimension totals are not added together. Conversation attribution stores only an opaque stable identifier, anonymous display label, inferred conversation kind, aggregate sizes, and confidence. It must never persist or log the raw path component used to derive the opaque identifier.
 
 ## Category Inference
 
@@ -157,6 +180,7 @@ Unavailable reasons include:
 - root missing
 - permission limited
 - TCC or sandbox limited
+- external link skipped
 - resource unavailable
 - scan cancelled
 - unknown
@@ -196,6 +220,7 @@ Logs must not include:
 - contact names
 - message content
 - raw WeChat database names when they may identify user data
+- consented filenames or user-assigned conversation names
 
 ## Verification
 

@@ -138,6 +138,18 @@ public extension SettingsKey {
         default: .string("")
     )
 
+    /// 用户授权的微信存储扫描根 security-scoped bookmark 列表。
+    static let weChatStorageRootBookmarks = SettingsKey(
+        "omnipo.settings.wechat.storageRootBookmarks",
+        default: .string("")
+    )
+
+    /// 用户是否明确同意在微信管理页显示敏感名称。聊天别名不写入设置。
+    static let weChatSensitiveNamesEnabled = SettingsKey(
+        "omnipo.settings.wechat.sensitiveNamesEnabled",
+        default: .bool(false)
+    )
+
     static let systemMonitorIntervalSeconds = SettingsKey(
         "omnipo.settings.systemMonitor.intervalSeconds",
         default: .double(SystemMonitorInterval.defaultSeconds)
@@ -324,6 +336,27 @@ public extension SettingsService {
             return
         }
         write(encoded.joined(separator: "\n"), forKey: .launcherFileDirectoryBookmarks)
+    }
+
+    func readWeChatStorageRootBookmarks() -> [Data] {
+        guard let stored = readString(forKey: .weChatStorageRootBookmarks),
+              !stored.isEmpty else {
+            return []
+        }
+        return stored
+            .split(separator: "\n")
+            .compactMap { Data(base64Encoded: String($0)) }
+    }
+
+    func writeWeChatStorageRootBookmarks(_ bookmarks: [Data]) {
+        let encoded = bookmarks
+            .filter { !$0.isEmpty }
+            .map { $0.base64EncodedString() }
+        guard !encoded.isEmpty else {
+            remove(forKey: .weChatStorageRootBookmarks)
+            return
+        }
+        write(encoded.joined(separator: "\n"), forKey: .weChatStorageRootBookmarks)
     }
 
     /// 读取系统监控采样间隔;损坏值回退到默认 5 秒。

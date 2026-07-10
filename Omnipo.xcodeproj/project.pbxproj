@@ -173,6 +173,7 @@
 		0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */; };
 		0000000000000000000002B9 /* WeChatManagerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E9 /* WeChatManagerStore.swift */; };
 		0000000000000000000002BA /* WeChatManagerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003EA /* WeChatManagerStoreTests.swift */; };
+		0000000000000000000002BB /* WeChatStorageAuthorizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003EB /* WeChatStorageAuthorizationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -355,6 +356,7 @@
 		0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultWeChatStorageServiceTests.swift; sourceTree = "<group>"; };
 		0000000000000000000003E9 /* WeChatManagerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatManagerStore.swift; sourceTree = "<group>"; };
 		0000000000000000000003EA /* WeChatManagerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatManagerStoreTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003EB /* WeChatStorageAuthorizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageAuthorizationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -418,6 +420,7 @@
 				000000000000000000000346 /* SystemMonitorStore.swift */,
 				0000000000000000000003B5 /* PermissionAuditStore.swift */,
 				0000000000000000000003E9 /* WeChatManagerStore.swift */,
+				0000000000000000000003EB /* WeChatStorageAuthorizationManager.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -883,6 +886,7 @@
 				0000000000000000000003C4 /* SystemPermissionApplicationResolver.swift in Sources */,
 				0000000000000000000003C5 /* PermissionAuditStore.swift in Sources */,
 				0000000000000000000002B9 /* WeChatManagerStore.swift in Sources */,
+				0000000000000000000002BB /* WeChatStorageAuthorizationManager.swift in Sources */,
 				0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */,
 				0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */,
 				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,

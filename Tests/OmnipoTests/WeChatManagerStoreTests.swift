@@ -83,6 +83,58 @@ final class WeChatManagerStoreTests: XCTestCase {
         XCTAssertTrue(cancelCalled)
     }
 
+    func test_authorizationManager_restoresAndClearsPersistedRoot() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("omnipo-wechat-auth-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let settings = UserDefaultsSettingsService.testing(
+            suiteName: "omnipo.tests.wechat.authorization.\(UUID().uuidString)"
+        )
+        let bookmark = try root.bookmarkData(
+            options: [.withSecurityScope],
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        settings.writeWeChatStorageRootBookmarks([bookmark])
+
+        let manager = WeChatStorageAuthorizationManager(settings: settings)
+        XCTAssertEqual(
+            manager.currentRoots().map { $0.standardizedFileURL.path },
+            [root.standardizedFileURL.path]
+        )
+
+        manager.clearRoots()
+        XCTAssertTrue(manager.currentRoots().isEmpty)
+        XCTAssertTrue(settings.readWeChatStorageRootBookmarks().isEmpty)
+    }
+
+    func test_sensitiveNamesRequireConsentAndAliasesClearWhenDisabled() async {
+        let settings = UserDefaultsSettingsService.testing(
+            suiteName: "omnipo.tests.wechat.sensitive.\(UUID().uuidString)"
+        )
+        let authorizationManager = WeChatStorageAuthorizationManager(
+            settings: settings,
+            sensitiveNamesConsentPrompt: { true }
+        )
+        let service = FakeWeChatStorageService(result: .success(makeResult(totalBytes: 10)))
+        let store = WeChatManagerStore(service: service, authorizationManager: authorizationManager)
+
+        XCTAssertFalse(store.sensitiveNamesEnabled)
+        store.setConversationAlias("不应保存", for: "opaque")
+        XCTAssertTrue(store.conversationAliases.isEmpty)
+
+        await store.enableSensitiveNames()
+        XCTAssertTrue(store.sensitiveNamesEnabled)
+        store.setConversationAlias("测试群", for: "opaque")
+        XCTAssertEqual(store.conversationAliases["opaque"], "测试群")
+
+        await store.disableSensitiveNames()
+        XCTAssertFalse(store.sensitiveNamesEnabled)
+        XCTAssertTrue(store.conversationAliases.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeResult(totalBytes: Int) -> WeChatStorageScanResult {

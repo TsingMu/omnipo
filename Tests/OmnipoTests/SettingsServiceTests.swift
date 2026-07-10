@@ -78,6 +78,28 @@ final class SettingsServiceTests: XCTestCase {
         XCTAssertTrue(service.readLauncherFileDirectoryBookmarks().isEmpty)
     }
 
+    func test_weChatStorageRootBookmarks_roundTripAndClear() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        let bookmarks = [Data([0x11, 0x12]), Data([0x21, 0x22])]
+
+        service.writeWeChatStorageRootBookmarks(bookmarks)
+        XCTAssertEqual(service.readWeChatStorageRootBookmarks(), bookmarks)
+
+        service.writeWeChatStorageRootBookmarks([])
+        XCTAssertTrue(service.readWeChatStorageRootBookmarks().isEmpty)
+    }
+
+    func test_weChatSensitiveNamesConsent_roundTripsAndDefaultsOff() {
+        let service = UserDefaultsSettingsService.testing(suiteName: "omnipo.tests.defaults.\(UUID().uuidString)")
+        XCTAssertFalse(service.readBool(forKey: .weChatSensitiveNamesEnabled))
+
+        service.write(true, forKey: .weChatSensitiveNamesEnabled)
+        XCTAssertTrue(service.readBool(forKey: .weChatSensitiveNamesEnabled))
+
+        service.write(false, forKey: .weChatSensitiveNamesEnabled)
+        XCTAssertFalse(service.readBool(forKey: .weChatSensitiveNamesEnabled))
+    }
+
     func test_isolationFromStandardDefaults() {
         UserDefaults.standard.removeObject(forKey: SettingsKey.launchDashboardAtStart.rawValue)
 

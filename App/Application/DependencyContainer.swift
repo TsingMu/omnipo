@@ -15,6 +15,7 @@ public final class DependencyContainer {
     public let permissionAuditService: any PermissionAuditService
     public let uninstallerService: any UninstallerService
     public let weChatStorageService: any WeChatStorageService
+    public let weChatStorageAuthorizationManager: WeChatStorageAuthorizationManager
     public let authorizedRootManager: AuthorizedRootManager
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
@@ -33,6 +34,7 @@ public final class DependencyContainer {
         permissionAuditService: any PermissionAuditService,
         uninstallerService: any UninstallerService,
         weChatStorageService: any WeChatStorageService,
+        weChatStorageAuthorizationManager: WeChatStorageAuthorizationManager,
         authorizedRootManager: AuthorizedRootManager,
         applicationResourceCache: ApplicationResourceCache,
         launcherCoordinator: LauncherCoordinator,
@@ -50,6 +52,7 @@ public final class DependencyContainer {
         self.permissionAuditService = permissionAuditService
         self.uninstallerService = uninstallerService
         self.weChatStorageService = weChatStorageService
+        self.weChatStorageAuthorizationManager = weChatStorageAuthorizationManager
         self.authorizedRootManager = authorizedRootManager
         self.applicationResourceCache = applicationResourceCache
         self.launcherCoordinator = launcherCoordinator
@@ -85,9 +88,18 @@ public final class DependencyContainer {
         let clipboardService = makeClipboardService(settings: settings)
         let permissionAuditService = DefaultPermissionAuditService(logger: logging)
         let uninstallerService = DefaultUninstallerService()
+        let weChatStorageAuthorizationManager = WeChatStorageAuthorizationManager(settings: settings)
         let weChatStorageService = DefaultWeChatStorageService(
             resolver: WeChatStorageRootResolver(),
-            scanner: WeChatStorageScanner()
+            scanner: WeChatStorageScanner(),
+            userSelectedRootsProvider: { @MainActor in
+                weChatStorageAuthorizationManager.currentRoots()
+            },
+            scanOptionsProvider: { @MainActor in
+                WeChatStorageScanOptions(
+                    includeSensitiveNames: weChatStorageAuthorizationManager.sensitiveNamesEnabled
+                )
+            }
         )
 
         let navigator = MainWindowNavigator()
@@ -165,6 +177,7 @@ public final class DependencyContainer {
             permissionAuditService: permissionAuditService,
             uninstallerService: uninstallerService,
             weChatStorageService: weChatStorageService,
+            weChatStorageAuthorizationManager: weChatStorageAuthorizationManager,
             authorizedRootManager: authorizedRootManager,
             applicationResourceCache: applicationResourceCache,
             launcherCoordinator: coordinator,

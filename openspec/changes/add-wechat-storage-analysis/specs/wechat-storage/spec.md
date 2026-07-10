@@ -28,6 +28,7 @@ WeChat Storage MUST search only known macOS WeChat storage candidates and user-a
 - **And** Group Containers are tagged as shared and their children use conservative categorization
 - **And** missing candidate roots are treated as absent, not failures
 - **And** unreadable existing roots are reported as unavailable
+- **And** the user may explicitly select additional WeChat roots through a system directory picker
 
 #### Scenario: Symbolic links are deduplicated and bounded
 
@@ -35,7 +36,8 @@ WeChat Storage MUST search only known macOS WeChat storage candidates and user-a
 - **When** the app scans metadata
 - **Then** it resolves each link to its real path and de-duplicates by real path
 - **And** it does not follow links whose real path resolves outside the union of candidate roots
-- **And** out-of-scope links are reported as skipped or permission-limited
+- **And** out-of-scope links are reported with a dedicated external-link-skipped reason, not as a permission failure
+- **And** repeated out-of-scope links are aggregated to at most one issue per root
 - **And** symlink issues include only stable reason codes, root identifiers or kinds, and sanitized display names
 - **And** symlink issues do not log or emphasize raw source paths, target paths, file names, or account-like path components
 
@@ -50,6 +52,59 @@ WeChat Storage MUST summarize visible usage by broad category without implying t
 - **Then** it reports total visible size
 - **And** it groups usage into categories such as cache, media/files, logs, databases/local state, backups, configuration, and other
 - **And** each category includes a user-facing privacy note or explanation
+
+### Requirement: Large File and Asset Type Summary
+
+WeChat Storage MUST summarize regular files by metadata-derived asset type and MUST provide a bounded ranking of the largest visible files without reading their contents.
+
+#### Scenario: Visible roots contain large media files
+
+- **Given** a readable WeChat root contains regular files
+- **When** the scan completes
+- **Then** it classifies files as video, image, audio, document, archive, database, or other using extensions and system type metadata
+- **And** it returns a size-sorted capped large-file list
+- **And** large-file display labels do not expose raw filenames or paths
+- **And** each file contributes exactly once to the visible total
+
+#### Scenario: User explicitly enables sensitive names
+
+- **Given** sensitive names are disabled by default
+- **When** the user accepts the sensitive-name warning and refreshes the scan
+- **Then** large-file rows may show the real filename without its parent path
+- **And** filenames remain only in the in-memory scan result
+- **And** filenames are not written to logs or settings
+
+### Requirement: Anonymous Conversation Usage
+
+WeChat Storage MUST provide anonymous conversation usage only when a conservative directory-layout rule can attribute files without parsing messages or databases.
+
+#### Scenario: A supported conversation media layout is present
+
+- **Given** a readable root contains a recognized message attachment directory layout
+- **When** the scanner attributes files to conversation buckets
+- **Then** it returns anonymous single-chat, group-chat, or unknown-conversation labels sorted by size
+- **And** it reports attribution confidence
+- **And** it keeps unrecognized files in an explicit unattributed total
+- **And** it does not retain or log raw conversation identifiers, contact names, group names, filenames, or paths
+
+### Requirement: Local Conversation Names Without Database Bypass
+
+WeChat Storage MUST allow an explicitly consenting user to assign a local in-memory name to an anonymous conversation, and MUST NOT bypass encrypted WeChat databases to obtain contact or group names.
+
+#### Scenario: User names an anonymous conversation
+
+- **Given** sensitive-name consent is enabled
+- **When** the user assigns a contact or group name to an anonymous conversation
+- **Then** the UI displays that name for the matching opaque conversation identifier
+- **And** the name is cleared when sensitive names are disabled or the app exits
+- **And** the name is not persisted or logged
+
+#### Scenario: WeChat identity database is encrypted or unsupported
+
+- **Given** the installed WeChat version does not expose a safely readable identity index
+- **When** conversation storage is displayed
+- **Then** the UI explains that automatic names are unavailable
+- **And** the app does not extract keys, inject into WeChat, decrypt protected databases, or claim aliases are WeChat-derived names
 
 ### Requirement: Partial Degradation
 

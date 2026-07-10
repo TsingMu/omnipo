@@ -40,6 +40,7 @@ final class WeChatStorageModelsTests: XCTestCase {
         for reason in WeChatStorageAvailabilityReason.allCases {
             XCTAssertEqual(reason.stableCode, reason.rawValue)
             XCTAssertFalse(reason.displayName.isEmpty)
+            XCTAssertFalse(reason.explanation.isEmpty)
         }
     }
 
@@ -70,6 +71,11 @@ final class WeChatStorageModelsTests: XCTestCase {
         XCTAssertEqual(result.totalVisibleBytes, 0)
         XCTAssertEqual(result.summedCategoryBytes, 0)
         XCTAssertTrue(result.categories.isEmpty)
+        XCTAssertTrue(result.assets.isEmpty)
+        XCTAssertTrue(result.largeFiles.isEmpty)
+        XCTAssertTrue(result.conversations.isEmpty)
+        XCTAssertEqual(result.unattributedBytes, 0)
+        XCTAssertFalse(result.sensitiveNamesIncluded)
         XCTAssertTrue(result.topGroups.isEmpty)
         XCTAssertTrue(result.roots.isEmpty)
         XCTAssertTrue(result.issues.isEmpty)
@@ -84,8 +90,28 @@ final class WeChatStorageModelsTests: XCTestCase {
     }
 
     func test_scanResult_clampsNegativeTotal() {
-        let result = WeChatStorageScanResult(totalVisibleBytes: -99)
+        let result = WeChatStorageScanResult(totalVisibleBytes: -99, unattributedBytes: -10)
         XCTAssertEqual(result.totalVisibleBytes, 0)
+        XCTAssertEqual(result.unattributedBytes, 0)
+    }
+
+    func test_assetAndConversationSummariesClampNegativeValues() {
+        let asset = WeChatAssetSummary(kind: .video, sizeBytes: -1, fileCount: -2)
+        let conversation = WeChatConversationUsage(
+            conversationID: "opaque",
+            kind: .group,
+            displayName: "群聊 1",
+            sizeBytes: -3,
+            fileCount: -4,
+            assets: [],
+            topFiles: [],
+            confidence: .inferred
+        )
+
+        XCTAssertEqual(asset.sizeBytes, 0)
+        XCTAssertEqual(asset.fileCount, 0)
+        XCTAssertEqual(conversation.sizeBytes, 0)
+        XCTAssertEqual(conversation.fileCount, 0)
     }
 
     // MARK: - Issue privacy
@@ -114,6 +140,19 @@ final class WeChatStorageModelsTests: XCTestCase {
         let result = WeChatStorageScanResult(
             totalVisibleBytes: 42,
             categories: [.init(category: .cache, sizeBytes: 42, fileCount: 1)],
+            assets: [.init(kind: .video, sizeBytes: 42, fileCount: 1)],
+            largeFiles: [.init(kind: .video, displayName: "视频文件 1", fileName: "real.mp4", sizeBytes: 42)],
+            conversations: [.init(
+                conversationID: "opaque",
+                kind: .group,
+                displayName: "群聊 1",
+                sizeBytes: 42,
+                fileCount: 1,
+                assets: [.init(kind: .video, sizeBytes: 42, fileCount: 1)],
+                topFiles: [],
+                confidence: .high
+            )],
+            sensitiveNamesIncluded: true,
             topGroups: [.init(category: .cache, displayName: "g", sizeBytes: 42, fileCount: 1)],
             roots: [root],
             issues: [.init(rootKind: .applicationContainer, reason: .rootMissing)],

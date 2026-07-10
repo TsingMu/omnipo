@@ -26,6 +26,7 @@ public enum WeChatStorageAvailabilityReason: String, CaseIterable, Codable, Send
     case rootMissing
     case permissionLimited
     case tccOrSandboxLimited
+    case externalLinkSkipped
     case resourceUnavailable
     case scanCancelled
     case unknown
@@ -35,11 +36,31 @@ public enum WeChatStorageAvailabilityReason: String, CaseIterable, Codable, Send
     public var displayName: String {
         switch self {
         case .rootMissing: return "未发现该位置"
-        case .permissionLimited: return "权限不足"
-        case .tccOrSandboxLimited: return "受系统保护"
+        case .permissionLimited: return "目录不可读"
+        case .tccOrSandboxLimited: return "受系统隐私保护"
+        case .externalLinkSkipped: return "已跳过外部链接"
         case .resourceUnavailable: return "资源不可用"
         case .scanCancelled: return "扫描已取消"
         case .unknown: return "未知原因"
+        }
+    }
+
+    public var explanation: String {
+        switch self {
+        case .rootMissing:
+            return "未在该候选位置发现微信存储。"
+        case .permissionLimited:
+            return "当前进程无法读取该目录，可选择一个已授权目录后重试。"
+        case .tccOrSandboxLimited:
+            return "macOS 隐私保护阻止了读取，可在系统设置中检查完全磁盘访问。"
+        case .externalLinkSkipped:
+            return "链接指向已授权扫描范围之外，为保护隐私未继续跟随。"
+        case .resourceUnavailable:
+            return "扫描时该资源已不存在或暂时无法访问。"
+        case .scanCancelled:
+            return "扫描已按用户请求停止，当前结果可能不完整。"
+        case .unknown:
+            return "无法确定该位置不可用的具体原因。"
         }
     }
 }
@@ -131,6 +152,160 @@ public struct WeChatStorageCategorySummary: Identifiable, Sendable, Hashable, Co
     }
 }
 
+/// 文件的可见类型。仅由扩展名和系统 UTType 推断，不读取文件内容。
+public enum WeChatAssetKind: String, CaseIterable, Codable, Sendable, Hashable {
+    case video
+    case image
+    case audio
+    case document
+    case archive
+    case database
+    case other
+
+    public var displayName: String {
+        switch self {
+        case .video: return "视频"
+        case .image: return "图片"
+        case .audio: return "音频"
+        case .document: return "文档"
+        case .archive: return "压缩包"
+        case .database: return "数据库"
+        case .other: return "其他"
+        }
+    }
+}
+
+/// 单个文件类型的大小与数量汇总。
+public struct WeChatAssetSummary: Identifiable, Sendable, Hashable, Codable {
+    public var id: WeChatAssetKind { kind }
+    public var kind: WeChatAssetKind
+    public var sizeBytes: Int
+    public var fileCount: Int
+
+    public init(kind: WeChatAssetKind, sizeBytes: Int, fileCount: Int) {
+        self.kind = kind
+        self.sizeBytes = max(0, sizeBytes)
+        self.fileCount = max(0, fileCount)
+    }
+}
+
+public enum WeChatConversationKind: String, CaseIterable, Codable, Sendable, Hashable {
+    case directMessage
+    case group
+    case unknown
+
+    public var displayName: String {
+        switch self {
+        case .directMessage: return "单聊"
+        case .group: return "群聊"
+        case .unknown: return "会话"
+        }
+    }
+}
+
+public enum WeChatAttributionConfidence: String, Codable, Sendable, Hashable {
+    case high
+    case inferred
+
+    public var displayName: String {
+        switch self {
+        case .high: return "高可信"
+        case .inferred: return "目录推断"
+        }
+    }
+}
+
+public struct WeChatStorageScanOptions: Sendable, Hashable {
+    public var includeSensitiveNames: Bool
+
+    public init(includeSensitiveNames: Bool = false) {
+        self.includeSensitiveNames = includeSensitiveNames
+    }
+
+    public static let anonymous = WeChatStorageScanOptions()
+}
+
+/// 大文件的隐私安全摘要。`displayName` 不包含原始文件名或路径。
+public struct WeChatLargeFile: Identifiable, Sendable, Hashable, Codable {
+    public let id: UUID
+    public var kind: WeChatAssetKind
+    public var displayName: String
+    public var fileName: String?
+    public var sizeBytes: Int
+    public var modifiedAt: Date?
+    public var conversationID: String?
+
+    public init(
+        id: UUID = UUID(),
+        kind: WeChatAssetKind,
+        displayName: String,
+        fileName: String?,
+        sizeBytes: Int,
+        modifiedAt: Date? = nil,
+        conversationID: String? = nil
+    ) {
+        self.id = id
+        self.kind = kind
+        self.displayName = displayName
+        self.fileName = fileName
+        self.sizeBytes = max(0, sizeBytes)
+        self.modifiedAt = modifiedAt
+        self.conversationID = conversationID
+    }
+
+    public init(
+        id: UUID = UUID(),
+        kind: WeChatAssetKind,
+        displayName: String,
+        sizeBytes: Int,
+        modifiedAt: Date? = nil,
+        conversationID: String? = nil
+    ) {
+        self.init(
+            id: id,
+            kind: kind,
+            displayName: displayName,
+            fileName: nil,
+            sizeBytes: sizeBytes,
+            modifiedAt: modifiedAt,
+            conversationID: conversationID
+        )
+    }
+}
+
+/// 由可识别目录结构推断出的匿名会话占用。
+public struct WeChatConversationUsage: Identifiable, Sendable, Hashable, Codable {
+    public var id: String { conversationID }
+    public var conversationID: String
+    public var kind: WeChatConversationKind
+    public var displayName: String
+    public var sizeBytes: Int
+    public var fileCount: Int
+    public var assets: [WeChatAssetSummary]
+    public var topFiles: [WeChatLargeFile]
+    public var confidence: WeChatAttributionConfidence
+
+    public init(
+        conversationID: String,
+        kind: WeChatConversationKind,
+        displayName: String,
+        sizeBytes: Int,
+        fileCount: Int,
+        assets: [WeChatAssetSummary],
+        topFiles: [WeChatLargeFile],
+        confidence: WeChatAttributionConfidence
+    ) {
+        self.conversationID = conversationID
+        self.kind = kind
+        self.displayName = displayName
+        self.sizeBytes = max(0, sizeBytes)
+        self.fileCount = max(0, fileCount)
+        self.assets = assets
+        self.topFiles = topFiles
+        self.confidence = confidence
+    }
+}
+
 /// 一个聚合存储组(通常是根下的子目录)。`displayName` 必须脱敏。
 public struct WeChatStorageGroup: Identifiable, Sendable, Hashable, Codable {
     public let id: UUID
@@ -188,6 +363,11 @@ public struct WeChatStorageIssue: Identifiable, Sendable, Hashable, Codable {
 public struct WeChatStorageScanResult: Sendable, Hashable, Codable {
     public var totalVisibleBytes: Int
     public var categories: [WeChatStorageCategorySummary]
+    public var assets: [WeChatAssetSummary]
+    public var largeFiles: [WeChatLargeFile]
+    public var conversations: [WeChatConversationUsage]
+    public var unattributedBytes: Int
+    public var sensitiveNamesIncluded: Bool
     public var topGroups: [WeChatStorageGroup]
     public var roots: [WeChatStorageRoot]
     public var issues: [WeChatStorageIssue]
@@ -196,6 +376,11 @@ public struct WeChatStorageScanResult: Sendable, Hashable, Codable {
     public init(
         totalVisibleBytes: Int = 0,
         categories: [WeChatStorageCategorySummary] = [],
+        assets: [WeChatAssetSummary] = [],
+        largeFiles: [WeChatLargeFile] = [],
+        conversations: [WeChatConversationUsage] = [],
+        unattributedBytes: Int = 0,
+        sensitiveNamesIncluded: Bool,
         topGroups: [WeChatStorageGroup] = [],
         roots: [WeChatStorageRoot] = [],
         issues: [WeChatStorageIssue] = [],
@@ -203,10 +388,42 @@ public struct WeChatStorageScanResult: Sendable, Hashable, Codable {
     ) {
         self.totalVisibleBytes = max(0, totalVisibleBytes)
         self.categories = categories
+        self.assets = assets
+        self.largeFiles = largeFiles
+        self.conversations = conversations
+        self.unattributedBytes = max(0, unattributedBytes)
+        self.sensitiveNamesIncluded = sensitiveNamesIncluded
         self.topGroups = topGroups
         self.roots = roots
         self.issues = issues
         self.completedAt = completedAt
+    }
+
+    public init(
+        totalVisibleBytes: Int = 0,
+        categories: [WeChatStorageCategorySummary] = [],
+        assets: [WeChatAssetSummary] = [],
+        largeFiles: [WeChatLargeFile] = [],
+        conversations: [WeChatConversationUsage] = [],
+        unattributedBytes: Int = 0,
+        topGroups: [WeChatStorageGroup] = [],
+        roots: [WeChatStorageRoot] = [],
+        issues: [WeChatStorageIssue] = [],
+        completedAt: Date = Date()
+    ) {
+        self.init(
+            totalVisibleBytes: totalVisibleBytes,
+            categories: categories,
+            assets: assets,
+            largeFiles: largeFiles,
+            conversations: conversations,
+            unattributedBytes: unattributedBytes,
+            sensitiveNamesIncluded: false,
+            topGroups: topGroups,
+            roots: roots,
+            issues: issues,
+            completedAt: completedAt
+        )
     }
 
     /// 各分类大小之和。供 UI 校验 `totalVisibleBytes` 一致性。

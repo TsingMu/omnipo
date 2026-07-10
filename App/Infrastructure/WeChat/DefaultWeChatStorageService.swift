@@ -4,20 +4,46 @@ import Foundation
 public final class DefaultWeChatStorageService: WeChatStorageService, @unchecked Sendable {
     private let resolver: WeChatStorageRootResolver
     private let scanner: WeChatStorageScanner
+    private let userSelectedRootsProvider: @Sendable () async -> [URL]
+    private let scanOptionsProvider: @Sendable () async -> WeChatStorageScanOptions
     private let lock = NSLock()
     private var cancelled = false
 
-    public init(resolver: WeChatStorageRootResolver, scanner: WeChatStorageScanner) {
+    public convenience init(
+        resolver: WeChatStorageRootResolver,
+        scanner: WeChatStorageScanner,
+        userSelectedRootsProvider: @escaping @Sendable () async -> [URL] = { [] }
+    ) {
+        self.init(
+            resolver: resolver,
+            scanner: scanner,
+            userSelectedRootsProvider: userSelectedRootsProvider,
+            scanOptionsProvider: { .anonymous }
+        )
+    }
+
+    public init(
+        resolver: WeChatStorageRootResolver,
+        scanner: WeChatStorageScanner,
+        userSelectedRootsProvider: @escaping @Sendable () async -> [URL],
+        scanOptionsProvider: @escaping @Sendable () async -> WeChatStorageScanOptions
+    ) {
         self.resolver = resolver
         self.scanner = scanner
+        self.userSelectedRootsProvider = userSelectedRootsProvider
+        self.scanOptionsProvider = scanOptionsProvider
     }
 
     public func scan() async -> Result<WeChatStorageScanResult, AppError> {
-        performScan(resetFirst: false)
+        let userSelectedRoots = await userSelectedRootsProvider()
+        let options = await scanOptionsProvider()
+        return performScan(resetFirst: false, userSelectedRoots: userSelectedRoots, options: options)
     }
 
     public func refresh() async -> Result<WeChatStorageScanResult, AppError> {
-        performScan(resetFirst: true)
+        let userSelectedRoots = await userSelectedRootsProvider()
+        let options = await scanOptionsProvider()
+        return performScan(resetFirst: true, userSelectedRoots: userSelectedRoots, options: options)
     }
 
     public func cancel() async {
@@ -26,11 +52,15 @@ public final class DefaultWeChatStorageService: WeChatStorageService, @unchecked
 
     /// 扫描流程:可选先重置取消标志(用于 refresh 强制全新扫描),scanner 通过 closure
     /// 读取取消标志;扫描结束后清理,允许下一次 scan/refresh 正常进行。
-    private func performScan(resetFirst: Bool) -> Result<WeChatStorageScanResult, AppError> {
+    private func performScan(
+        resetFirst: Bool,
+        userSelectedRoots: [URL],
+        options: WeChatStorageScanOptions
+    ) -> Result<WeChatStorageScanResult, AppError> {
         if resetFirst { setCancelled(false) }
         let isCancelled = { [weak self] in self?.isCancelledFlag() ?? false }
-        let roots = resolver.resolve()
-        let result = scanner.scan(roots: roots, isCancelled: isCancelled)
+        let roots = resolver.resolve(userSelectedRoots: userSelectedRoots)
+        let result = scanner.scan(roots: roots, options: options, isCancelled: isCancelled)
         setCancelled(false)
         return .success(result)
     }

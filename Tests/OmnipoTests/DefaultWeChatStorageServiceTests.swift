@@ -67,11 +67,55 @@ final class DefaultWeChatStorageServiceTests: XCTestCase {
         XCTAssertEqual(contentsBefore, contentsAfter)
     }
 
+    func test_refresh_includesUserSelectedRoots() async throws {
+        let home = try makeTemporaryHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let userRoot = try makeTemporaryHome()
+        defer { try? FileManager.default.removeItem(at: userRoot) }
+        try writeFile(userRoot.appendingPathComponent("Caches/manual.dat"), bytes: 25)
+
+        let service = makeService(
+            home: home,
+            bid: "com.tencent.xinWeChat",
+            userSelectedRootsProvider: { [userRoot] }
+        )
+        let result = try await service.refresh().get()
+
+        XCTAssertEqual(result.totalVisibleBytes, 25)
+        XCTAssertTrue(result.roots.contains { $0.kind == .userSelected })
+    }
+
+    func test_refresh_passesSensitiveNameOptionToScanner() async throws {
+        let home = try makeTemporaryHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let bid = "com.tencent.xinWeChat"
+        try writeFile(home.appendingPathComponent("Library/Containers/\(bid)/Media/real-name.mp4"), bytes: 80)
+
+        let result = try await makeService(
+            home: home,
+            bid: bid,
+            scanOptionsProvider: { .init(includeSensitiveNames: true) }
+        ).refresh().get()
+
+        XCTAssertTrue(result.sensitiveNamesIncluded)
+        XCTAssertEqual(result.largeFiles.first?.fileName, "real-name.mp4")
+    }
+
     // MARK: - Helpers
 
-    private func makeService(home: URL, bid: String) -> DefaultWeChatStorageService {
+    private func makeService(
+        home: URL,
+        bid: String,
+        userSelectedRootsProvider: @escaping @Sendable () async -> [URL] = { [] },
+        scanOptionsProvider: @escaping @Sendable () async -> WeChatStorageScanOptions = { .anonymous }
+    ) -> DefaultWeChatStorageService {
         let resolver = WeChatStorageRootResolver(bundleIDProvider: FixedBidProvider(bid: bid), homeDirectory: home)
-        return DefaultWeChatStorageService(resolver: resolver, scanner: WeChatStorageScanner())
+        return DefaultWeChatStorageService(
+            resolver: resolver,
+            scanner: WeChatStorageScanner(),
+            userSelectedRootsProvider: userSelectedRootsProvider,
+            scanOptionsProvider: scanOptionsProvider
+        )
     }
 
     private func makeTemporaryHome() throws -> URL {

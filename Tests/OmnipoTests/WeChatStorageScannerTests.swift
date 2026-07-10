@@ -84,7 +84,8 @@ final class WeChatStorageScannerTests: XCTestCase {
         let result = WeChatStorageScanner().scan(roots: [readableRoot(url: root)])
 
         XCTAssertEqual(result.totalVisibleBytes, 0)
-        XCTAssertTrue(result.issues.contains { $0.reason == .permissionLimited })
+        XCTAssertTrue(result.issues.contains { $0.reason == .externalLinkSkipped })
+        XCTAssertFalse(result.issues.contains { $0.reason == .permissionLimited })
     }
 
     func test_scan_supportsCancellation() throws {
@@ -129,9 +130,28 @@ final class WeChatStorageScannerTests: XCTestCase {
 
         let result = WeChatStorageScanner().scan(roots: [readableRoot(url: root)])
 
-        // 嵌套 symlink 越界:不仅静默跳过,还要按 spec 报 permissionLimited issue。
-        XCTAssertTrue(result.issues.contains { $0.reason == .permissionLimited })
+        // 嵌套 symlink 越界:明确标记为安全边界跳过,不误报权限不足。
+        XCTAssertTrue(result.issues.contains { $0.reason == .externalLinkSkipped })
         XCTAssertEqual(result.totalVisibleBytes, 0)
+    }
+
+    func test_scan_aggregatesExternalLinkIssuesPerRoot() throws {
+        let root = try makeTemporaryDir()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let outside = try makeTemporaryDir()
+        defer { try? FileManager.default.removeItem(at: outside) }
+
+        for index in 0..<3 {
+            let link = root.appendingPathComponent("External\(index)")
+            try FileManager.default.createSymbolicLink(
+                atPath: link.path,
+                withDestinationPath: outside.path
+            )
+        }
+
+        let result = WeChatStorageScanner().scan(roots: [readableRoot(url: root)])
+
+        XCTAssertEqual(result.issues.filter { $0.reason == .externalLinkSkipped }.count, 1)
     }
 
     func test_scan_cancelMidScanProducesCancelledIssue() throws {
@@ -154,6 +174,65 @@ final class WeChatStorageScannerTests: XCTestCase {
         XCTAssertEqual(WeChatStorageScanner.inferCategory(path: "/x/store.sqlite"), .databasesAndState)
         XCTAssertEqual(WeChatStorageScanner.inferCategory(path: "/x/Media/photo"), .mediaAndFiles)
         XCTAssertEqual(WeChatStorageScanner.inferCategory(path: "/x/random"), .other)
+    }
+
+    func test_inferAssetKind_usesFilenameTypeWithoutOpeningContent() {
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/movie.mp4")), .video)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/photo.png")), .image)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/voice.m4a")), .audio)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/report.pdf")), .document)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/store.sqlite")), .database)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/Msg/Video/blob")), .video)
+        XCTAssertEqual(WeChatStorageScanner.inferAssetKind(url: URL(fileURLWithPath: "/x/Msg/Image/blob")), .image)
+    }
+
+    func test_scan_buildsAssetSummaryAndCapsLargeFiles() throws {
+        let root = try makeTemporaryDir()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeFile(root.appendingPathComponent("Media/a.mp4"), bytes: 400)
+        try writeFile(root.appendingPathComponent("Media/b.jpg"), bytes: 300)
+        try writeFile(root.appendingPathComponent("Media/c.pdf"), bytes: 200)
+
+        let result = WeChatStorageScanner(largeFileCap: 2).scan(roots: [readableRoot(url: root)])
+
+        XCTAssertEqual(result.assets.reduce(0) { $0 + $1.sizeBytes }, result.totalVisibleBytes)
+        XCTAssertEqual(result.largeFiles.map(\.sizeBytes), [400, 300])
+        XCTAssertFalse(result.sensitiveNamesIncluded)
+        XCTAssertTrue(result.largeFiles.allSatisfy { $0.fileName == nil })
+        XCTAssertTrue(result.largeFiles.allSatisfy { !$0.displayName.contains("a.mp4") && !$0.displayName.contains("b.jpg") })
+    }
+
+    func test_scan_includesRealFilenameOnlyWithExplicitOption() throws {
+        let root = try makeTemporaryDir()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeFile(root.appendingPathComponent("Media/private-name.mp4"), bytes: 400)
+
+        let anonymous = WeChatStorageScanner().scan(roots: [readableRoot(url: root)])
+        let consented = WeChatStorageScanner().scan(
+            roots: [readableRoot(url: root)],
+            options: .init(includeSensitiveNames: true)
+        )
+
+        XCTAssertNil(anonymous.largeFiles.first?.fileName)
+        XCTAssertEqual(consented.largeFiles.first?.fileName, "private-name.mp4")
+        XCTAssertTrue(consented.sensitiveNamesIncluded)
+    }
+
+    func test_scan_attributesRecognizedMessageDirectoriesToAnonymousConversations() throws {
+        let root = try makeTemporaryDir()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeFile(root.appendingPathComponent("Msg/Attach/wxid_person/photo.jpg"), bytes: 120)
+        try writeFile(root.appendingPathComponent("Msg/Video/team@chatroom/movie.mp4"), bytes: 300)
+        try writeFile(root.appendingPathComponent("Cache/unowned.dat"), bytes: 20)
+
+        let result = WeChatStorageScanner().scan(roots: [readableRoot(url: root)])
+
+        XCTAssertEqual(result.conversations.count, 2)
+        XCTAssertEqual(result.conversations.first?.sizeBytes, 300)
+        XCTAssertTrue(result.conversations.contains { $0.kind == .group && $0.displayName.hasPrefix("群聊") })
+        XCTAssertTrue(result.conversations.contains { $0.kind == .directMessage && $0.displayName.hasPrefix("单聊") })
+        XCTAssertEqual(result.unattributedBytes, 20)
+        XCTAssertFalse(result.conversations.contains { $0.displayName.contains("wxid_person") || $0.displayName.contains("team") })
     }
 
     // MARK: - Helpers

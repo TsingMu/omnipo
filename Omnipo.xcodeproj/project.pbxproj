@@ -171,6 +171,8 @@
 		0000000000000000000002B6 /* WeChatStorageScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E6 /* WeChatStorageScannerTests.swift */; };
 		0000000000000000000002B7 /* DefaultWeChatStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E7 /* DefaultWeChatStorageService.swift */; };
 		0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */; };
+		0000000000000000000002B9 /* WeChatManagerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E9 /* WeChatManagerStore.swift */; };
+		0000000000000000000002BA /* WeChatManagerStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003EA /* WeChatManagerStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -351,6 +353,8 @@
 		0000000000000000000003E6 /* WeChatStorageScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageScannerTests.swift; sourceTree = "<group>"; };
 		0000000000000000000003E7 /* DefaultWeChatStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultWeChatStorageService.swift; sourceTree = "<group>"; };
 		0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultWeChatStorageServiceTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003E9 /* WeChatManagerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatManagerStore.swift; sourceTree = "<group>"; };
+		0000000000000000000003EA /* WeChatManagerStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatManagerStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -413,6 +417,7 @@
 				000000000000000000000338 /* AuthorizedRootManager.swift */,
 				000000000000000000000346 /* SystemMonitorStore.swift */,
 				0000000000000000000003B5 /* PermissionAuditStore.swift */,
+				0000000000000000000003E9 /* WeChatManagerStore.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -719,6 +724,7 @@
 				0000000000000000000003E5 /* WeChatStorageRootResolverTests.swift */,
 				0000000000000000000003E6 /* WeChatStorageScannerTests.swift */,
 				0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */,
+				0000000000000000000003EA /* WeChatManagerStoreTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -876,6 +882,7 @@
 				0000000000000000000003C3 /* TCCPermissionCategoryProvider.swift in Sources */,
 				0000000000000000000003C4 /* SystemPermissionApplicationResolver.swift in Sources */,
 				0000000000000000000003C5 /* PermissionAuditStore.swift in Sources */,
+				0000000000000000000002B9 /* WeChatManagerStore.swift in Sources */,
 				0000000000000000000002A2 /* ClipboardPanelView.swift in Sources */,
 				0000000000000000000002A3 /* ClipboardContentType+Presentation.swift in Sources */,
 				000000000000000000000279 /* ClipboardStorageLocation.swift in Sources */,
@@ -992,6 +999,7 @@
 				0000000000000000000002B5 /* WeChatStorageRootResolverTests.swift in Sources */,
 				0000000000000000000002B6 /* WeChatStorageScannerTests.swift in Sources */,
 				0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */,
+				0000000000000000000002BA /* WeChatManagerStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

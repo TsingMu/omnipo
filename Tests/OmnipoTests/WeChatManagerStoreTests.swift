@@ -135,6 +135,48 @@ final class WeChatManagerStoreTests: XCTestCase {
         XCTAssertTrue(store.conversationAliases.isEmpty)
     }
 
+    func test_largeFileCandidatesSupportSelectionIgnoreAndRestore() async {
+        let first = WeChatLargeFile(id: UUID(), kind: .video, displayName: "视频文件 1", sizeBytes: 200)
+        let second = WeChatLargeFile(id: UUID(), kind: .image, displayName: "图片文件 1", sizeBytes: 100)
+        let result = WeChatStorageScanResult(largeFiles: [first, second])
+        let service = FakeWeChatStorageService(result: .success(result))
+        let store = WeChatManagerStore(service: service)
+        await store.refresh()
+
+        store.setLargeFileSelection([first.id, second.id], selected: true)
+        XCTAssertEqual(store.selectedLargeFileIDs, Set([first.id, second.id]))
+        XCTAssertEqual(store.selectedLargeFileBytes(in: result), 300)
+
+        store.ignoreSelectedLargeFiles()
+        XCTAssertTrue(store.selectedLargeFileIDs.isEmpty)
+        XCTAssertEqual(store.ignoredLargeFileIDs, Set([first.id, second.id]))
+
+        store.setLargeFileSelection(first.id, selected: true)
+        XCTAssertTrue(store.selectedLargeFileIDs.isEmpty)
+
+        store.restoreIgnoredLargeFile(first.id)
+        store.setLargeFileSelection(first.id, selected: true)
+        XCTAssertEqual(store.selectedLargeFileIDs, Set([first.id]))
+
+        store.restoreAllIgnoredLargeFiles()
+        XCTAssertTrue(store.ignoredLargeFileIDs.isEmpty)
+    }
+
+    func test_refreshPrunesCandidateStateForFilesNoLongerPresent() async {
+        let oldFile = WeChatLargeFile(id: UUID(), kind: .video, displayName: "视频文件 1", sizeBytes: 200)
+        let newFile = WeChatLargeFile(id: UUID(), kind: .image, displayName: "图片文件 1", sizeBytes: 100)
+        let service = FakeWeChatStorageService(result: .success(.init(largeFiles: [oldFile])))
+        let store = WeChatManagerStore(service: service)
+        await store.refresh()
+        store.setLargeFileSelection(oldFile.id, selected: true)
+
+        service.result = .success(.init(largeFiles: [newFile]))
+        await store.refresh()
+
+        XCTAssertTrue(store.selectedLargeFileIDs.isEmpty)
+        XCTAssertTrue(store.ignoredLargeFileIDs.isEmpty)
+    }
+
     // MARK: - Helpers
 
     private func makeResult(totalBytes: Int) -> WeChatStorageScanResult {
@@ -143,7 +185,7 @@ final class WeChatManagerStoreTests: XCTestCase {
 }
 
 private final class FakeWeChatStorageService: WeChatStorageService, @unchecked Sendable {
-    let result: Result<WeChatStorageScanResult, AppError>
+    var result: Result<WeChatStorageScanResult, AppError>
     var callCount = 0
     private(set) var cancelCalled = false
 

@@ -71,6 +71,7 @@ public final class WeChatStorageScanner: @unchecked Sendable {
                 kind: kind,
                 displayName: "\(kind.displayName)文件 \(fileSerials[kind, default: 0])",
                 fileName: options.includeSensitiveNames ? url.lastPathComponent : nil,
+                fileURL: options.includeSensitiveNames ? url.standardizedFileURL : nil,
                 sizeBytes: size,
                 modifiedAt: values.contentModificationDate,
                 conversationID: descriptor?.opaqueID

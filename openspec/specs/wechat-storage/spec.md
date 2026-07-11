@@ -1,7 +1,8 @@
-# wechat-storage 增量规范
+# wechat-storage Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change add-wechat-storage-analysis. Update Purpose after archive.
+## Requirements
 ### Requirement: Read-Only WeChat Storage Analysis
 
 WeChat Storage MUST analyze local WeChat disk usage using file-system metadata only. It MUST NOT parse chat content, contacts, account data, databases, media contents, or message-derived metadata.
@@ -106,6 +107,36 @@ WeChat Storage MUST allow an explicitly consenting user to assign a local in-mem
 - **Then** the UI explains that automatic names are unavailable
 - **And** the app does not extract keys, inject into WeChat, decrypt protected databases, or claim aliases are WeChat-derived names
 
+### Requirement: Read-Only File Location and Conversation Composition
+
+WeChat Storage MUST help the user locate large files and understand each conversation's storage composition without adding cleanup behavior or persisting sensitive paths.
+
+#### Scenario: User reveals a consented large file
+
+- **Given** sensitive-name consent is enabled and a scanned large file remains available
+- **When** the user chooses to show that file in Finder
+- **Then** Finder selects the file without modifying or deleting it
+- **And** the temporary file URL exists only in the in-memory scan result
+- **And** the URL is omitted from encoded models and logs
+- **And** anonymous scan results do not contain a file URL or offer the Finder action
+
+#### Scenario: User reviews a conversation's storage composition
+
+- **Given** a conversation has attributed files of one or more asset types
+- **When** the conversation row is displayed
+- **Then** the UI shows the leading type percentages and a proportional segmented bar
+- **And** the conversation's total bytes and file count remain visible
+
+#### Scenario: User prepares a read-only cleanup candidate list
+
+- **Given** a storage scan has produced large-file candidates
+- **When** the user selects one or more visible candidates
+- **Then** the UI shows the selected item count and estimated combined bytes
+- **And** the user can review selected items separately
+- **And** the user can ignore and restore candidates within the current scan result
+- **And** selection and ignore state are reconciled when a refreshed scan no longer contains an item
+- **And** the app does not delete, move, rename, or modify any selected file
+
 ### Requirement: Partial Degradation
 
 WeChat Storage MUST support partial results and MUST distinguish unavailable data from empty data.
@@ -140,3 +171,4 @@ WeChat Storage MUST NOT include user paths, file names, account identifiers, con
 - **When** it writes logs
 - **Then** logs contain only stable event names, aggregate counts, stable reason codes, and sanitized context
 - **And** logs do not contain raw paths, file names, account identifiers, contact names, message content, database rows, or media-derived metadata
+

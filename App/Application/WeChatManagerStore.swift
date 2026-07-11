@@ -13,6 +13,8 @@ final class WeChatManagerStore {
 
     private(set) var state: LoadState = .idle
     private(set) var conversationAliases: [String: String] = [:]
+    private(set) var selectedLargeFileIDs: Set<UUID> = []
+    private(set) var ignoredLargeFileIDs: Set<UUID> = []
 
     private let service: any WeChatStorageService
     private let authorizationManager: WeChatStorageAuthorizationManager?
@@ -41,6 +43,7 @@ final class WeChatManagerStore {
             guard Task.isCancelled == false else { return }
             switch result {
             case .success(let scanResult):
+                reconcileLargeFileCandidates(with: scanResult)
                 state = .loaded(scanResult)
             case .failure(let error):
                 state = .failed(error)
@@ -90,5 +93,53 @@ final class WeChatManagerStore {
         } else {
             conversationAliases[conversationID] = String(trimmed.prefix(80))
         }
+    }
+
+    func isLargeFileSelected(_ id: UUID) -> Bool {
+        selectedLargeFileIDs.contains(id)
+    }
+
+    func setLargeFileSelection(_ id: UUID, selected: Bool) {
+        guard !ignoredLargeFileIDs.contains(id) else { return }
+        if selected {
+            selectedLargeFileIDs.insert(id)
+        } else {
+            selectedLargeFileIDs.remove(id)
+        }
+    }
+
+    func setLargeFileSelection(_ ids: some Sequence<UUID>, selected: Bool) {
+        let selectableIDs = Set(ids).subtracting(ignoredLargeFileIDs)
+        if selected {
+            selectedLargeFileIDs.formUnion(selectableIDs)
+        } else {
+            selectedLargeFileIDs.subtract(selectableIDs)
+        }
+    }
+
+    func ignoreSelectedLargeFiles() {
+        ignoredLargeFileIDs.formUnion(selectedLargeFileIDs)
+        selectedLargeFileIDs.removeAll()
+    }
+
+    func restoreIgnoredLargeFile(_ id: UUID) {
+        ignoredLargeFileIDs.remove(id)
+    }
+
+    func restoreAllIgnoredLargeFiles() {
+        ignoredLargeFileIDs.removeAll()
+    }
+
+    func selectedLargeFileBytes(in result: WeChatStorageScanResult) -> Int {
+        result.largeFiles.reduce(0) { total, file in
+            total + (selectedLargeFileIDs.contains(file.id) ? file.sizeBytes : 0)
+        }
+    }
+
+    private func reconcileLargeFileCandidates(with result: WeChatStorageScanResult) {
+        let currentIDs = Set(result.largeFiles.map(\.id))
+        selectedLargeFileIDs.formIntersection(currentIDs)
+        ignoredLargeFileIDs.formIntersection(currentIDs)
+        selectedLargeFileIDs.subtract(ignoredLargeFileIDs)
     }
 }

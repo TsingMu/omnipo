@@ -231,6 +231,8 @@ public struct WeChatLargeFile: Identifiable, Sendable, Hashable, Codable {
     public var kind: WeChatAssetKind
     public var displayName: String
     public var fileName: String?
+    /// 仅用于本次授权扫描后的本地操作，不参与编码或持久化。
+    public var fileURL: URL?
     public var sizeBytes: Int
     public var modifiedAt: Date?
     public var conversationID: String?
@@ -244,10 +246,33 @@ public struct WeChatLargeFile: Identifiable, Sendable, Hashable, Codable {
         modifiedAt: Date? = nil,
         conversationID: String? = nil
     ) {
+        self.init(
+            id: id,
+            kind: kind,
+            displayName: displayName,
+            fileName: fileName,
+            fileURL: nil,
+            sizeBytes: sizeBytes,
+            modifiedAt: modifiedAt,
+            conversationID: conversationID
+        )
+    }
+
+    public init(
+        id: UUID = UUID(),
+        kind: WeChatAssetKind,
+        displayName: String,
+        fileName: String?,
+        fileURL: URL?,
+        sizeBytes: Int,
+        modifiedAt: Date? = nil,
+        conversationID: String? = nil
+    ) {
         self.id = id
         self.kind = kind
         self.displayName = displayName
         self.fileName = fileName
+        self.fileURL = fileURL
         self.sizeBytes = max(0, sizeBytes)
         self.modifiedAt = modifiedAt
         self.conversationID = conversationID
@@ -270,6 +295,39 @@ public struct WeChatLargeFile: Identifiable, Sendable, Hashable, Codable {
             modifiedAt: modifiedAt,
             conversationID: conversationID
         )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case kind
+        case displayName
+        case fileName
+        case sizeBytes
+        case modifiedAt
+        case conversationID
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        kind = try container.decode(WeChatAssetKind.self, forKey: .kind)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        fileName = try container.decodeIfPresent(String.self, forKey: .fileName)
+        fileURL = nil
+        sizeBytes = max(0, try container.decode(Int.self, forKey: .sizeBytes))
+        modifiedAt = try container.decodeIfPresent(Date.self, forKey: .modifiedAt)
+        conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(displayName, forKey: .displayName)
+        try container.encodeIfPresent(fileName, forKey: .fileName)
+        try container.encode(sizeBytes, forKey: .sizeBytes)
+        try container.encodeIfPresent(modifiedAt, forKey: .modifiedAt)
+        try container.encodeIfPresent(conversationID, forKey: .conversationID)
     }
 }
 

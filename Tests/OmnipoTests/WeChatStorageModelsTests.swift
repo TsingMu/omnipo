@@ -164,4 +164,23 @@ final class WeChatStorageModelsTests: XCTestCase {
 
         XCTAssertEqual(decoded, result)
     }
+
+    func test_largeFile_codableOmitsTransientFileURL() throws {
+        let sensitiveURL = URL(fileURLWithPath: "/Users/private-account/secret-video.mp4")
+        let file = WeChatLargeFile(
+            kind: .video,
+            displayName: "视频文件 1",
+            fileName: "secret-video.mp4",
+            fileURL: sensitiveURL,
+            sizeBytes: 42
+        )
+
+        let data = try JSONEncoder().encode(file)
+        let decoded = try JSONDecoder().decode(WeChatLargeFile.self, from: data)
+
+        XCTAssertNil(decoded.fileURL)
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains(sensitiveURL.path))
+        XCTAssertEqual(decoded.fileName, file.fileName)
+        XCTAssertEqual(decoded.sizeBytes, file.sizeBytes)
+    }
 }

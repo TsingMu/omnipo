@@ -199,6 +199,7 @@ final class WeChatStorageScannerTests: XCTestCase {
         XCTAssertEqual(result.largeFiles.map(\.sizeBytes), [400, 300])
         XCTAssertFalse(result.sensitiveNamesIncluded)
         XCTAssertTrue(result.largeFiles.allSatisfy { $0.fileName == nil })
+        XCTAssertTrue(result.largeFiles.allSatisfy { $0.fileURL == nil })
         XCTAssertTrue(result.largeFiles.allSatisfy { !$0.displayName.contains("a.mp4") && !$0.displayName.contains("b.jpg") })
     }
 
@@ -214,7 +215,9 @@ final class WeChatStorageScannerTests: XCTestCase {
         )
 
         XCTAssertNil(anonymous.largeFiles.first?.fileName)
+        XCTAssertNil(anonymous.largeFiles.first?.fileURL)
         XCTAssertEqual(consented.largeFiles.first?.fileName, "private-name.mp4")
+        XCTAssertEqual(consented.largeFiles.first?.fileURL, root.appendingPathComponent("Media/private-name.mp4"))
         XCTAssertTrue(consented.sensitiveNamesIncluded)
     }
 

@@ -225,7 +225,7 @@ private struct WeChatStorageLoadedContent: View {
                 case .largeFiles:
                     WeChatStorageLargeFilesPanel(
                         result: result,
-                        aliases: store.conversationAliases
+                        store: store
                     )
                 case .conversations:
                     WeChatStorageConversationPanel(
@@ -459,7 +459,7 @@ private struct WeChatStorageAssetRow: View {
                 .controlSize(.small)
         }
         .padding(.vertical, 10)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private var fraction: Double {
@@ -476,16 +476,17 @@ private struct WeChatStorageAssetRow: View {
 
 private struct WeChatStorageLargeFilesPanel: View {
     let result: WeChatStorageScanResult
-    let aliases: [String: String]
+    @Bindable var store: WeChatManagerStore
     @State private var kindFilter: WeChatAssetFilter = .all
     @State private var threshold: WeChatLargeFileThreshold = .fiftyMegabytes
     @State private var fileNameQuery = ""
+    @State private var listMode: WeChatCleanupListMode = .candidates
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             WeChatStorageSectionHeader(
                 title: "大文件",
-                subtitle: result.sensitiveNamesIncluded ? "真实文件名仅保留在本次扫描结果中" : "匿名文件标签，最多保留 500 项",
+                subtitle: result.sensitiveNamesIncluded ? "只读候选清单；真实文件名仅保留在本次扫描结果中" : "只读候选清单；匿名文件标签最多保留 500 项",
                 symbol: "doc.badge.ellipsis"
             )
 
@@ -512,11 +513,58 @@ private struct WeChatStorageLargeFilesPanel: View {
                 .frame(width: 118)
             }
 
+            HStack(spacing: 10) {
+                Picker("候选清单", selection: $listMode) {
+                    ForEach(WeChatCleanupListMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 280)
+
+                Spacer(minLength: 12)
+
+                Text(selectionSummary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+
+                if listMode == .ignored {
+                    Button {
+                        store.restoreAllIgnoredLargeFiles()
+                    } label: {
+                        Label("全部恢复", systemImage: "arrow.uturn.backward")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(store.ignoredLargeFileIDs.isEmpty)
+                } else {
+                    Button {
+                        store.setLargeFileSelection(filteredFiles.map(\.id), selected: !allVisibleSelected)
+                    } label: {
+                        Label(allVisibleSelected ? "取消全选" : "全选当前", systemImage: allVisibleSelected ? "square" : "checkmark.square")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(filteredFiles.isEmpty)
+
+                    Button {
+                        store.ignoreSelectedLargeFiles()
+                    } label: {
+                        Label("忽略所选", systemImage: "eye.slash")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(store.selectedLargeFileIDs.isEmpty)
+                }
+            }
+
             if filteredFiles.isEmpty {
                 ContentUnavailableView(
-                    "没有符合条件的大文件",
-                    systemImage: "line.3.horizontal.decrease.circle",
-                    description: Text("可降低大小门槛或切换文件类型。")
+                    emptyTitle,
+                    systemImage: listMode.symbolName,
+                    description: Text(emptyDescription)
                 )
                 .frame(maxWidth: .infinity, minHeight: 150)
             } else {
@@ -524,7 +572,13 @@ private struct WeChatStorageLargeFilesPanel: View {
                     ForEach(filteredFiles) { file in
                         WeChatStorageLargeFileRow(
                             file: file,
-                            conversationName: conversationNames[file.conversationID ?? ""]
+                            conversationName: conversationNames[file.conversationID ?? ""],
+                            isSelected: store.isLargeFileSelected(file.id),
+                            isIgnored: store.ignoredLargeFileIDs.contains(file.id),
+                            onSelectionChanged: { selected in
+                                store.setLargeFileSelection(file.id, selected: selected)
+                            },
+                            onRestore: { store.restoreIgnoredLargeFile(file.id) }
                         )
                         if file.id != filteredFiles.last?.id { Divider() }
                     }
@@ -536,28 +590,92 @@ private struct WeChatStorageLargeFilesPanel: View {
 
     private var filteredFiles: [WeChatLargeFile] {
         result.largeFiles.filter { file in
+            let matchesListMode: Bool
+            switch listMode {
+            case .candidates:
+                matchesListMode = !store.ignoredLargeFileIDs.contains(file.id)
+            case .selected:
+                matchesListMode = store.selectedLargeFileIDs.contains(file.id)
+            case .ignored:
+                matchesListMode = store.ignoredLargeFileIDs.contains(file.id)
+            }
             let matchesName = !result.sensitiveNamesIncluded
                 || fileNameQuery.isEmpty
                 || file.fileName?.localizedCaseInsensitiveContains(fileNameQuery) == true
-            return file.sizeBytes >= threshold.bytes
+            return matchesListMode
+                && file.sizeBytes >= threshold.bytes
                 && kindFilter.includes(file.kind)
                 && matchesName
         }
     }
 
+    private var allVisibleSelected: Bool {
+        !filteredFiles.isEmpty && filteredFiles.allSatisfy { store.selectedLargeFileIDs.contains($0.id) }
+    }
+
+    private var selectionSummary: String {
+        let bytes = store.selectedLargeFileBytes(in: result)
+        return "已选 \(store.selectedLargeFileIDs.count) 项 · \(Self.byteFormatter.string(fromByteCount: Int64(bytes)))"
+    }
+
+    private var emptyTitle: String {
+        switch listMode {
+        case .candidates: return "没有符合条件的大文件"
+        case .selected: return "尚未选择候选文件"
+        case .ignored: return "没有已忽略文件"
+        }
+    }
+
+    private var emptyDescription: String {
+        switch listMode {
+        case .candidates: return "可降低大小门槛或切换文件类型。"
+        case .selected: return "在待处理清单中勾选需要进一步确认的文件。"
+        case .ignored: return "忽略的文件仅在当前扫描结果中隐藏，可随时恢复。"
+        }
+    }
+
     private var conversationNames: [String: String] {
         Dictionary(uniqueKeysWithValues: result.conversations.map {
-            ($0.conversationID, aliases[$0.conversationID] ?? $0.displayName)
+            ($0.conversationID, store.conversationAliases[$0.conversationID] ?? $0.displayName)
         })
     }
+
+    private static let byteFormatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter
+    }()
 }
 
 private struct WeChatStorageLargeFileRow: View {
     let file: WeChatLargeFile
     let conversationName: String?
+    let isSelected: Bool
+    let isIgnored: Bool
+    let onSelectionChanged: (Bool) -> Void
+    let onRestore: () -> Void
 
     var body: some View {
         HStack(spacing: 11) {
+            if isIgnored {
+                Button(action: onRestore) {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+                .buttonStyle(.borderless)
+                .help("恢复到待处理清单")
+                .accessibilityLabel("恢复 \(file.fileName ?? file.displayName)")
+            } else {
+                Toggle(
+                    "选择 \(file.fileName ?? file.displayName)",
+                    isOn: Binding(
+                        get: { isSelected },
+                        set: { newValue in onSelectionChanged(newValue) }
+                    )
+                )
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+            }
+
             Image(systemName: file.kind.symbolName)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(file.kind.tint)
@@ -581,6 +699,16 @@ private struct WeChatStorageLargeFileRow: View {
                 .foregroundStyle(.secondary)
             }
             Spacer(minLength: 12)
+            if let fileURL = file.fileURL {
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+                } label: {
+                    Image(systemName: "folder")
+                }
+                .buttonStyle(.borderless)
+                .help("在 Finder 中显示")
+                .accessibilityLabel("在 Finder 中显示 \(file.fileName ?? file.displayName)")
+            }
             Text(Self.byteFormatter.string(fromByteCount: Int64(file.sizeBytes)))
                 .font(.callout.weight(.semibold))
                 .monospacedDigit()
@@ -594,6 +722,30 @@ private struct WeChatStorageLargeFileRow: View {
         formatter.countStyle = .file
         return formatter
     }()
+}
+
+private enum WeChatCleanupListMode: String, CaseIterable, Identifiable {
+    case candidates
+    case selected
+    case ignored
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .candidates: return "待处理"
+        case .selected: return "已选"
+        case .ignored: return "已忽略"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .candidates: return "line.3.horizontal.decrease.circle"
+        case .selected: return "checkmark.square"
+        case .ignored: return "eye.slash"
+        }
+    }
 }
 
 private struct WeChatStorageConversationPanel: View {
@@ -727,6 +879,10 @@ private struct WeChatStorageConversationRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                WeChatConversationAssetBar(
+                    assets: conversation.assets,
+                    totalBytes: conversation.sizeBytes
+                )
             }
             Spacer(minLength: 12)
             if canEditName {
@@ -754,7 +910,15 @@ private struct WeChatStorageConversationRow: View {
         conversation.assets
             .sorted { $0.sizeBytes > $1.sizeBytes }
             .prefix(3)
-            .map { "\($0.kind.displayName) \(Self.byteFormatter.string(fromByteCount: Int64($0.sizeBytes)))" }
+            .map { summary in
+                let percentage = conversation.sizeBytes > 0
+                    ? Double(summary.sizeBytes) / Double(conversation.sizeBytes) * 100
+                    : 0
+                let percentageText = percentage > 0 && percentage < 1
+                    ? "<1%"
+                    : "\(Int(percentage.rounded()))%"
+                return "\(summary.kind.displayName) \(percentageText)"
+            }
             .joined(separator: " · ")
     }
 
@@ -763,6 +927,34 @@ private struct WeChatStorageConversationRow: View {
         formatter.countStyle = .file
         return formatter
     }()
+}
+
+private struct WeChatConversationAssetBar: View {
+    let assets: [WeChatAssetSummary]
+    let totalBytes: Int
+
+    var body: some View {
+        GeometryReader { proxy in
+            let visibleAssets = assets.filter { $0.sizeBytes > 0 }
+            let spacing = CGFloat(max(0, visibleAssets.count - 1)) * 2
+            let availableWidth = max(0, proxy.size.width - spacing)
+
+            HStack(spacing: 2) {
+                ForEach(visibleAssets) { asset in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(asset.kind.tint)
+                        .frame(width: availableWidth * fraction(for: asset))
+                }
+            }
+        }
+        .frame(height: 5)
+        .accessibilityHidden(true)
+    }
+
+    private func fraction(for asset: WeChatAssetSummary) -> Double {
+        guard totalBytes > 0 else { return 0 }
+        return min(1, Double(asset.sizeBytes) / Double(totalBytes))
+    }
 }
 
 private struct WeChatConversationNameEditor: View {

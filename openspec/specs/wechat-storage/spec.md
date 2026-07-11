@@ -1,7 +1,9 @@
 # wechat-storage Specification
 
 ## Purpose
-TBD - created by archiving change add-wechat-storage-analysis. Update Purpose after archive.
+
+定义 macOS 上微信本地存储的只读分析能力：在用户可见和明确授权的目录范围内，仅使用文件系统元数据统计分类占用、大文件及匿名会话占用，并严格限制敏感名称、路径、日志和本地操作的生命周期。该能力不读取聊天或媒体内容，不绕过微信数据库保护，也不删除、移动或修改微信数据。
+
 ## Requirements
 ### Requirement: Read-Only WeChat Storage Analysis
 
@@ -171,4 +173,3 @@ WeChat Storage MUST NOT include user paths, file names, account identifiers, con
 - **When** it writes logs
 - **Then** logs contain only stable event names, aggregate counts, stable reason codes, and sanitized context
 - **And** logs do not contain raw paths, file names, account identifiers, contact names, message content, database rows, or media-derived metadata
-

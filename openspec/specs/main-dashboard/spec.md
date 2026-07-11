@@ -1,7 +1,9 @@
 # main-dashboard Specification
 
 ## Purpose
-TBD - created by archiving change redesign-main-dashboard. Update Purpose after archive.
+
+定义 Omnipo 主窗口的稳定导航与只读总览体验：以分组侧栏组织八个固定功能入口，在 Dashboard 展示产品定位、启动卷容量摘要和安全说明，并确保标题栏边界、键盘导航、窗口缩放以及浅色和深色外观下的可读性。Dashboard 与快捷入口只负责状态展示和导航，不自动启动扫描、清理、删除或其他敏感操作。
+
 ## Requirements
 ### Requirement: 主窗口必须提供清晰的分组导航
 

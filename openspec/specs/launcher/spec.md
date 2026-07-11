@@ -1,7 +1,9 @@
 # launcher Specification
 
 ## Purpose
-TBD - created by archiving change add-launcher-core. Update Purpose after archive.
+
+定义 Omnipo 的键盘优先快捷启动能力：通过可配置的全局快捷键唤起独立搜索面板，或在主窗口使用等价的 Launcher 工作台，统一搜索并执行内置功能命令、已安装应用和经用户授权的 Spotlight 文件结果。该能力使用公开 macOS API，限制搜索范围和结果生命周期，不监听全部键盘输入，不记录用户查询或文件路径，也不因导航自动触发扫描、删除或额外权限请求。
+
 ## Requirements
 ### Requirement: 系统必须提供默认全局快捷键
 

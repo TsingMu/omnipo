@@ -7,7 +7,7 @@
 - **验收日期**:2026-06-24
 - **当前状态**:已实现并合并
 
-## 概述
+## Purpose
 
 disk-analysis capability 提供启动卷容量摘要与大文件列表的只读视图。容量摘要来自系统卷级元数据;大文件列表由用户通过 `NSOpenPanel` 主动授权扫描根目录后,基于 security-scoped bookmark 持久化,扫描只读 `fileSize`/`contentModificationDate`/`isRegularFile` 元数据,不读取文件内容、不建立自有索引、不执行删除或清理动作。
 

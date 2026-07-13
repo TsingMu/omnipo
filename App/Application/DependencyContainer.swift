@@ -18,6 +18,9 @@ public final class DependencyContainer {
     public let weChatStorageService: any WeChatStorageService
     public let weChatStorageAuthorizationManager: WeChatStorageAuthorizationManager
     public let authorizedRootManager: AuthorizedRootManager
+    public var largeFileRevealService: LargeFileRevealService {
+        LargeFileRevealService(rootManager: authorizedRootManager, logger: logging)
+    }
     public let applicationResourceCache: ApplicationResourceCache
     public let launcherCoordinator: LauncherCoordinator
     public let clipboardCoordinator: ClipboardCoordinator

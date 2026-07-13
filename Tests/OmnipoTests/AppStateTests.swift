@@ -55,6 +55,19 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(state.startupVolumeCapacity, second)
     }
 
+    func test_capacityRefreshDoesNotStartLargeFileScan() async {
+        let service = MockDiskUsageService(responses: [.unavailable(reason: .unknown)])
+        let state = AppState(diskUsageService: service)
+
+        await state.refreshStartupVolumeCapacity()
+
+        let capacityTriggers = await service.recordedTriggers()
+        let largeFileTriggers = await service.recordedLargeFileTriggers()
+        XCTAssertEqual(capacityTriggers, [.userRefresh])
+        XCTAssertTrue(largeFileTriggers.isEmpty)
+        XCTAssertEqual(state.largeFileAvailability, .idle)
+    }
+
     // MARK: - Large Files
 
     func test_loadLargeFilesIfNeeded_startsFromIdle() async {
@@ -129,6 +142,19 @@ final class AppStateTests: XCTestCase {
         let triggers = await service.recordedLargeFileTriggers()
         XCTAssertEqual(triggers, [.initialLoad, .userRefresh])
         XCTAssertEqual(state.largeFileAvailability, second)
+    }
+
+    func test_largeFileRefreshDoesNotRefreshCapacity() async {
+        let service = MockDiskUsageService(largeFileResponses: [.available([])])
+        let state = AppState(diskUsageService: service)
+
+        await state.refreshLargeFiles()
+
+        let largeFileTriggers = await service.recordedLargeFileTriggers()
+        let capacityTriggers = await service.recordedTriggers()
+        XCTAssertEqual(largeFileTriggers, [.userRefresh])
+        XCTAssertTrue(capacityTriggers.isEmpty)
+        XCTAssertEqual(state.startupVolumeCapacity, .idle)
     }
 
     func test_refreshLargeFiles_unavailableStatePropagates() async {
@@ -212,6 +238,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(manager.authorizationAvailability, .available(validRootCount: 1))
         XCTAssertEqual(startCount, 1)
         XCTAssertEqual(stopCount, 1)
+        XCTAssertEqual(manager.currentRootPathForDisplayGrouping(), root.standardizedFileURL.path)
     }
 
     func test_authorizedRoot_staleBookmark_refreshesPersistedData() {

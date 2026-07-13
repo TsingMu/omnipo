@@ -33,42 +33,44 @@ struct CleanerView: View {
                             .font(.largeTitle.bold())
                     }
 
-                    Text("当前阶段仅展示启动卷容量概览。目录分析、分类占用和清理建议将在后续 change 中提供。")
+                    Text("查看启动卷容量，并在你授权的目录内分析最多 50 个大文件。分类和筛选只使用当前扫描结果的元数据。")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     DashboardDiskCard(availability: appState.startupVolumeCapacity)
 
-                    largeFileRootPicker
-
                     Button {
-                        Task {
-                            await appState.refreshStartupVolumeCapacity()
-                            await appState.refreshLargeFiles()
-                        }
+                        Task { await appState.refreshStartupVolumeCapacity() }
                     } label: {
-                        Label("刷新容量摘要与大文件", systemImage: "arrow.clockwise")
+                        Label("刷新容量", systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
+                    .accessibilityHint("只刷新启动卷容量，不会开始目录扫描")
+
+                    largeFileRootPicker
 
                     CleanerLargeFileSection(
                         availability: presentedLargeFileAvailability,
+                        authorizedRootPath: container.authorizedRootManager.currentRootPathForDisplayGrouping(),
                         onRefresh: {
                             Task { await appState.refreshLargeFiles() }
+                        },
+                        onReveal: { record in
+                            container.largeFileRevealService.reveal(
+                                record: record,
+                                currentRecords: presentedLargeFileAvailability.records
+                            )
                         }
                     )
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Phase 0 暂未实现", systemImage: "sparkles")
+                        Label("当前只读边界", systemImage: "lock.shield")
                             .font(.headline)
-                        Label("目录分析", systemImage: "circle.dashed")
+                        Label("不会删除、移动、重命名或自动清理文件", systemImage: "checkmark.shield")
                             .font(.callout)
                             .foregroundStyle(.secondary)
-                        Label("分类占用", systemImage: "circle.dashed")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                        Label("清理建议", systemImage: "circle.dashed")
+                        Label("不建立持久文件索引，也不代表全盘扫描结果", systemImage: "checkmark.shield")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }

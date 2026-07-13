@@ -59,6 +59,7 @@ public final class AuthorizedRootManager {
     private var bookmarkData: Data?
     private var resolvedURL: URL?
     private var resolvedDisplayName: String?
+    private var resolvedStandardizedPath: String?
     private var hasValidatedAuthorization: Bool
     private var authorizationState: PersistedDirectoryAuthorizationAvailability
     private var lastLoggedRecoveryState: PersistedDirectoryAuthorizationAvailability?
@@ -93,6 +94,7 @@ public final class AuthorizedRootManager {
         self.bookmarkCreator = bookmarkCreator
         self.bookmarkData = settings.readLargeFileRootBookmark()
         self.resolvedDisplayName = nil
+        self.resolvedStandardizedPath = nil
         self.hasValidatedAuthorization = self.bookmarkData == nil
         self.authorizationState = self.bookmarkData == nil
             ? .notConfigured
@@ -120,6 +122,7 @@ public final class AuthorizedRootManager {
         guard let data = bookmarkData else {
             hasValidatedAuthorization = true
             resolvedDisplayName = nil
+            resolvedStandardizedPath = nil
             authorizationState = .notConfigured
             return nil
         }
@@ -129,6 +132,7 @@ public final class AuthorizedRootManager {
         } catch {
             hasValidatedAuthorization = true
             resolvedDisplayName = nil
+            resolvedStandardizedPath = nil
             updateAuthorizationState(.reauthorizationRequired(
                 validRootCount: 0,
                 invalidRootCount: 1,
@@ -139,6 +143,7 @@ public final class AuthorizedRootManager {
         guard scopeStarter(resolved.url) else {
             hasValidatedAuthorization = true
             resolvedDisplayName = nil
+            resolvedStandardizedPath = nil
             updateAuthorizationState(.reauthorizationRequired(
                 validRootCount: 0,
                 invalidRootCount: 1,
@@ -148,6 +153,7 @@ public final class AuthorizedRootManager {
         }
         resolvedURL = resolved.url
         resolvedDisplayName = resolved.url.lastPathComponent
+        resolvedStandardizedPath = resolved.url.standardizedFileURL.path
         hasValidatedAuthorization = true
         updateAuthorizationState(.available(validRootCount: 1))
         if resolved.isStale {
@@ -160,6 +166,12 @@ public final class AuthorizedRootManager {
     public func currentRootDisplayName() -> String? {
         _ = authorizationAvailability
         return resolvedDisplayName
+    }
+
+    /// 仅供当前会话的相对目录分组使用；不会写入设置或日志。
+    public func currentRootPathForDisplayGrouping() -> String? {
+        _ = authorizationAvailability
+        return resolvedStandardizedPath
     }
 
     /// 弹出 NSOpenPanel 让用户选择新目录,持久化 bookmark,激活 security scope。
@@ -183,6 +195,7 @@ public final class AuthorizedRootManager {
         releaseScope()
         bookmarkData = nil
         resolvedDisplayName = nil
+        resolvedStandardizedPath = nil
         hasValidatedAuthorization = true
         authorizationState = .notConfigured
         settings.writeLargeFileRootBookmark(nil)

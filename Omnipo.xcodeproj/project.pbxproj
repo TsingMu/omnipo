@@ -176,6 +176,12 @@
 		0000000000000000000002BB /* WeChatStorageAuthorizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003EB /* WeChatStorageAuthorizationManager.swift */; };
 		0000000000000000000003F1 /* LaunchAtLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003F0 /* LaunchAtLoginService.swift */; };
 		0000000000000000000003F3 /* LaunchAtLoginServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003F2 /* LaunchAtLoginServiceTests.swift */; };
+		0000000000000000000003F5 /* LargeFileWorkbench.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003F4 /* LargeFileWorkbench.swift */; };
+		0000000000000000000003F7 /* LargeFileWorkbenchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003F6 /* LargeFileWorkbenchTests.swift */; };
+		0000000000000000000003F9 /* LargeFileWorkbenchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003F8 /* LargeFileWorkbenchStore.swift */; };
+		0000000000000000000003FB /* LargeFileWorkbenchStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003FA /* LargeFileWorkbenchStoreTests.swift */; };
+		0000000000000000000003FD /* LargeFileRevealService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003FC /* LargeFileRevealService.swift */; };
+		0000000000000000000003FF /* LargeFileRevealServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003FE /* LargeFileRevealServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -361,6 +367,12 @@
 		0000000000000000000003EB /* WeChatStorageAuthorizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeChatStorageAuthorizationManager.swift; sourceTree = "<group>"; };
 		0000000000000000000003F0 /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
 		0000000000000000000003F2 /* LaunchAtLoginServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginServiceTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003F4 /* LargeFileWorkbench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileWorkbench.swift; sourceTree = "<group>"; };
+		0000000000000000000003F6 /* LargeFileWorkbenchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileWorkbenchTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003F8 /* LargeFileWorkbenchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileWorkbenchStore.swift; sourceTree = "<group>"; };
+		0000000000000000000003FA /* LargeFileWorkbenchStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileWorkbenchStoreTests.swift; sourceTree = "<group>"; };
+		0000000000000000000003FC /* LargeFileRevealService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileRevealService.swift; sourceTree = "<group>"; };
+		0000000000000000000003FE /* LargeFileRevealServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFileRevealServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -421,6 +433,8 @@
 				0000000000000000000003A0 /* ClipboardCoordinator.swift */,
 				000000000000000000000320 /* MainWindowNavigator.swift */,
 				000000000000000000000338 /* AuthorizedRootManager.swift */,
+				0000000000000000000003F8 /* LargeFileWorkbenchStore.swift */,
+				0000000000000000000003FC /* LargeFileRevealService.swift */,
 				000000000000000000000346 /* SystemMonitorStore.swift */,
 				0000000000000000000003B5 /* PermissionAuditStore.swift */,
 				0000000000000000000003E9 /* WeChatManagerStore.swift */,
@@ -491,6 +505,7 @@
 				000000000000000000000327 /* DashboardShortcut.swift */,
 				00000000000000000000032B /* DiskCapacitySnapshot.swift */,
 				000000000000000000000332 /* LargeFile.swift */,
+				0000000000000000000003F4 /* LargeFileWorkbench.swift */,
 				000000000000000000000339 /* SystemMetricSnapshot.swift */,
 				000000000000000000000348 /* SystemMonitorTab.swift */,
 				000000000000000000000349 /* AppUsage.swift */,
@@ -704,6 +719,9 @@
 				000000000000000000000330 /* AppStateTests.swift */,
 				000000000000000000000331 /* LauncherCoordinatorTests.swift */,
 				000000000000000000000333 /* LargeFileTests.swift */,
+				0000000000000000000003F6 /* LargeFileWorkbenchTests.swift */,
+				0000000000000000000003FA /* LargeFileWorkbenchStoreTests.swift */,
+				0000000000000000000003FE /* LargeFileRevealServiceTests.swift */,
 				000000000000000000000335 /* LargeFileScannerTests.swift */,
 				000000000000000000000337 /* CleanerLargeFileSectionTests.swift */,
 				00000000000000000000033B /* SystemMonitorModelsTests.swift */,
@@ -849,6 +867,8 @@
 				000000000000000000000209 /* CleanerView.swift in Sources */,
 				00000000000000000000025C /* CleanerLargeFileSection.swift in Sources */,
 				00000000000000000000025E /* AuthorizedRootManager.swift in Sources */,
+				0000000000000000000003F9 /* LargeFileWorkbenchStore.swift in Sources */,
+				0000000000000000000003FD /* LargeFileRevealService.swift in Sources */,
 				00000000000000000000025F /* SystemMetricSnapshot.swift in Sources */,
 				000000000000000000000260 /* SystemMonitorService.swift in Sources */,
 				00000000000000000000026E /* SystemMonitorTab.swift in Sources */,
@@ -955,6 +975,7 @@
 				000000000000000000000250 /* WindowLayoutMetrics.swift in Sources */,
 				000000000000000000000251 /* DiskCapacitySnapshot.swift in Sources */,
 				000000000000000000000258 /* LargeFile.swift in Sources */,
+				0000000000000000000003F5 /* LargeFileWorkbench.swift in Sources */,
 				00000000000000000000025A /* LargeFileScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -982,6 +1003,9 @@
 				000000000000000000000256 /* AppStateTests.swift in Sources */,
 				000000000000000000000257 /* LauncherCoordinatorTests.swift in Sources */,
 				000000000000000000000259 /* LargeFileTests.swift in Sources */,
+				0000000000000000000003F7 /* LargeFileWorkbenchTests.swift in Sources */,
+				0000000000000000000003FB /* LargeFileWorkbenchStoreTests.swift in Sources */,
+				0000000000000000000003FF /* LargeFileRevealServiceTests.swift in Sources */,
 				00000000000000000000025B /* LargeFileScannerTests.swift in Sources */,
 				00000000000000000000025D /* CleanerLargeFileSectionTests.swift in Sources */,
 				000000000000000000000261 /* SystemMonitorModelsTests.swift in Sources */,

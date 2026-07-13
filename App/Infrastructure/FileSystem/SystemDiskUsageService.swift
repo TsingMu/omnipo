@@ -21,6 +21,7 @@ public actor SystemDiskUsageService: DiskUsageService {
     private let metadataLoader: @Sendable () async throws -> VolumeMetadata
     private let dateProvider: @Sendable () -> Date
     private let largeFileRootsProvider: @Sendable () async -> [URL]
+    private let largeFileRootsRelease: @Sendable () async -> Void
     private var inFlight: (id: UUID, task: Task<DiskCapacityAvailability, Never>)?
     private var inFlightLargeFiles: (id: UUID, task: Task<LargeFileAvailability, Never>)?
 
@@ -29,29 +30,34 @@ public actor SystemDiskUsageService: DiskUsageService {
         self.metadataLoader = Self.loadSystemVolumeMetadata
         self.dateProvider = Date.init
         self.largeFileRootsProvider = { LargeFileScanner.defaultRoots() }
+        self.largeFileRootsRelease = {}
     }
 
     /// 注入自定义大文件根 provider(例如 AuthorizedRootManager)。
     public init(
         logger: any LoggingService,
-        largeFileRootsProvider: @escaping @Sendable () async -> [URL]
+        largeFileRootsProvider: @escaping @Sendable () async -> [URL],
+        largeFileRootsRelease: @escaping @Sendable () async -> Void = {}
     ) {
         self.logger = logger
         self.metadataLoader = Self.loadSystemVolumeMetadata
         self.dateProvider = Date.init
         self.largeFileRootsProvider = largeFileRootsProvider
+        self.largeFileRootsRelease = largeFileRootsRelease
     }
 
     init(
         logger: any LoggingService,
         metadataLoader: @escaping @Sendable () async throws -> VolumeMetadata,
         dateProvider: @escaping @Sendable () -> Date = Date.init,
-        largeFileRootsProvider: @escaping @Sendable () async -> [URL] = { LargeFileScanner.defaultRoots() }
+        largeFileRootsProvider: @escaping @Sendable () async -> [URL] = { LargeFileScanner.defaultRoots() },
+        largeFileRootsRelease: @escaping @Sendable () async -> Void = {}
     ) {
         self.logger = logger
         self.metadataLoader = metadataLoader
         self.dateProvider = dateProvider
         self.largeFileRootsProvider = largeFileRootsProvider
+        self.largeFileRootsRelease = largeFileRootsRelease
     }
 
     public func loadStartupVolumeCapacity(
@@ -102,48 +108,64 @@ public actor SystemDiskUsageService: DiskUsageService {
         limit: Int,
         trigger: LargeFileLoadTrigger
     ) async -> LargeFileAvailability {
-        // 取消未完成的旧任务,确保用户频繁刷新不会堆积并发扫描。
-        if let inFlightLargeFiles {
-            inFlightLargeFiles.task.cancel()
+        // 取消并等待旧扫描释放授权后再开始下一轮,避免同一 security scope 被并发复用。
+        while let previous = inFlightLargeFiles {
+            previous.task.cancel()
+            _ = await previous.task.value
+            if inFlightLargeFiles?.id == previous.id {
+                inFlightLargeFiles = nil
+            }
         }
 
         let id = UUID()
         let logger = self.logger
         let metadataLoader = self.metadataLoader
+        let rootsProvider = self.largeFileRootsProvider
+        let rootsRelease = self.largeFileRootsRelease
+        let cancellation = LargeFileScanCancellationFlag()
         let task = Task<LargeFileAvailability, Never> { () -> LargeFileAvailability in
-            // 卷标识先用最近一次容量结果,缺失时同步读一次元数据。
-            let volumeIdentifier = await Self.resolveVolumeIdentifier(
-                metadataLoader: metadataLoader
-            )
-            // 根目录解析(MainActor 内的 AuthorizedRootManager)。
-            let roots = await largeFileRootsProvider()
-            // 未授权或 roots 为空,直接返回 scanNotStarted(UI 会引导用户授权)。
-            guard !roots.isEmpty else {
-                logger.log(Self.logLargeFileUnavailable(trigger: trigger, reason: .scanNotStarted))
-                return .unavailable(reason: .scanNotStarted)
-            }
-            // 扫描是 sync I/O,放到 detached task 避免阻塞 actor。
-            let result = await Task.detached(priority: .utility) {
-                LargeFileScanner.scan(
-                    roots: roots,
-                    limit: limit,
-                    volumeIdentifier: volumeIdentifier
+            await withTaskCancellationHandler {
+                // 卷标识先用最近一次容量结果,缺失时同步读一次元数据。
+                let volumeIdentifier = await Self.resolveVolumeIdentifier(
+                    metadataLoader: metadataLoader
                 )
-            }.value
+                // 根目录解析(MainActor 内的 AuthorizedRootManager)。
+                let roots = await rootsProvider()
 
-            if Task.isCancelled {
-                logger.log(Self.logLargeFileCancelled(trigger: trigger))
-                return .unavailable(reason: .scanNotStarted)
+                let result: LargeFileAvailability
+                if roots.isEmpty || cancellation.isCancelled {
+                    result = .unavailable(reason: .scanNotStarted)
+                } else {
+                    // 扫描是 sync I/O,放到 detached task 避免阻塞 actor；共享标志让取消可中断枚举。
+                    result = await Task.detached(priority: .utility) {
+                        LargeFileScanner.scan(
+                            roots: roots,
+                            limit: limit,
+                            volumeIdentifier: volumeIdentifier,
+                            isCancelled: { cancellation.isCancelled }
+                        )
+                    }.value
+                }
+
+                // provider 可能已经激活 security scope；所有成功、失败和取消路径都在返回前释放。
+                await rootsRelease()
+
+                if cancellation.isCancelled || Task.isCancelled {
+                    logger.log(Self.logLargeFileCancelled(trigger: trigger))
+                    return .unavailable(reason: .scanNotStarted)
+                }
+                switch result {
+                case .available:
+                    logger.log(Self.logLargeFileLoaded(trigger: trigger))
+                case .unavailable(let reason):
+                    logger.log(Self.logLargeFileUnavailable(trigger: trigger, reason: reason))
+                case .idle, .loading:
+                    break
+                }
+                return result
+            } onCancel: {
+                cancellation.cancel()
             }
-            switch result {
-            case .available:
-                logger.log(Self.logLargeFileLoaded(trigger: trigger))
-            case .unavailable(let reason):
-                logger.log(Self.logLargeFileUnavailable(trigger: trigger, reason: reason))
-            case .idle, .loading:
-                break
-            }
-            return result
         }
 
         inFlightLargeFiles = (id: id, task: task)
@@ -342,5 +364,22 @@ public actor SystemDiskUsageService: DiskUsageService {
                 "trigger": trigger.rawValue
             ]
         )
+    }
+}
+
+private final class LargeFileScanCancellationFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+
+    func cancel() {
+        lock.lock()
+        value = true
+        lock.unlock()
     }
 }

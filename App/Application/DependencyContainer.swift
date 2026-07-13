@@ -68,7 +68,7 @@ public final class DependencyContainer {
         let logging = OSLogLoggingService()
         let launchAtLoginService = SystemLaunchAtLoginService()
         let shortcut = CarbonShortcutService(logger: logging)
-        let authorizedRootManager = AuthorizedRootManager(settings: settings)
+        let authorizedRootManager = AuthorizedRootManager(settings: settings, logger: logging)
         let diskUsageService = SystemDiskUsageService(
             logger: logging,
             largeFileRootsProvider: { @MainActor in
@@ -76,6 +76,9 @@ public final class DependencyContainer {
                     return [url]
                 }
                 return []
+            },
+            largeFileRootsRelease: { @MainActor in
+                authorizedRootManager.releaseRoot()
             }
         )
         let systemMonitorService = DefaultSystemMonitorService(
@@ -92,12 +95,18 @@ public final class DependencyContainer {
         let clipboardService = makeClipboardService(settings: settings, logging: logging)
         let permissionAuditService = DefaultPermissionAuditService(logger: logging)
         let uninstallerService = DefaultUninstallerService()
-        let weChatStorageAuthorizationManager = WeChatStorageAuthorizationManager(settings: settings)
+        let weChatStorageAuthorizationManager = WeChatStorageAuthorizationManager(
+            settings: settings,
+            logger: logging
+        )
         let weChatStorageService = DefaultWeChatStorageService(
             resolver: WeChatStorageRootResolver(),
             scanner: WeChatStorageScanner(),
             userSelectedRootsProvider: { @MainActor in
                 weChatStorageAuthorizationManager.currentRoots()
+            },
+            userSelectedRootsRelease: { @MainActor in
+                weChatStorageAuthorizationManager.releaseRoots()
             },
             scanOptionsProvider: { @MainActor in
                 WeChatStorageScanOptions(

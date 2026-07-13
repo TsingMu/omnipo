@@ -3,7 +3,6 @@
 ## Purpose
 
 定义 macOS 上微信本地存储的只读分析能力：在用户可见和明确授权的目录范围内，仅使用文件系统元数据统计分类占用、大文件及匿名会话占用，并严格限制敏感名称、路径、日志和本地操作的生命周期。该能力不读取聊天或媒体内容，不绕过微信数据库保护，也不删除、移动或修改微信数据。
-
 ## Requirements
 ### Requirement: Read-Only WeChat Storage Analysis
 
@@ -173,3 +172,21 @@ WeChat Storage MUST NOT include user paths, file names, account identifiers, con
 - **When** it writes logs
 - **Then** logs contain only stable event names, aggregate counts, stable reason codes, and sanitized context
 - **And** logs do not contain raw paths, file names, account identifiers, contact names, message content, database rows, or media-derived metadata
+
+### Requirement: 用户授权的微信根失效时必须保留可恢复状态
+
+WeChat Storage MUST 对用户选择根的有效、stale 可刷新和不可恢复 bookmark 分别处理。部分根失效不得阻止其他有效根产生只读分析结果；失效根不得被静默当作零占用或无微信数据。
+
+#### Scenario: 部分用户授权根失效
+
+- **当** 多个用户授权微信根中至少一个仍然有效且至少一个无法恢复
+- **那么** 系统扫描有效根并显示部分结果
+- **并且** UI 显示存在需要重新授权的根
+- **并且** 不显示失效根的原始路径或敏感名称
+
+#### Scenario: 所有用户授权根失效
+
+- **当** 所有持久化用户授权根均无法解析或访问
+- **那么** UI 显示需要重新授权而不是 0 B 或未发现微信数据
+- **并且** 提供重新选择目录的操作
+- **并且** 日志只记录失效数量和稳定原因码

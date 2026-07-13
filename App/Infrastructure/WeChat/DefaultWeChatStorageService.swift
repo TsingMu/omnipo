@@ -5,6 +5,7 @@ public final class DefaultWeChatStorageService: WeChatStorageService, @unchecked
     private let resolver: WeChatStorageRootResolver
     private let scanner: WeChatStorageScanner
     private let userSelectedRootsProvider: @Sendable () async -> [URL]
+    private let userSelectedRootsRelease: @Sendable () async -> Void
     private let scanOptionsProvider: @Sendable () async -> WeChatStorageScanOptions
     private let lock = NSLock()
     private var cancelled = false
@@ -12,12 +13,14 @@ public final class DefaultWeChatStorageService: WeChatStorageService, @unchecked
     public convenience init(
         resolver: WeChatStorageRootResolver,
         scanner: WeChatStorageScanner,
-        userSelectedRootsProvider: @escaping @Sendable () async -> [URL] = { [] }
+        userSelectedRootsProvider: @escaping @Sendable () async -> [URL] = { [] },
+        userSelectedRootsRelease: @escaping @Sendable () async -> Void = {}
     ) {
         self.init(
             resolver: resolver,
             scanner: scanner,
             userSelectedRootsProvider: userSelectedRootsProvider,
+            userSelectedRootsRelease: userSelectedRootsRelease,
             scanOptionsProvider: { .anonymous }
         )
     }
@@ -26,24 +29,30 @@ public final class DefaultWeChatStorageService: WeChatStorageService, @unchecked
         resolver: WeChatStorageRootResolver,
         scanner: WeChatStorageScanner,
         userSelectedRootsProvider: @escaping @Sendable () async -> [URL],
+        userSelectedRootsRelease: @escaping @Sendable () async -> Void = {},
         scanOptionsProvider: @escaping @Sendable () async -> WeChatStorageScanOptions
     ) {
         self.resolver = resolver
         self.scanner = scanner
         self.userSelectedRootsProvider = userSelectedRootsProvider
+        self.userSelectedRootsRelease = userSelectedRootsRelease
         self.scanOptionsProvider = scanOptionsProvider
     }
 
     public func scan() async -> Result<WeChatStorageScanResult, AppError> {
         let userSelectedRoots = await userSelectedRootsProvider()
         let options = await scanOptionsProvider()
-        return performScan(resetFirst: false, userSelectedRoots: userSelectedRoots, options: options)
+        let result = performScan(resetFirst: false, userSelectedRoots: userSelectedRoots, options: options)
+        await userSelectedRootsRelease()
+        return result
     }
 
     public func refresh() async -> Result<WeChatStorageScanResult, AppError> {
         let userSelectedRoots = await userSelectedRootsProvider()
         let options = await scanOptionsProvider()
-        return performScan(resetFirst: true, userSelectedRoots: userSelectedRoots, options: options)
+        let result = performScan(resetFirst: true, userSelectedRoots: userSelectedRoots, options: options)
+        await userSelectedRootsRelease()
+        return result
     }
 
     public func cancel() async {

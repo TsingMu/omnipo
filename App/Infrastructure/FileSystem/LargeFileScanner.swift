@@ -57,7 +57,8 @@ public enum LargeFileScanner {
         fileManager: FileManager = .default,
         limit: Int,
         volumeIdentifier: String,
-        now: Date = .now
+        now: Date = .now,
+        isCancelled: @Sendable () -> Bool = { false }
     ) -> LargeFileAvailability {
         _ = now  // 预留给后续"刷新时间戳"使用,目前不影响排序
         guard limit > 0 else {
@@ -78,6 +79,9 @@ public enum LargeFileScanner {
         ]
 
         for root in roots {
+            guard !isCancelled() else {
+                return .unavailable(reason: .scanNotStarted)
+            }
             // fileManager.enumerator 对某些不存在路径可能返回非 nil 空 enumerator;
             // 用 fileExists 显式预检,确保只把真正可读的根算作 anyRootReadable。
             var isDirectory: ObjCBool = false
@@ -98,6 +102,9 @@ public enum LargeFileScanner {
             let skipped = Self.skippedSubtreeNames
             let rootComponents = root.standardizedFileURL.pathComponents
             for case let url as URL in enumerator {
+                guard !isCancelled() else {
+                    return .unavailable(reason: .scanNotStarted)
+                }
                 // 跳过系统/缓存子树;命中后 skipDescendants 避免继续递归。
                 let lastComponent = url.lastPathComponent
                 let isSkippedSubtree = skipped.contains(lastComponent)

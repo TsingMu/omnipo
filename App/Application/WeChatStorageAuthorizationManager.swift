@@ -5,31 +5,89 @@ import Foundation
 @MainActor
 public final class WeChatStorageAuthorizationManager {
     private let settings: any SettingsService
+    private let logger: (any LoggingService)?
     private let maximumRootCount: Int
     private let sensitiveNamesConsentPrompt: @MainActor () -> Bool
+    private let bookmarkResolver: (Data) throws -> ResolvedDirectoryBookmark
+    private let scopeStarter: (URL) -> Bool
+    private let scopeStopper: (URL) -> Void
+    private let bookmarkCreator: (URL) throws -> Data
     private var bookmarkData: [Data]
     private var activeRoots: [URL] = []
+    private var hasValidatedAuthorization: Bool
+    private var failedBookmarks = Set<Data>()
+    private var authorizationState: PersistedDirectoryAuthorizationAvailability
+    private var lastLoggedRecoveryState: PersistedDirectoryAuthorizationAvailability?
 
     public convenience init(
         settings: any SettingsService,
-        maximumRootCount: Int = 8
+        maximumRootCount: Int = 8,
+        logger: (any LoggingService)? = nil
     ) {
         self.init(
             settings: settings,
             maximumRootCount: maximumRootCount,
-            sensitiveNamesConsentPrompt: Self.defaultSensitiveNamesConsentPrompt
+            sensitiveNamesConsentPrompt: Self.defaultSensitiveNamesConsentPrompt,
+            bookmarkResolver: Self.resolveBookmark,
+            scopeStarter: { $0.startAccessingSecurityScopedResource() },
+            scopeStopper: { $0.stopAccessingSecurityScopedResource() },
+            bookmarkCreator: Self.createBookmark,
+            logger: logger
+        )
+    }
+
+    convenience init(
+        settings: any SettingsService,
+        maximumRootCount: Int = 8,
+        sensitiveNamesConsentPrompt: @escaping @MainActor () -> Bool
+    ) {
+        self.init(
+            settings: settings,
+            maximumRootCount: maximumRootCount,
+            sensitiveNamesConsentPrompt: sensitiveNamesConsentPrompt,
+            bookmarkResolver: Self.resolveBookmark,
+            scopeStarter: { $0.startAccessingSecurityScopedResource() },
+            scopeStopper: { $0.stopAccessingSecurityScopedResource() },
+            bookmarkCreator: Self.createBookmark,
+            logger: nil
         )
     }
 
     init(
         settings: any SettingsService,
-        maximumRootCount: Int = 8,
-        sensitiveNamesConsentPrompt: @escaping @MainActor () -> Bool
+        maximumRootCount: Int,
+        sensitiveNamesConsentPrompt: @escaping @MainActor () -> Bool,
+        bookmarkResolver: @escaping (Data) throws -> ResolvedDirectoryBookmark,
+        scopeStarter: @escaping (URL) -> Bool,
+        scopeStopper: @escaping (URL) -> Void,
+        bookmarkCreator: @escaping (URL) throws -> Data,
+        logger: (any LoggingService)? = nil
     ) {
         self.settings = settings
+        self.logger = logger
         self.maximumRootCount = max(1, maximumRootCount)
         self.sensitiveNamesConsentPrompt = sensitiveNamesConsentPrompt
+        self.bookmarkResolver = bookmarkResolver
+        self.scopeStarter = scopeStarter
+        self.scopeStopper = scopeStopper
+        self.bookmarkCreator = bookmarkCreator
         self.bookmarkData = settings.readWeChatStorageRootBookmarks()
+        self.hasValidatedAuthorization = self.bookmarkData.isEmpty
+        self.authorizationState = self.bookmarkData.isEmpty
+            ? .notConfigured
+            : .reauthorizationRequired(
+                validRootCount: 0,
+                invalidRootCount: self.bookmarkData.count,
+                reason: .bookmarkInvalid
+            )
+    }
+
+    public var authorizationAvailability: PersistedDirectoryAuthorizationAvailability {
+        if !hasValidatedAuthorization {
+            _ = currentRoots()
+            releaseActiveRoots()
+        }
+        return authorizationState
     }
 
     public var sensitiveNamesEnabled: Bool {
@@ -52,39 +110,65 @@ public final class WeChatStorageAuthorizationManager {
     public func currentRoots() -> [URL] {
         if !activeRoots.isEmpty { return activeRoots }
 
-        var validBookmarks: [Data] = []
+        guard !bookmarkData.isEmpty else {
+            hasValidatedAuthorization = true
+            authorizationState = .notConfigured
+            failedBookmarks = []
+            return []
+        }
+
+        var retainedBookmarks: [Data] = []
         var roots: [URL] = []
         var seen = Set<String>()
+        var failures = Set<Data>()
+        var recoveryReason: DirectoryAuthorizationRecoveryReason?
 
         for bookmark in bookmarkData {
-            var stale = false
-            guard let url = try? URL(
-                resolvingBookmarkData: bookmark,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &stale
-            ), url.startAccessingSecurityScopedResource() else {
+            let resolved: ResolvedDirectoryBookmark
+            do {
+                resolved = try bookmarkResolver(bookmark)
+            } catch {
+                retainedBookmarks.append(bookmark)
+                failures.insert(bookmark)
+                recoveryReason = recoveryReason ?? .bookmarkInvalid
+                continue
+            }
+            guard scopeStarter(resolved.url) else {
+                retainedBookmarks.append(bookmark)
+                failures.insert(bookmark)
+                recoveryReason = recoveryReason ?? .accessDenied
                 continue
             }
 
-            let normalizedPath = url.resolvingSymlinksInPath().standardizedFileURL.path
+            let normalizedPath = resolved.url.resolvingSymlinksInPath().standardizedFileURL.path
             guard seen.insert(normalizedPath).inserted else {
-                url.stopAccessingSecurityScopedResource()
+                scopeStopper(resolved.url)
                 continue
             }
 
-            roots.append(url)
-            if stale, let refreshed = makeBookmark(for: url) {
-                validBookmarks.append(refreshed)
+            roots.append(resolved.url)
+            if resolved.isStale, let refreshed = makeBookmark(for: resolved.url) {
+                retainedBookmarks.append(refreshed)
             } else {
-                validBookmarks.append(bookmark)
+                retainedBookmarks.append(bookmark)
             }
         }
 
         activeRoots = roots
-        if validBookmarks != bookmarkData {
-            bookmarkData = validBookmarks
-            settings.writeWeChatStorageRootBookmarks(validBookmarks)
+        hasValidatedAuthorization = true
+        failedBookmarks = failures
+        if let recoveryReason, !failures.isEmpty {
+            updateAuthorizationState(.reauthorizationRequired(
+                validRootCount: roots.count,
+                invalidRootCount: failures.count,
+                reason: recoveryReason
+            ))
+        } else {
+            updateAuthorizationState(.available(validRootCount: roots.count))
+        }
+        if retainedBookmarks != bookmarkData {
+            bookmarkData = retainedBookmarks
+            settings.writeWeChatStorageRootBookmarks(retainedBookmarks)
         }
         return roots
     }
@@ -92,6 +176,7 @@ public final class WeChatStorageAuthorizationManager {
     /// 让用户选择一个或多个目录；成功后持久化授权并供后续刷新使用。
     @discardableResult
     public func selectNewRoots() async -> Bool {
+        _ = currentRoots()
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
@@ -106,7 +191,10 @@ public final class WeChatStorageAuthorizationManager {
         guard !newBookmarks.isEmpty else { return false }
 
         releaseActiveRoots()
-        bookmarkData = deduplicatedBookmarks(newBookmarks + bookmarkData)
+        let retainedValidBookmarks = bookmarkData.filter { !failedBookmarks.contains($0) }
+        bookmarkData = deduplicatedBookmarks(newBookmarks + retainedValidBookmarks)
+        hasValidatedAuthorization = false
+        failedBookmarks = []
         settings.writeWeChatStorageRootBookmarks(bookmarkData)
         return !currentRoots().isEmpty
     }
@@ -114,15 +202,19 @@ public final class WeChatStorageAuthorizationManager {
     public func clearRoots() {
         releaseActiveRoots()
         bookmarkData = []
+        hasValidatedAuthorization = true
+        failedBookmarks = []
+        authorizationState = .notConfigured
         settings.writeWeChatStorageRootBookmarks([])
     }
 
+    /// 一轮扫描结束后释放所有由 `currentRoots()` 激活的 security scope。
+    public func releaseRoots() {
+        releaseActiveRoots()
+    }
+
     private func makeBookmark(for url: URL) -> Data? {
-        try? url.bookmarkData(
-            options: [.withSecurityScope],
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
-        )
+        try? bookmarkCreator(url)
     }
 
     private func deduplicatedBookmarks(_ bookmarks: [Data]) -> [Data] {
@@ -130,14 +222,8 @@ public final class WeChatStorageAuthorizationManager {
         var result: [Data] = []
 
         for bookmark in bookmarks {
-            var stale = false
-            guard let url = try? URL(
-                resolvingBookmarkData: bookmark,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &stale
-            ) else { continue }
-            let path = url.resolvingSymlinksInPath().standardizedFileURL.path
+            guard let resolved = try? bookmarkResolver(bookmark) else { continue }
+            let path = resolved.url.resolvingSymlinksInPath().standardizedFileURL.path
             guard seen.insert(path).inserted else { continue }
             result.append(bookmark)
             if result.count == maximumRootCount { break }
@@ -147,9 +233,51 @@ public final class WeChatStorageAuthorizationManager {
 
     private func releaseActiveRoots() {
         for root in activeRoots {
-            root.stopAccessingSecurityScopedResource()
+            scopeStopper(root)
         }
         activeRoots = []
+    }
+
+    private func updateAuthorizationState(
+        _ state: PersistedDirectoryAuthorizationAvailability
+    ) {
+        authorizationState = state
+        guard case .reauthorizationRequired(let validCount, let invalidCount, let reason) = state else {
+            lastLoggedRecoveryState = nil
+            return
+        }
+        guard lastLoggedRecoveryState != state else { return }
+        lastLoggedRecoveryState = state
+        logger?.log(LogEvent(
+            level: .warning,
+            category: .application,
+            message: "wechat.authorization.reauthorizationRequired",
+            stableCode: reason.stableCode,
+            sanitizedContext: [
+                "reason": reason.rawValue,
+                "validCount": "\(validCount)",
+                "invalidCount": "\(invalidCount)"
+            ]
+        ))
+    }
+
+    private static func resolveBookmark(_ data: Data) throws -> ResolvedDirectoryBookmark {
+        var stale = false
+        let url = try URL(
+            resolvingBookmarkData: data,
+            options: [.withSecurityScope],
+            relativeTo: nil,
+            bookmarkDataIsStale: &stale
+        )
+        return ResolvedDirectoryBookmark(url: url, isStale: stale)
+    }
+
+    private static func createBookmark(for url: URL) throws -> Data {
+        try url.bookmarkData(
+            options: [.withSecurityScope],
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
     }
 
     private static func defaultSensitiveNamesConsentPrompt() -> Bool {

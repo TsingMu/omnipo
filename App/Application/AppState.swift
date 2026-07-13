@@ -78,11 +78,16 @@ final class AppState {
             return
         }
 
+        if trigger == .userRefresh {
+            largeFileTask?.cancel()
+        }
+
         largeFileAvailability = .loading
         let taskID = UUID()
         let limit = largeFileLimit
         let task = Task { @MainActor in
             let result = await diskUsageService.loadLargeFiles(limit: limit, trigger: trigger)
+            guard !Task.isCancelled, largeFileTaskID == taskID else { return }
             largeFileAvailability = result
         }
         largeFileTaskID = taskID

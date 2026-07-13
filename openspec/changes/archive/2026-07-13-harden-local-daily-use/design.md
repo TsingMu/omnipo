@@ -120,6 +120,20 @@ Classify background activity explicitly:
 
 Focused tests should prove these policies. Code changes are required only where the audit finds a violation.
 
+### Lifecycle Audit Result
+
+| Activity | Audit result | Evidence / resolution |
+| --- | --- | --- |
+| System metrics and app usage | Conforms | View activation/deactivation owns the stream; generation checks reject retired-stream and late sampler results; re-entry creates one fresh stream |
+| Clipboard monitoring | Conforms | Monitoring is owned by the application service rather than the page; disabling stops immediately; repeated enable keeps one monitor |
+| Launcher search | Conforms | Query replacement cancels the prior producer; panel hide calls `cancelAll`; store generation rejects stale batches |
+| Disk scan | Fixed as `LOCAL-005-A` | Replacement cancels and drains the previous scan; metadata enumeration observes cancellation; every terminal path releases the authorized root; AppState rejects superseded results |
+| WeChat scan | Fixed as `LOCAL-005-B` | Replacement cancels and drains the previous refresh; every terminal result releases selected-root scopes; store task identity rejects superseded results |
+| Authorization status probes and file actions | Fixed as `LOCAL-005-C` | Availability probes validate then immediately release scopes; display-name reads do not reacquire; finite file actions release manager-owned access |
+| Uninstall execution | Conforms | Navigation has no automatic cancellation hook; only explicit cancellation reaches the service; execution results remain in store state |
+
+No blanket navigation stop policy was introduced. Clipboard capture and confirmed uninstall execution retain their intentionally broader lifetimes.
+
 ## UI and Diagnostics
 
 Recovery messages should state the affected capability, the safe reason, and the next action. They must not display private raw paths except for a user-approved final path component already allowed by the relevant capability.

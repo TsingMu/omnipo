@@ -101,12 +101,33 @@ final class DefaultWeChatStorageServiceTests: XCTestCase {
         XCTAssertEqual(result.largeFiles.first?.fileName, "real-name.mp4")
     }
 
+    func test_refresh_releasesUserSelectedRootScopeAfterTerminalResult() async throws {
+        let home = try makeTemporaryHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let userRoot = try makeTemporaryHome()
+        defer { try? FileManager.default.removeItem(at: userRoot) }
+        try writeFile(userRoot.appendingPathComponent("Caches/manual.dat"), bytes: 25)
+        let releases = WeChatReleaseCounter()
+
+        let service = makeService(
+            home: home,
+            bid: "com.tencent.xinWeChat",
+            userSelectedRootsProvider: { [userRoot] },
+            userSelectedRootsRelease: { await releases.increment() }
+        )
+        _ = try await service.refresh().get()
+        let releaseCount = await releases.value
+
+        XCTAssertEqual(releaseCount, 1)
+    }
+
     // MARK: - Helpers
 
     private func makeService(
         home: URL,
         bid: String,
         userSelectedRootsProvider: @escaping @Sendable () async -> [URL] = { [] },
+        userSelectedRootsRelease: @escaping @Sendable () async -> Void = {},
         scanOptionsProvider: @escaping @Sendable () async -> WeChatStorageScanOptions = { .anonymous }
     ) -> DefaultWeChatStorageService {
         let resolver = WeChatStorageRootResolver(bundleIDProvider: FixedBidProvider(bid: bid), homeDirectory: home)
@@ -114,6 +135,7 @@ final class DefaultWeChatStorageServiceTests: XCTestCase {
             resolver: resolver,
             scanner: WeChatStorageScanner(),
             userSelectedRootsProvider: userSelectedRootsProvider,
+            userSelectedRootsRelease: userSelectedRootsRelease,
             scanOptionsProvider: scanOptionsProvider
         )
     }
@@ -128,6 +150,14 @@ final class DefaultWeChatStorageServiceTests: XCTestCase {
     private func writeFile(_ url: URL, bytes: Int) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(count: bytes).write(to: url)
+    }
+}
+
+private actor WeChatReleaseCounter {
+    private(set) var value = 0
+
+    func increment() {
+        value += 1
     }
 }
 

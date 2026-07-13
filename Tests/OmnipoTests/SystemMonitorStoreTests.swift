@@ -85,6 +85,33 @@ final class SystemMonitorStoreTests: XCTestCase {
         XCTAssertEqual(stopCount, 1)
     }
 
+    func test_reactivateCreatesOneFreshStreamAndRejectsRetiredStreamUpdates() async {
+        let service = MockSystemMonitorService()
+        let store = SystemMonitorStore(service: service)
+        let first = makeSnapshot(id: "first-visit")
+        let stale = makeSnapshot(id: "retired-stream")
+        let second = makeSnapshot(id: "second-visit")
+
+        await store.activate()
+        await service.push(first)
+        await waitUntil { store.snapshot == first }
+        await store.deactivate()
+        await store.activate()
+        await service.pushRetired(stale)
+        await service.push(second)
+        await waitUntil { store.snapshot == second }
+        let startedIntervals = await service.startedIntervals()
+        let stopCount = await service.stopCallCount()
+
+        XCTAssertTrue(store.isActive)
+        XCTAssertEqual(store.snapshot, second)
+        XCTAssertEqual(
+            startedIntervals,
+            [SystemMonitorInterval.defaultSeconds, SystemMonitorInterval.defaultSeconds]
+        )
+        XCTAssertEqual(stopCount, 1)
+    }
+
     func test_deactivateCancelsAppUsageSamplingAndIgnoresLateResult() async {
         let service = MockSystemMonitorService()
         let sampler = MockAppUsageSampler()

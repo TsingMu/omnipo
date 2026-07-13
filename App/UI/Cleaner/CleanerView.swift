@@ -53,7 +53,7 @@ struct CleanerView: View {
                     .buttonStyle(.borderedProminent)
 
                     CleanerLargeFileSection(
-                        availability: appState.largeFileAvailability,
+                        availability: presentedLargeFileAvailability,
                         onRefresh: {
                             Task { await appState.refreshLargeFiles() }
                         }
@@ -91,23 +91,29 @@ struct CleanerView: View {
     /// 由 AuthorizedRootManager 用 security-scoped bookmark 持久化。
     @ViewBuilder
     private var largeFileRootPicker: some View {
-        let authorizedURL = container.authorizedRootManager.currentRoot()
+        let availability = container.authorizedRootManager.authorizationAvailability
         HStack(spacing: 12) {
             Image(systemName: "folder.badge.gearshape")
-                .foregroundStyle(OmnipoTheme.brandRed)
+                .foregroundStyle(availability.requiresReauthorization ? .orange : OmnipoTheme.brandRed)
             VStack(alignment: .leading, spacing: 2) {
                 Text("大文件扫描目录")
                     .font(.headline)
-                if let name = container.authorizedRootManager.currentRootDisplayName() {
-                    Text("当前授权:\(name)")
+                switch availability {
+                case .notConfigured:
+                    Text("尚未授权;点击右侧按钮选择需要扫描的目录(如“下载”或“文稿”)。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                case .available:
+                    Text("当前授权:\(container.authorizedRootManager.currentRootDisplayName() ?? "已选择目录")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                } else {
-                    Text("尚未授权;点击右侧按钮选择需要扫描的目录(如“下载”或“文稿”)。")
+                case .reauthorizationRequired(_, _, let reason):
+                    Text("需要重新授权:\(reason.userDescription)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -115,10 +121,12 @@ struct CleanerView: View {
             Button {
                 Task { await pickRoot() }
             } label: {
-                Label(authorizedURL == nil ? "选择目录…" : "更换目录…",
+                Label(rootPickerButtonTitle(for: availability),
                       systemImage: "folder")
             }
-            if authorizedURL != nil {
+            if case .notConfigured = availability {
+                EmptyView()
+            } else {
                 Button(role: .destructive) {
                     container.authorizedRootManager.clearRoot()
                     Task { await appState.refreshLargeFiles() }
@@ -130,6 +138,23 @@ struct CleanerView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var presentedLargeFileAvailability: LargeFileAvailability {
+        if container.authorizedRootManager.authorizationAvailability.requiresReauthorization {
+            return .unavailable(reason: .permissionLimited)
+        }
+        return appState.largeFileAvailability
+    }
+
+    private func rootPickerButtonTitle(
+        for availability: PersistedDirectoryAuthorizationAvailability
+    ) -> String {
+        switch availability {
+        case .notConfigured: "选择目录…"
+        case .available: "更换目录…"
+        case .reauthorizationRequired: "重新选择…"
+        }
     }
 
     private func pickRoot() async {

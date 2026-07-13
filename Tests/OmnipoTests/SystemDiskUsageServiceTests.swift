@@ -127,6 +127,66 @@ final class SystemDiskUsageServiceTests: XCTestCase {
         XCTAssertNil(event.sanitizedContext["path"])
         XCTAssertFalse(event.message.contains("/Users/"))
     }
+
+    func test_largeFileScan_releasesAuthorizedRootsAfterSuccess() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("omnipo-large-file-release-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data(count: 8).write(to: root.appendingPathComponent("sample.bin"))
+        defer { try? FileManager.default.removeItem(at: root) }
+        let releases = AsyncInvocationCounter()
+        let service = SystemDiskUsageService(
+            logger: RecordingLogger(),
+            metadataLoader: { Self.metadataFixture },
+            largeFileRootsProvider: { [root] },
+            largeFileRootsRelease: { await releases.increment() }
+        )
+
+        let result = await service.loadLargeFiles(limit: 10, trigger: .initialLoad)
+
+        guard case .available = result else {
+            return XCTFail("expected available result")
+        }
+        let releaseCount = await releases.value
+        XCTAssertEqual(releaseCount, 1)
+    }
+
+    func test_replacingLargeFileScan_cancelsOldScanAndReleasesBothScopes() async {
+        let root = FileManager.default.temporaryDirectory
+        let provider = SuspendingLargeFileRootsProvider(root: root)
+        let releases = AsyncInvocationCounter()
+        let service = SystemDiskUsageService(
+            logger: RecordingLogger(),
+            metadataLoader: { Self.metadataFixture },
+            largeFileRootsProvider: { await provider.roots() },
+            largeFileRootsRelease: { await releases.increment() }
+        )
+
+        let first = Task {
+            await service.loadLargeFiles(limit: 1, trigger: .initialLoad)
+        }
+        await provider.waitUntilFirstCallStarts()
+        let second = Task {
+            await service.loadLargeFiles(limit: 1, trigger: .userRefresh)
+        }
+
+        _ = await first.value
+        _ = await second.value
+        let providerCallCount = await provider.callCount
+        let releaseCount = await releases.value
+
+        XCTAssertEqual(providerCallCount, 2)
+        XCTAssertEqual(releaseCount, 2)
+    }
+
+    private static var metadataFixture: SystemDiskUsageService.VolumeMetadata {
+        .init(
+            volumeName: "Test Volume",
+            volumeIdentifier: "test-volume",
+            totalBytes: 100,
+            availableBytes: 50
+        )
+    }
 }
 
 private final class RecordingLogger: @unchecked Sendable, LoggingService {
@@ -151,5 +211,46 @@ private actor InvocationCounter {
 
     func increment() {
         value += 1
+    }
+}
+
+private actor AsyncInvocationCounter {
+    private(set) var value = 0
+
+    func increment() {
+        value += 1
+    }
+}
+
+private actor SuspendingLargeFileRootsProvider {
+    let root: URL
+    private(set) var callCount = 0
+    private var firstCallStarted = false
+    private var firstCallWaiter: CheckedContinuation<Void, Never>?
+
+    init(root: URL) {
+        self.root = root
+    }
+
+    func roots() async -> [URL] {
+        callCount += 1
+        if callCount == 1 {
+            firstCallStarted = true
+            firstCallWaiter?.resume()
+            firstCallWaiter = nil
+            do {
+                try await Task.sleep(for: .seconds(30))
+            } catch {
+                // 新扫描取消旧 task 后立即返回，让旧 scope 走统一释放路径。
+            }
+        }
+        return [root]
+    }
+
+    func waitUntilFirstCallStarts() async {
+        guard !firstCallStarted else { return }
+        await withCheckedContinuation { continuation in
+            firstCallWaiter = continuation
+        }
     }
 }

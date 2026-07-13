@@ -146,8 +146,15 @@ public final class FileLauncher {
     }
 
     private func startAuthorizedDirectoryAccess(containing url: URL) -> DirectoryAccess? {
-        if let rootURL = authorizedRootManager?.currentRoot(), rootURL.contains(url) {
-            return DirectoryAccess(url: rootURL, didAccess: false)
+        if let authorizedRootManager, let rootURL = authorizedRootManager.currentRoot() {
+            if rootURL.contains(url) {
+                return DirectoryAccess(
+                    url: rootURL,
+                    didAccess: false,
+                    additionalStop: { authorizedRootManager.releaseRoot() }
+                )
+            }
+            authorizedRootManager.releaseRoot()
         }
 
         guard let settings else { return nil }
@@ -223,6 +230,7 @@ public final class FileLauncher {
             settings.writeLauncherFileDirectoryBookmarks(Array(bookmarks.prefix(maxAuthorizedDirectories)))
         }
         authorizedRootManager?.adoptRoot(url: directoryURL)
+        authorizedRootManager?.releaseRoot()
 
         var stale = false
         guard let scopedURL = try? URL(
@@ -281,11 +289,13 @@ public final class FileLauncher {
     private struct DirectoryAccess {
         let url: URL
         let didAccess: Bool
+        var additionalStop: (() -> Void)? = nil
 
         func stop() {
             if didAccess {
                 url.stopAccessingSecurityScopedResource()
             }
+            additionalStop?()
         }
     }
 

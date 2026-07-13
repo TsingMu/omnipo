@@ -35,12 +35,16 @@ final class WeChatManagerStore {
     }
 
     func refresh() async {
-        loadTask?.cancel()
+        if let previous = loadTask {
+            previous.cancel()
+            await service.cancel()
+            await previous.value
+        }
         state = .loading
         let taskID = UUID()
         let task = Task { @MainActor in
             let result = await service.refresh()
-            guard Task.isCancelled == false else { return }
+            guard Task.isCancelled == false, loadTaskID == taskID else { return }
             switch result {
             case .success(let scanResult):
                 reconcileLargeFileCandidates(with: scanResult)
@@ -67,6 +71,10 @@ final class WeChatManagerStore {
         guard let authorizationManager,
               await authorizationManager.selectNewRoots() else { return }
         await refresh()
+    }
+
+    var authorizationAvailability: PersistedDirectoryAuthorizationAvailability {
+        authorizationManager?.authorizationAvailability ?? .notConfigured
     }
 
     var sensitiveNamesEnabled: Bool {

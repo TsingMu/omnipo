@@ -41,6 +41,19 @@ private struct WeChatManagerContent: View {
                         onRefresh: { Task { await store.refresh() } }
                     )
 
+                    if case .reauthorizationRequired(
+                        let validRootCount,
+                        let invalidRootCount,
+                        let reason
+                    ) = store.authorizationAvailability {
+                        WeChatAuthorizationRecoveryPanel(
+                            validRootCount: validRootCount,
+                            invalidRootCount: invalidRootCount,
+                            reason: reason,
+                            onReauthorize: { Task { await store.selectUserRoots() } }
+                        )
+                    }
+
                     stateContent
                 }
                 .frame(maxWidth: 900, alignment: .topLeading)
@@ -64,8 +77,52 @@ private struct WeChatManagerContent: View {
                 Task { await store.refresh() }
             }
         case .loaded(let result):
-            WeChatStorageLoadedContent(result: result, store: store)
+            WeChatStorageLoadedContent(
+                result: result,
+                store: store,
+                authorizationAvailability: store.authorizationAvailability
+            )
         }
+    }
+}
+
+private struct WeChatAuthorizationRecoveryPanel: View {
+    let validRootCount: Int
+    let invalidRootCount: Int
+    let reason: DirectoryAuthorizationRecoveryReason
+    let onReauthorize: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "folder.badge.questionmark")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(validRootCount > 0 ? "部分目录需要重新授权" : "微信目录需要重新授权")
+                    .font(.headline)
+                Text(recoveryMessage)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Text("原因码: \(reason.stableCode)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer(minLength: 12)
+
+            Button("重新选择目录", action: onReauthorize)
+                .buttonStyle(.borderedProminent)
+        }
+        .wechatPanel(padding: 16)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var recoveryMessage: String {
+        if validRootCount > 0 {
+            return "仍可扫描 \(validRootCount) 个有效目录;另有 \(invalidRootCount) 个授权已失效。请选择替代目录以恢复完整结果。"
+        }
+        return "\(invalidRootCount) 个已保存授权均无法使用。请重新选择目录;Omnipo 不会将其显示为 0 B 或无数据。"
     }
 }
 
@@ -189,6 +246,7 @@ private struct WeChatStorageFailurePanel: View {
 private struct WeChatStorageLoadedContent: View {
     let result: WeChatStorageScanResult
     @Bindable var store: WeChatManagerStore
+    let authorizationAvailability: PersistedDirectoryAuthorizationAvailability
     @State private var mode: WeChatStorageViewMode = .overview
 
     var body: some View {
@@ -208,7 +266,10 @@ private struct WeChatStorageLoadedContent: View {
             WeChatStorageSummaryGrid(result: result)
 
             if isEffectivelyEmpty {
-                WeChatStorageEmptyPanel(result: result)
+                WeChatStorageEmptyPanel(
+                    result: result,
+                    authorizationAvailability: authorizationAvailability
+                )
             } else {
                 Picker("查看维度", selection: $mode) {
                     ForEach(WeChatStorageViewMode.allCases) { mode in
@@ -362,6 +423,7 @@ private struct WeChatStorageMetricTile: View {
 
 private struct WeChatStorageEmptyPanel: View {
     let result: WeChatStorageScanResult
+    let authorizationAvailability: PersistedDirectoryAuthorizationAvailability
 
     var body: some View {
         ContentUnavailableView {
@@ -381,12 +443,20 @@ private struct WeChatStorageEmptyPanel: View {
     }
 
     private var title: String {
+        if case .reauthorizationRequired(let validCount, _, _) = authorizationAvailability,
+           validCount == 0 {
+            return "微信目录需要重新授权"
+        }
         if result.roots.isEmpty { return "未发现微信存储" }
         if !hasReadableRoot { return "微信存储不可读" }
         return "可读微信存储为空"
     }
 
     private var description: String {
+        if case .reauthorizationRequired(let validCount, let invalidCount, _) = authorizationAvailability,
+           validCount == 0 {
+            return "\(invalidCount) 个已保存目录授权已失效。请使用上方“重新选择目录”恢复访问。"
+        }
         if result.roots.isEmpty {
             return "未在常见位置找到微信数据。可使用右上角“选择目录”授权一个微信数据目录。"
         }

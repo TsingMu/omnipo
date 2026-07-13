@@ -110,6 +110,8 @@ public enum PrivacyRedaction {
         "stateDetail",
         "argumentName",
         "resource",
+        "validCount",
+        "invalidCount",
         "corruptionDetail",
         "formatDetail",
         "unknownCode"

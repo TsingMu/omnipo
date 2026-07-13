@@ -73,6 +73,18 @@ final class DefaultClipboardServiceTests: XCTestCase {
         XCTAssertEqual(fixture.monitorFactory.latestMonitor?.startCount, 1)
     }
 
+    func test_repeatedEnableKeepsSingleApplicationWideMonitor() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+
+        _ = await fixture.service.setEnabled(true)
+        _ = await fixture.service.setEnabled(true)
+
+        XCTAssertEqual(fixture.monitorFactory.monitorCount, 1)
+        XCTAssertEqual(fixture.monitorFactory.latestMonitor?.startCount, 1)
+        XCTAssertEqual(fixture.monitorFactory.latestMonitor?.stopCount, 0)
+    }
+
     func test_monitorChangePersistsCapturedContentOnlyAfterAcknowledgedAndEnabled() async throws {
         let fixture = try makeFixture(acknowledged: true, enabled: true)
         defer { fixture.cleanup() }

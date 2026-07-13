@@ -315,9 +315,8 @@ final class LauncherStoreTests: XCTestCase {
     }
 
     func test_cancelAll_clearsState() async {
-        let service = makeService([
-            ("command", .success([sampleResult(id: "alpha")]))
-        ])
+        let result = sampleResult(id: "alpha")
+        let service = CancellationRecordingSearchService(result: result)
         let store = LauncherStore(service: service)
 
         store.updateQuery("a")
@@ -330,6 +329,7 @@ final class LauncherStoreTests: XCTestCase {
         XCTAssertTrue(store.results.isEmpty)
         XCTAssertNil(store.selection)
         XCTAssertEqual(store.state, .idle)
+        XCTAssertEqual(service.cancelCallCount, 1)
     }
 
     func test_emptyResults_marksStateEmpty() async {
@@ -371,5 +371,34 @@ final class LauncherStoreTests: XCTestCase {
 
         XCTAssertEqual(store.selection, localSelection)
         XCTAssertEqual(store.results.count, 3)
+    }
+}
+
+private final class CancellationRecordingSearchService: SearchService, @unchecked Sendable {
+    private let result: SearchResult
+    private let cancellationCount = OSAllocatedUnfairLock<Int>(initialState: 0)
+
+    init(result: SearchResult) {
+        self.result = result
+    }
+
+    var cancelCallCount: Int {
+        cancellationCount.withLock { $0 }
+    }
+
+    func search(query: String) -> AsyncStream<SearchBatch> {
+        AsyncStream { continuation in
+            continuation.yield(SearchBatch(
+                generation: 1,
+                results: [result],
+                failures: [],
+                isFinal: true
+            ))
+            continuation.finish()
+        }
+    }
+
+    func cancel() {
+        cancellationCount.withLock { $0 += 1 }
     }
 }

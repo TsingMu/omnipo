@@ -6,6 +6,7 @@ struct ClipboardPanelView: View {
     let pasteTargetProcessIdentifier: () -> pid_t?
     let onHide: () -> Void
 
+    @State private var serviceAvailability: ClipboardServiceAvailability = .available
     @State private var hasAcknowledgedNotice = false
     @State private var isEnabled = false
     @State private var records: [ClipboardItem] = []
@@ -21,14 +22,19 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             header
 
-            if hasAcknowledgedNotice {
-                queryBar
-                Divider()
-                historyList
-                Divider()
-                actionBar
-            } else {
-                firstRunNotice
+            switch serviceAvailability {
+            case .available:
+                if hasAcknowledgedNotice {
+                    queryBar
+                    Divider()
+                    historyList
+                    Divider()
+                    actionBar
+                } else {
+                    firstRunNotice
+                }
+            case .unavailable:
+                unavailableState
             }
         }
         .frame(width: 460, height: 560)
@@ -48,7 +54,7 @@ struct ClipboardPanelView: View {
             Task { await loadRecords() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .clipboardHistoryDidChange)) { _ in
-            guard hasAcknowledgedNotice, isEnabled else { return }
+            guard serviceAvailability.isAvailable, hasAcknowledgedNotice, isEnabled else { return }
             Task { await loadRecords() }
         }
         .onExitCommand(perform: onHide)
@@ -64,7 +70,7 @@ struct ClipboardPanelView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Clipboard")
                     .font(.headline)
-                Text(isEnabled ? "最近记录" : "记录已关闭")
+                Text(headerSubtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -230,6 +236,27 @@ struct ClipboardPanelView: View {
         .padding(24)
     }
 
+    private var unavailableState: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("剪切板存储暂不可用", systemImage: "externaldrive.badge.exclamationmark")
+                .font(.headline)
+            Text("无法打开本机剪切板数据库,但 Omnipo 的其他功能仍可使用。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Text("请检查磁盘空间和目录写入权限,然后重启应用。现有数据不会被自动删除或重建。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding(24)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var headerSubtitle: String {
+        guard serviceAvailability.isAvailable else { return "存储不可用" }
+        return isEnabled ? "最近记录" : "记录已关闭"
+    }
+
     private var selectedItem: ClipboardItem? {
         guard let selectedItemID else { return nil }
         return records.first { $0.id == selectedItemID }
@@ -254,6 +281,15 @@ struct ClipboardPanelView: View {
     }
 
     private func refreshState() async {
+        serviceAvailability = await clipboardService.availability
+        guard serviceAvailability.isAvailable else {
+            hasAcknowledgedNotice = false
+            isEnabled = false
+            records = []
+            selectedItemID = nil
+            message = nil
+            return
+        }
         hasAcknowledgedNotice = await clipboardService.hasAcknowledgedLocalStorageNotice
         isEnabled = await clipboardService.isEnabled
         if hasAcknowledgedNotice {
@@ -262,6 +298,7 @@ struct ClipboardPanelView: View {
     }
 
     private func loadRecords() async {
+        guard serviceAvailability.isAvailable else { return }
         isLoading = true
         defer { isLoading = false }
         let query = ClipboardQuery(

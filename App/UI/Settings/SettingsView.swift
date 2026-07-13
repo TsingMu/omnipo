@@ -1,10 +1,9 @@
-import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(DependencyContainer.self) private var container
 
-    @State private var launchAtLogin = true
+    @State private var launchAtLoginController: LaunchAtLoginSettingsController?
     @State private var launchDashboardAtStart = false
     @State private var reopenLastDestination = false
     @State private var clipboardAutoPaste = true
@@ -19,7 +18,6 @@ struct SettingsView: View {
     @State private var pollingIntervalSeconds = ClipboardSettingsDefaults.pollingIntervalSeconds
     @State private var imageQuality = ClipboardSettingsDefaults.imageQuality
     @State private var showMenuBarIcon = ClipboardSettingsDefaults.showMenuBarIcon
-    @State private var serviceManagementMessage: String?
 
     var body: some View {
         ZStack {
@@ -56,6 +54,15 @@ struct SettingsView: View {
         }
         .frame(width: 520, height: 520)
         .task {
+            if launchAtLoginController == nil {
+                let controller = LaunchAtLoginSettingsController(
+                    service: container.launchAtLoginService,
+                    settings: container.settings,
+                    logger: container.logging
+                )
+                launchAtLoginController = controller
+                controller.refresh()
+            }
             loadSettings()
         }
     }
@@ -86,11 +93,7 @@ struct SettingsView: View {
     private var generalTab: some View {
         Form {
             Section {
-                Toggle("开机时自动启动", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, value in
-                        container.settings.write(value, forKey: .launchAtLogin)
-                        updateLaunchAtLogin(value)
-                    }
+                launchAtLoginSetting
 
                 Toggle("启动时打开 Dashboard", isOn: $launchDashboardAtStart)
                     .onChange(of: launchDashboardAtStart) { _, value in
@@ -120,11 +123,6 @@ struct SettingsView: View {
                     container.logging.log(.preferenceChanged(key: "clipboardPanelPosition"))
                 }
 
-                if let serviceManagementMessage {
-                    Text(serviceManagementMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.orange)
-                }
             } header: {
                 Text("通用")
             } footer: {
@@ -135,6 +133,35 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+    }
+
+    @ViewBuilder
+    private var launchAtLoginSetting: some View {
+        if let controller = launchAtLoginController {
+            Toggle("开机时自动启动", isOn: Binding(
+                get: { controller.isEnabled },
+                set: { requestedValue in
+                    Task { await controller.setEnabled(requestedValue) }
+                }
+            ))
+            .disabled(controller.isUpdating)
+
+            if let message = controller.message {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+
+                    Button("刷新开机启动状态") {
+                        controller.refresh()
+                    }
+                    .controlSize(.small)
+                }
+            }
+        } else {
+            Toggle("开机时自动启动", isOn: .constant(false))
+                .disabled(true)
+        }
     }
 
     private var storageTab: some View {
@@ -301,7 +328,6 @@ struct SettingsView: View {
     }
 
     private func loadSettings() {
-        launchAtLogin = container.settings.readBool(forKey: .launchAtLogin)
         launchDashboardAtStart = container.settings.readBool(forKey: .launchDashboardAtStart)
         reopenLastDestination = container.settings.readBool(forKey: .reopenLastDestination)
         clipboardAutoPaste = container.settings.readBool(forKey: .clipboardAutoPaste)
@@ -314,20 +340,6 @@ struct SettingsView: View {
         pollingIntervalSeconds = container.settings.readClipboardPollingIntervalSeconds()
         imageQuality = container.settings.readClipboardImageQuality()
         showMenuBarIcon = container.settings.readBool(forKey: .showMenuBarIcon)
-    }
-
-    private func updateLaunchAtLogin(_ isEnabled: Bool) {
-        serviceManagementMessage = nil
-        do {
-            if isEnabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-            container.logging.log(.preferenceChanged(key: "launchAtLogin"))
-        } catch {
-            serviceManagementMessage = "无法更新开机启动设置:\(error.localizedDescription)"
-        }
     }
 
     private func addFrontmostApplicationToExclusions() {

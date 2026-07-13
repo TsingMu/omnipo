@@ -6,6 +6,7 @@ import Observation
 public final class DependencyContainer {
     public let settings: any SettingsService
     public let logging: any LoggingService
+    public let launchAtLoginService: any LaunchAtLoginService
     public let shortcutService: any ShortcutService
     public let diskUsageService: any DiskUsageService
     public let systemMonitorService: any SystemMonitorService
@@ -25,6 +26,7 @@ public final class DependencyContainer {
     public init(
         settings: any SettingsService,
         logging: any LoggingService,
+        launchAtLoginService: any LaunchAtLoginService,
         shortcutService: any ShortcutService,
         diskUsageService: any DiskUsageService,
         systemMonitorService: any SystemMonitorService,
@@ -43,6 +45,7 @@ public final class DependencyContainer {
     ) {
         self.settings = settings
         self.logging = logging
+        self.launchAtLoginService = launchAtLoginService
         self.shortcutService = shortcutService
         self.diskUsageService = diskUsageService
         self.systemMonitorService = systemMonitorService
@@ -63,6 +66,7 @@ public final class DependencyContainer {
     public static func production() -> DependencyContainer {
         let settings = UserDefaultsSettingsService()
         let logging = OSLogLoggingService()
+        let launchAtLoginService = SystemLaunchAtLoginService()
         let shortcut = CarbonShortcutService(logger: logging)
         let authorizedRootManager = AuthorizedRootManager(settings: settings)
         let diskUsageService = SystemDiskUsageService(
@@ -85,7 +89,7 @@ public final class DependencyContainer {
             settings: settings,
             intervalSeconds: settings.readSystemMonitorIntervalSeconds()
         )
-        let clipboardService = makeClipboardService(settings: settings)
+        let clipboardService = makeClipboardService(settings: settings, logging: logging)
         let permissionAuditService = DefaultPermissionAuditService(logger: logging)
         let uninstallerService = DefaultUninstallerService()
         let weChatStorageAuthorizationManager = WeChatStorageAuthorizationManager(settings: settings)
@@ -168,6 +172,7 @@ public final class DependencyContainer {
         return DependencyContainer(
             settings: settings,
             logging: logging,
+            launchAtLoginService: launchAtLoginService,
             shortcutService: shortcut,
             diskUsageService: diskUsageService,
             systemMonitorService: systemMonitorService,
@@ -186,11 +191,26 @@ public final class DependencyContainer {
         )
     }
 
-    private static func makeClipboardService(settings: any SettingsService) -> any ClipboardService {
+    internal static func makeClipboardService(
+        settings: any SettingsService,
+        logging: any LoggingService,
+        locationProvider: () throws -> ClipboardStorageLocation = {
+            try ClipboardStorageLocation.applicationSupport()
+        },
+        databaseProvider: (ClipboardStorageLocation) throws -> ClipboardDatabase = {
+            try ClipboardDatabase(location: $0)
+        },
+        databaseInitializer: (ClipboardDatabase) throws -> Void = {
+            try $0.initialize()
+        }
+    ) -> any ClipboardService {
+        var initializationStage = "application-support"
         do {
-            let location = try ClipboardStorageLocation.applicationSupport()
-            let database = try ClipboardDatabase(location: location)
-            try database.initialize()
+            let location = try locationProvider()
+            initializationStage = "sqlite"
+            let database = try databaseProvider(location)
+            initializationStage = "schema"
+            try databaseInitializer(database)
             let repository = ClipboardRepository(database: database)
             let binaryStore = BinaryContentStore(rootDirectory: location.binaryPayloadsDirectory)
             let writer = SystemClipboardContentWriter()
@@ -206,7 +226,17 @@ public final class DependencyContainer {
                 pasteController: pasteController
             )
         } catch {
-            preconditionFailure("Clipboard service initialization failed: \(error)")
+            logging.log(LogEvent(
+                level: .error,
+                category: .lifecycle,
+                message: "clipboard.storage.initializationFailed",
+                stableCode: "E_CLIPBOARD_STORAGE_INIT",
+                sanitizedContext: [
+                    "stage": initializationStage,
+                    "reason": "initialization-failed"
+                ]
+            ))
+            return UnavailableClipboardService()
         }
     }
 }

@@ -257,6 +257,134 @@ final class DefaultClipboardServiceTests: XCTestCase {
         XCTAssertFalse(fixture.binaryStore.exists(oldStoragePath))
     }
 
+    func test_unavailableService_reportsUnavailableAndRejectsEveryOperation() async {
+        let expectedError = UnavailableClipboardService.initializationError
+        let service = UnavailableClipboardService()
+        let itemID = UUID()
+        let availability = await service.availability
+        let isEnabled = await service.isEnabled
+        let hasAcknowledgedNotice = await service.hasAcknowledgedLocalStorageNotice
+
+        XCTAssertEqual(availability, .unavailable(expectedError))
+        XCTAssertFalse(isEnabled)
+        XCTAssertFalse(hasAcknowledgedNotice)
+
+        let results: [AppError?] = [
+            failure(from: await service.setEnabled(true)),
+            failure(from: await service.acknowledgeLocalStorageNotice()),
+            failure(from: await service.records(matching: ClipboardQuery())),
+            failure(from: await service.setFavorite(true, for: itemID)),
+            failure(from: await service.delete(itemID)),
+            failure(from: await service.copyToPasteboard(itemID)),
+            failure(from: await service.copyAndPaste(itemID)),
+            failure(from: await service.copyAndPaste(itemID, targetProcessIdentifier: 42))
+        ]
+
+        XCTAssertEqual(results, Array(repeating: expectedError, count: results.count))
+    }
+
+    func test_factory_applicationSupportFailure_returnsUnavailableServiceAndSafeLog() async {
+        let settings = makeFactorySettings()
+        let logger = RecordingClipboardInitializationLogger()
+
+        let service = await MainActor.run {
+            DependencyContainer.makeClipboardService(
+                settings: settings,
+                logging: logger,
+                locationProvider: {
+                    throw AppError.unknown(code: "/Users/private/clipboard-location")
+                }
+            )
+        }
+
+        await assertUnavailableFactoryResult(
+            service,
+            logger: logger,
+            expectedStage: "application-support"
+        )
+        XCTAssertTrue(settings.readBool(forKey: .reopenLastDestination))
+    }
+
+    func test_factory_sqliteFailure_returnsUnavailableServiceAndSafeLog() async {
+        let settings = makeFactorySettings()
+        let logger = RecordingClipboardInitializationLogger()
+        let location = ClipboardStorageLocation(
+            rootDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("omnipo-clipboard-factory-unused-\(UUID().uuidString)")
+        )
+
+        let service = await MainActor.run {
+            DependencyContainer.makeClipboardService(
+                settings: settings,
+                logging: logger,
+                locationProvider: { location },
+                databaseProvider: { _ in
+                    throw AppError.systemFailure(code: "sqlite-test-failure")
+                }
+            )
+        }
+
+        await assertUnavailableFactoryResult(service, logger: logger, expectedStage: "sqlite")
+    }
+
+    func test_factory_schemaFailure_returnsUnavailableServiceAndSafeLog() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("omnipo-clipboard-factory-schema-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let settings = makeFactorySettings()
+        let logger = RecordingClipboardInitializationLogger()
+        let location = ClipboardStorageLocation(rootDirectory: root)
+        let database = try ClipboardDatabase(location: location)
+
+        let service = await MainActor.run {
+            DependencyContainer.makeClipboardService(
+                settings: settings,
+                logging: logger,
+                locationProvider: { location },
+                databaseProvider: { _ in database },
+                databaseInitializer: { _ in
+                    throw AppError.dataCorrupted(detail: "schema-test-failure")
+                }
+            )
+        }
+
+        await assertUnavailableFactoryResult(service, logger: logger, expectedStage: "schema")
+    }
+
+    private func failure<T>(from result: Result<T, AppError>) -> AppError? {
+        guard case .failure(let error) = result else { return nil }
+        return error
+    }
+
+    private func makeFactorySettings() -> UserDefaultsSettingsService {
+        let settings = UserDefaultsSettingsService.testing(
+            suiteName: "omnipo.tests.clipboard.factory.\(UUID().uuidString)"
+        )
+        settings.write(true, forKey: .reopenLastDestination)
+        return settings
+    }
+
+    private func assertUnavailableFactoryResult(
+        _ service: any ClipboardService,
+        logger: RecordingClipboardInitializationLogger,
+        expectedStage: String
+    ) async {
+        let availability = await service.availability
+        XCTAssertEqual(
+            availability,
+            .unavailable(UnavailableClipboardService.initializationError)
+        )
+        XCTAssertEqual(logger.events.count, 1)
+        XCTAssertEqual(logger.events.first?.stableCode, "E_CLIPBOARD_STORAGE_INIT")
+        XCTAssertEqual(logger.events.first?.sanitizedContext, [
+            "stage": expectedStage,
+            "reason": "initialization-failed"
+        ])
+        XCTAssertFalse(logger.events.description.contains("/Users/"))
+        XCTAssertFalse(logger.events.description.contains("schema-test-failure"))
+        XCTAssertFalse(logger.events.description.contains("sqlite-test-failure"))
+    }
+
     private func capturedPlainText(hash: String) -> ClipboardCapturedContent {
         capturedContent(
             hash: hash,
@@ -414,4 +542,21 @@ private final class RecordingClipboardMonitor: ClipboardMonitoring, @unchecked S
 
 private final class NoopClipboardContentWriter: ClipboardContentWriting, @unchecked Sendable {
     func write(_ payloads: [ClipboardCapturedPayload], as contentType: ClipboardContentType) throws {}
+}
+
+private final class RecordingClipboardInitializationLogger: LoggingService, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedEvents: [LogEvent] = []
+
+    var events: [LogEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedEvents
+    }
+
+    func log(_ event: LogEvent) {
+        lock.lock()
+        recordedEvents.append(event)
+        lock.unlock()
+    }
 }

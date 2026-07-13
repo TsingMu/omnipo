@@ -255,3 +255,59 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
         }
     }
 }
+
+/// Keeps the rest of the application usable when the local clipboard store cannot start.
+public final class UnavailableClipboardService: ClipboardService, @unchecked Sendable {
+    public static let initializationError = AppError.resourceUnavailable(
+        reason: "clipboard-storage-initialization-failed"
+    )
+
+    private let error: AppError
+
+    public init(error: AppError = UnavailableClipboardService.initializationError) {
+        self.error = error
+    }
+
+    public var availability: ClipboardServiceAvailability {
+        get async { .unavailable(error) }
+    }
+
+    public var isEnabled: Bool {
+        get async { false }
+    }
+
+    public var hasAcknowledgedLocalStorageNotice: Bool {
+        get async { false }
+    }
+
+    public func setEnabled(_ isEnabled: Bool) async -> Result<Void, AppError> {
+        .failure(error)
+    }
+
+    public func acknowledgeLocalStorageNotice() async -> Result<Void, AppError> {
+        .failure(error)
+    }
+
+    public func records(matching query: ClipboardQuery) async -> Result<[ClipboardItem], AppError> {
+        .failure(error)
+    }
+
+    public func setFavorite(_ isFavorite: Bool, for itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
+        .failure(error)
+    }
+
+    public func delete(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
+        .failure(error)
+    }
+
+    public func copyToPasteboard(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
+        .failure(error)
+    }
+
+    public func copyAndPaste(
+        _ itemID: ClipboardItem.ID,
+        targetProcessIdentifier: pid_t?
+    ) async -> Result<ClipboardPasteOutcome, AppError> {
+        .failure(error)
+    }
+}

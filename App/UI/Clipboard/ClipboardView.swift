@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ClipboardView: View {
     @Environment(DependencyContainer.self) private var container
+    @State private var serviceAvailability: ClipboardServiceAvailability = .available
     @State private var hasAcknowledgedNotice = false
     @State private var isEnabled = false
     @State private var errorMessage: String?
@@ -30,11 +31,16 @@ struct ClipboardView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
 
-                    if hasAcknowledgedNotice {
-                        enabledControls
-                        historySection
-                    } else {
-                        firstUseNotice
+                    switch serviceAvailability {
+                    case .available:
+                        if hasAcknowledgedNotice {
+                            enabledControls
+                            historySection
+                        } else {
+                            firstUseNotice
+                        }
+                    case .unavailable:
+                        unavailableState
                     }
 
                     if let errorMessage {
@@ -74,7 +80,7 @@ struct ClipboardView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .clipboardHistoryDidChange)) { _ in
-            guard hasAcknowledgedNotice, isEnabled else { return }
+            guard serviceAvailability.isAvailable, hasAcknowledgedNotice, isEnabled else { return }
             Task {
                 await loadRecords()
             }
@@ -128,6 +134,23 @@ struct ClipboardView: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var unavailableState: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("剪切板存储暂不可用", systemImage: "externaldrive.badge.exclamationmark")
+                .font(.headline)
+            Text("Omnipo 无法打开本机剪切板数据库。其他功能仍可正常使用。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Text("请确认磁盘有可用空间且“应用程序支持”目录可写,然后重启应用。Omnipo 不会自动删除或重建现有剪切板数据。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private var enabledControls: some View {
@@ -430,6 +453,15 @@ struct ClipboardView: View {
     }
 
     private func refreshState() async {
+        serviceAvailability = await container.clipboardService.availability
+        guard serviceAvailability.isAvailable else {
+            hasAcknowledgedNotice = false
+            isEnabled = false
+            records = []
+            selectedItemID = nil
+            errorMessage = nil
+            return
+        }
         hasAcknowledgedNotice = await container.clipboardService.hasAcknowledgedLocalStorageNotice
         isEnabled = await container.clipboardService.isEnabled
         if hasAcknowledgedNotice {
@@ -438,6 +470,7 @@ struct ClipboardView: View {
     }
 
     private func loadRecords() async {
+        guard serviceAvailability.isAvailable else { return }
         isLoadingRecords = true
         defer { isLoadingRecords = false }
 

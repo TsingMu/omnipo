@@ -46,7 +46,7 @@ public enum LogCategory: String, Sendable, Equatable, CaseIterable {
 }
 
 public enum LoggingSubsystem {
-    public static let omnipo = "com.omnipo.app"
+    public static let omnipo = "com.qing.omnipo"
 }
 
 /// 隐私脱敏的最后一道字符串防线。

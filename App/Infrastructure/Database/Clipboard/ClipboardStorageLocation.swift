@@ -17,7 +17,7 @@ public struct ClipboardStorageLocation: Sendable, Hashable {
 
     public static func applicationSupport(
         fileManager: FileManager = .default,
-        bundleIdentifier: String = Bundle.main.bundleIdentifier ?? "com.omnipo.app"
+        bundleIdentifier: String = Bundle.main.bundleIdentifier ?? "com.qing.omnipo"
     ) throws -> ClipboardStorageLocation {
         guard let baseURL = fileManager.urls(
             for: .applicationSupportDirectory,

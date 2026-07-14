@@ -26,7 +26,7 @@ private final class FakeProvider: SearchProvider, @unchecked Sendable {
 }
 
 private func makeLogger() -> any LoggingService {
-    OSLogLoggingService(subsystem: "com.omnipo.tests.search")
+    OSLogLoggingService(subsystem: "com.qing.omnipo.tests.search")
 }
 
 private func collectBatches(

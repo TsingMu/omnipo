@@ -93,7 +93,7 @@ final class CPUSamplerTests: XCTestCase {
 
     func test_sample_firstCallReturnsWarmupAndProvidesTicks() {
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu"),
             hostStatistics: { makeTicks(100, 50, 200, 5) }
         )
 
@@ -109,7 +109,7 @@ final class CPUSamplerTests: XCTestCase {
         let firstSample = makeTicks(100, 50, 200, 5)
         let secondSample = makeTicks(150, 60, 250, 5)
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu"),
             hostStatistics: {
                 let n = counter.withLock { value -> Int in
                     let current = value
@@ -131,7 +131,7 @@ final class CPUSamplerTests: XCTestCase {
 
     func test_sample_hostStatisticsFailureReturnsHostInfoFailed() {
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu"),
             hostStatistics: { nil }
         )
 
@@ -142,7 +142,7 @@ final class CPUSamplerTests: XCTestCase {
 
     func test_sample_hostStatisticsFailurePreservesPreviousTicks() {
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu"),
             hostStatistics: { nil }
         )
 
@@ -155,7 +155,7 @@ final class CPUSamplerTests: XCTestCase {
 
     func test_sample_realMachCallAtLeastOnceReturnsTicks() {
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu")
         )
 
         let (availability, newTicks) = sampler.sample(previous: nil)
@@ -165,7 +165,7 @@ final class CPUSamplerTests: XCTestCase {
 
     func test_sample_realMachCallTwiceProducesAvailableOrWarmup() {
         let sampler = CPUSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.cpu")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.cpu")
         )
 
         let (_, first) = sampler.sample(previous: nil)

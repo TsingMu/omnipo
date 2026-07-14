@@ -50,7 +50,7 @@ final class LauncherPerformanceTests: XCTestCase {
                 ApplicationSearchProvider(index: index),
                 BenchmarkFileProvider()
             ],
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.performance"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.performance"),
             fileDebounce: .milliseconds(150)
         )
         let store = LauncherStore(service: service)

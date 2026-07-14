@@ -22,7 +22,7 @@ CONFIGURATION="Debug"
 DERIVED_DATA="$PROJECT_ROOT/build/DerivedData"
 APP_BUNDLE_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION/Omnipo.app"
 APP_EXECUTABLE="$APP_BUNDLE_PATH/Contents/MacOS/Omnipo"
-BUNDLE_ID="com.omnipo.app"
+BUNDLE_ID="com.qing.omnipo"
 LOG_SUBSYSTEM="$BUNDLE_ID"
 LOG_BIN="/usr/bin/log"
 

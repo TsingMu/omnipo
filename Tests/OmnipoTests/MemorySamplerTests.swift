@@ -75,7 +75,7 @@ final class MemorySamplerTests: XCTestCase {
 
     func test_sample_successReturnsAvailable() {
         let sampler = MemorySampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.mem"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.mem"),
             totalBytesProvider: { 1_000_000 },
             vmStatsProvider: { vmStats(free: 100, inactive: 50, compressed: 10) }
         )
@@ -90,7 +90,7 @@ final class MemorySamplerTests: XCTestCase {
 
     func test_sample_totalBytesFailureReturnsSysctlFailed() {
         let sampler = MemorySampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.mem"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.mem"),
             totalBytesProvider: { nil },
             vmStatsProvider: { vmStats() }
         )
@@ -100,7 +100,7 @@ final class MemorySamplerTests: XCTestCase {
 
     func test_sample_vmStatsFailureReturnsHostStatsFailed() {
         let sampler = MemorySampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.mem"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.mem"),
             totalBytesProvider: { 1_000_000 },
             vmStatsProvider: { nil }
         )
@@ -112,7 +112,7 @@ final class MemorySamplerTests: XCTestCase {
 
     func test_sample_realProvidersReturnAvailable() {
         let sampler = MemorySampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.mem")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.mem")
         )
 
         let result = sampler.sample()
@@ -127,7 +127,7 @@ final class MemorySamplerTests: XCTestCase {
     func test_sample_realMemoryTotalMatchesHardware() {
         // 真实 hw.memsize 至少应有数 GB
         let sampler = MemorySampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.mem")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.mem")
         )
 
         let result = sampler.sample()

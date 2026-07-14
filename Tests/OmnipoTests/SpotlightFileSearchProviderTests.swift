@@ -21,7 +21,7 @@ private final class FakeFileSearchBackend: FileSearchBackend, @unchecked Sendabl
 final class SpotlightFileSearchProviderTests: XCTestCase {
 
     private func makeLogger() -> any LoggingService {
-        OSLogLoggingService(subsystem: "com.omnipo.tests.spotlight")
+        OSLogLoggingService(subsystem: "com.qing.omnipo.tests.spotlight")
     }
 
     func test_shortQuery_skipsBackend() async {

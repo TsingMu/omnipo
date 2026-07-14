@@ -1,7 +1,7 @@
 import Foundation
 
 public extension Notification.Name {
-    static let menuBarVisibilitySettingDidChange = Notification.Name("com.omnipo.settings.menuBarVisibilityDidChange")
+    static let menuBarVisibilitySettingDidChange = Notification.Name("com.qing.omnipo.settings.menuBarVisibilityDidChange")
 }
 
 public protocol SettingsService: AnyObject, Sendable {

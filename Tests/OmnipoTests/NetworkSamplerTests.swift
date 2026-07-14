@@ -98,7 +98,7 @@ final class NetworkSamplerTests: XCTestCase {
 
     func test_sample_firstCallReturnsPlaceholderWithCurrentInterfaces() {
         let sampler = NetworkSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.net"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.net"),
             countersProvider: { makeCounters(["en0": 100], ["en0": 50]) }
         )
 
@@ -114,7 +114,7 @@ final class NetworkSamplerTests: XCTestCase {
     func test_sample_secondCallProducesRealRates() {
         let counter = OSAllocatedUnfairLock<Int>(initialState: 0)
         let sampler = NetworkSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.net"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.net"),
             countersProvider: {
                 let n = counter.withLock { v -> Int in
                     let curr = v
@@ -142,7 +142,7 @@ final class NetworkSamplerTests: XCTestCase {
 
     func test_sample_providerFailureReturnsGetifaddrsFailed() {
         let sampler = NetworkSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.net"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.net"),
             countersProvider: { nil }
         )
 
@@ -155,7 +155,7 @@ final class NetworkSamplerTests: XCTestCase {
 
     func test_sample_realGetifaddrsReturnsAvailableOrFailure() {
         let sampler = NetworkSampler(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.net")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.net")
         )
 
         let (availability, previous) = sampler.sample(previous: nil)

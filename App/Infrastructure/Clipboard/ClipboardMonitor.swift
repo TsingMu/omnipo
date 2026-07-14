@@ -44,7 +44,7 @@ public final class ClipboardMonitor: @unchecked Sendable {
         provider: any ClipboardChangeCountProviding = SystemClipboardChangeCountProvider(),
         contentReader: (any ClipboardContentReading)? = SystemClipboardContentReader(),
         sourceApplicationProvider: (any ClipboardSourceApplicationProviding)? = SystemClipboardSourceApplicationProvider(),
-        queue: DispatchQueue = DispatchQueue(label: "com.omnipo.clipboard.monitor", qos: .utility),
+        queue: DispatchQueue = DispatchQueue(label: "com.qing.omnipo.clipboard.monitor", qos: .utility),
         handler: @escaping Handler
     ) {
         self.provider = provider

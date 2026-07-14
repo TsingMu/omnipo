@@ -1,7 +1,7 @@
 import Foundation
 
 public extension Notification.Name {
-    static let clipboardHistoryDidChange = Notification.Name("com.omnipo.clipboard.historyDidChange")
+    static let clipboardHistoryDidChange = Notification.Name("com.qing.omnipo.clipboard.historyDidChange")
 }
 
 public enum ClipboardServiceAvailability: Sendable, Equatable {

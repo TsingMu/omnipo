@@ -47,7 +47,7 @@ final class EnergyStatusTests: XCTestCase {
 
     func test_sample_injectedBatteryReturnsAvailable() {
         let status = EnergyStatus(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.energy"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.energy"),
             powerSourcesProvider: { .init(percent: 0.42, isCharging: false, isOnExternalPower: false) }
         )
 
@@ -62,7 +62,7 @@ final class EnergyStatusTests: XCTestCase {
 
     func test_sample_nilProviderReturnsNoBattery() {
         let status = EnergyStatus(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.energy"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.energy"),
             powerSourcesProvider: { nil }
         )
 
@@ -83,7 +83,7 @@ final class EnergyStatusTests: XCTestCase {
 
     func test_sample_realIOKitReturnsAvailableOrNoBattery() {
         let status = EnergyStatus(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.energy")
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.energy")
         )
 
         let result = status.sample()

@@ -6,7 +6,7 @@ import AppKit
 private let sampleApps: [AppRecord] = [
     AppRecord(bundleIdentifier: "com.apple.Safari", displayName: "Safari"),
     AppRecord(bundleIdentifier: "com.apple.mail", displayName: "Mail"),
-    AppRecord(bundleIdentifier: "com.omnipo.app", displayName: "Omnipo"),
+    AppRecord(bundleIdentifier: "com.qing.omnipo", displayName: "Omnipo"),
     AppRecord(
         bundleIdentifier: "com.tencent.xinWeChat",
         displayName: "微信",

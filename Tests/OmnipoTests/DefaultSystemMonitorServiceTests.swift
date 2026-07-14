@@ -7,7 +7,7 @@ final class DefaultSystemMonitorServiceTests: XCTestCase {
     func test_start_pushesAtLeastOneSnapshot() async {
         let diskService = StubDiskUsageService()
         let service = DefaultSystemMonitorService(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.sysmon"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.sysmon"),
             diskUsageService: diskService
         )
 
@@ -31,7 +31,7 @@ final class DefaultSystemMonitorServiceTests: XCTestCase {
     func test_stop_cancelsSampling() async {
         let diskService = StubDiskUsageService()
         let service = DefaultSystemMonitorService(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.sysmon"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.sysmon"),
             diskUsageService: diskService
         )
 
@@ -61,7 +61,7 @@ final class DefaultSystemMonitorServiceTests: XCTestCase {
     func test_refreshOnce_returnsSnapshotImmediately() async {
         let diskService = StubDiskUsageService()
         let service = DefaultSystemMonitorService(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.sysmon"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.sysmon"),
             diskUsageService: diskService
         )
 
@@ -72,7 +72,7 @@ final class DefaultSystemMonitorServiceTests: XCTestCase {
     func test_refreshOnce_cpuWarmupOnFirstCall() async {
         let diskService = StubDiskUsageService()
         let service = DefaultSystemMonitorService(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.sysmon"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.sysmon"),
             diskUsageService: diskService
         )
 
@@ -85,7 +85,7 @@ final class DefaultSystemMonitorServiceTests: XCTestCase {
     func test_clampsInvalidInterval() async {
         let diskService = StubDiskUsageService()
         let service = DefaultSystemMonitorService(
-            logger: OSLogLoggingService(subsystem: "com.omnipo.tests.sysmon"),
+            logger: OSLogLoggingService(subsystem: "com.qing.omnipo.tests.sysmon"),
             diskUsageService: diskService
         )
 

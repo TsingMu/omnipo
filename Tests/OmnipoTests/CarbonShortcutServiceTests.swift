@@ -4,7 +4,7 @@ import XCTest
 final class CarbonShortcutServiceTests: XCTestCase {
 
     private func makeLogger() -> any LoggingService {
-        OSLogLoggingService(subsystem: "com.omnipo.tests.shortcut")
+        OSLogLoggingService(subsystem: "com.qing.omnipo.tests.shortcut")
     }
 
     func test_register_validShortcut_succeeds() async {

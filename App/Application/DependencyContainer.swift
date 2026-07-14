@@ -168,7 +168,8 @@ public final class DependencyContainer {
         )
         let clipboardPanelController = ClipboardPanelController(
             clipboardService: clipboardService,
-            settings: settings
+            settings: settings,
+            applicationResourceCache: applicationResourceCache
         )
         let clipboardCoordinator = ClipboardCoordinator(
             shortcutService: shortcut,

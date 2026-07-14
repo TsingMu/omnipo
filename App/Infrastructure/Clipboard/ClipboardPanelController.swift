@@ -6,14 +6,20 @@ import SwiftUI
 public final class ClipboardPanelController {
     private let clipboardService: any ClipboardService
     private let settings: any SettingsService
+    private let applicationResourceCache: ApplicationResourceCache
     private var panel: NSPanel?
     private var lastPanelOrigin: NSPoint?
     private var pasteTargetProcessIdentifier: pid_t?
     nonisolated(unsafe) private var resignObserver: NSObjectProtocol?
 
-    public init(clipboardService: any ClipboardService, settings: any SettingsService) {
+    public init(
+        clipboardService: any ClipboardService,
+        settings: any SettingsService,
+        applicationResourceCache: ApplicationResourceCache
+    ) {
         self.clipboardService = clipboardService
         self.settings = settings
+        self.applicationResourceCache = applicationResourceCache
     }
 
     public func toggle() {
@@ -67,6 +73,7 @@ public final class ClipboardPanelController {
             rootView: ClipboardPanelView(
                 clipboardService: clipboardService,
                 settings: settings,
+                applicationResourceCache: applicationResourceCache,
                 pasteTargetProcessIdentifier: { [weak self] in
                     self?.pasteTargetProcessIdentifier
                 },

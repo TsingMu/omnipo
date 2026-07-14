@@ -3,6 +3,7 @@ import SwiftUI
 struct ClipboardPanelView: View {
     let clipboardService: any ClipboardService
     let settings: any SettingsService
+    @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let pasteTargetProcessIdentifier: () -> pid_t?
     let onHide: () -> Void
 
@@ -152,6 +153,7 @@ struct ClipboardPanelView: View {
                             ClipboardPanelRow(
                                 item: item,
                                 isSelected: selectedItemID == item.id,
+                                applicationResourceCache: applicationResourceCache,
                                 onSelect: { selectedItemID = item.id },
                                 onDoubleClick: {
                                     selectedItemID = item.id
@@ -421,6 +423,7 @@ struct ClipboardPanelView: View {
 private struct ClipboardPanelRow: View {
     let item: ClipboardItem
     let isSelected: Bool
+    @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
     let onToggleFavorite: () -> Void
@@ -438,11 +441,13 @@ private struct ClipboardPanelRow: View {
                     .font(.callout)
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    Text(item.contentType.displayName)
-                    if let sourceDisplayName {
-                        Text(sourceDisplayName)
-                            .lineLimit(1)
+                    if let sourceApplicationIdentifier {
+                        ClipboardSourceApplicationLabel(
+                            bundleIdentifier: sourceApplicationIdentifier,
+                            resourceCache: applicationResourceCache
+                        )
                     }
+                    Text(item.contentType.displayName)
                     Text(item.updatedAt, style: .relative)
                 }
                 .font(.caption)
@@ -482,10 +487,9 @@ private struct ClipboardPanelRow: View {
         return textPreview
     }
 
-    private var sourceDisplayName: String? {
-        guard let source = item.sourceApplicationID, !source.isEmpty else {
-            return nil
-        }
-        return ApplicationDisplayNameResolver.displayName(forBundleIdentifier: source)
+    private var sourceApplicationIdentifier: String? {
+        guard let source = item.sourceApplicationID?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !source.isEmpty else { return nil }
+        return source
     }
 }

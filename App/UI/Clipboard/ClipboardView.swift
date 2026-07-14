@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ClipboardView: View {
@@ -228,6 +229,7 @@ struct ClipboardView: View {
                         ClipboardHistoryRow(
                             item: item,
                             isSelected: selectedItemID == item.id,
+                            applicationResourceCache: container.applicationResourceCache,
                             onSelect: {
                                 selectedItemID = item.id
                             },
@@ -525,6 +527,7 @@ private struct ClipboardEmptyStateView: View {
 private struct ClipboardHistoryRow: View {
     let item: ClipboardItem
     let isSelected: Bool
+    @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let onSelect: () -> Void
     let onToggleFavorite: () -> Void
     let onDelete: () -> Void
@@ -543,12 +546,14 @@ private struct ClipboardHistoryRow: View {
                     .truncationMode(.tail)
 
                 HStack(spacing: 8) {
+                    if let sourceApplicationIdentifier {
+                        ClipboardSourceApplicationLabel(
+                            bundleIdentifier: sourceApplicationIdentifier,
+                            resourceCache: applicationResourceCache
+                        )
+                    }
                     Text(item.contentType.displayName)
                     Text(item.updatedAt, style: .relative)
-                    if let sourceDisplayName {
-                        Text(sourceDisplayName)
-                            .lineLimit(1)
-                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -615,10 +620,52 @@ private struct ClipboardHistoryRow: View {
     }
 
     private var sourceDisplayName: String? {
-        guard let source = item.sourceApplicationID, !source.isEmpty else {
-            return nil
+        sourceApplicationIdentifier.map {
+            ApplicationDisplayNameResolver.displayName(forBundleIdentifier: $0)
         }
-        return ApplicationDisplayNameResolver.displayName(forBundleIdentifier: source)
+    }
+
+    private var sourceApplicationIdentifier: String? {
+        guard let source = item.sourceApplicationID?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !source.isEmpty else { return nil }
+        return source
+    }
+}
+
+struct ClipboardSourceApplicationLabel: View {
+    let bundleIdentifier: String
+    @ObservedObject var resourceCache: ApplicationResourceCache
+    @State private var image: NSImage?
+    @State private var displayName: String?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Group {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                } else {
+                    Image(systemName: "app")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 14, height: 14)
+
+            Text(displayName ?? bundleIdentifier)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .task(id: "\(bundleIdentifier):\(resourceCache.generation)") {
+            displayName = ApplicationDisplayNameResolver.displayName(
+                forBundleIdentifier: bundleIdentifier
+            )
+            image = resourceCache.icon(for: bundleIdentifier)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("来源应用 \(displayName ?? bundleIdentifier)")
     }
 }
 

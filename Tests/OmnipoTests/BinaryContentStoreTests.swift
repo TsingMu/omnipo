@@ -73,6 +73,17 @@ final class BinaryContentStoreTests: XCTestCase {
         }
     }
 
+    func test_fileURL_returnsValidatedPayloadURLAndRejectsPathTraversal() throws {
+        let (store, root) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let path = try store.write(Data([1, 2, 3]), for: UUID(), format: .image)
+
+        XCTAssertEqual(try store.fileURL(for: path), root.appendingPathComponent(path))
+        XCTAssertThrowsError(try store.fileURL(for: "../outside.image")) { error in
+            XCTAssertEqual(error as? AppError, .invalidArgument(name: "storagePath"))
+        }
+    }
+
     func test_delete_rejectsPathTraversalAndDoesNotTouchOutsideFile() throws {
         let (store, root) = try makeStore()
         defer { try? FileManager.default.removeItem(at: root) }

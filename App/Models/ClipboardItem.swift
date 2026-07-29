@@ -66,3 +66,17 @@ public enum ClipboardPasteOutcome: Sendable, Hashable {
     case pasted
     case copiedOnly(reason: String)
 }
+
+/// 图片记录的有界缩略图数据。
+///
+/// 由 `ClipboardService` 从现有 image payload 异步生成,以 PNG 字节形式跨并发域传递,
+/// 由 UI 转换为 `NSImage` 展示。`maxPixelSize` 覆盖最大预览尺寸(主页面 48pt @3x),保证清晰。
+public struct ClipboardImageThumbnail: Sendable, Hashable {
+    public static let maxPixelSize: Int = 160
+
+    public let data: Data
+
+    public init(data: Data) {
+        self.data = data
+    }
+}

@@ -1,4 +1,6 @@
+import CoreGraphics
 import Foundation
+import ImageIO
 
 public protocol ClipboardMonitoring: AnyObject, Sendable {
     func start(interval: TimeInterval)
@@ -15,14 +17,24 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
     private let binaryStore: BinaryContentStore
     private let pasteController: ClipboardPasteController
     private let monitorFactory: MonitorFactory
+    private let thumbnailGenerator: @Sendable (URL) -> Data?
     private let lock = NSLock()
     private var monitor: (any ClipboardMonitoring)?
+
+    private let thumbnailCache: NSCache<NSUUID, NSData> = {
+        let cache = NSCache<NSUUID, NSData>()
+        cache.totalCostLimit = 32 * 1_024 * 1_024
+        return cache
+    }()
+
+    private let decodingGate = ThumbnailConcurrencyGate(limit: 3)
 
     public init(
         settings: any SettingsService,
         repository: ClipboardRepository,
         binaryStore: BinaryContentStore,
         pasteController: ClipboardPasteController,
+        thumbnailGenerator: (@Sendable (URL) -> Data?)? = nil,
         monitorFactory: @escaping MonitorFactory = { handler in
             ClipboardMonitor(handler: handler)
         }
@@ -31,6 +43,9 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
         self.repository = repository
         self.binaryStore = binaryStore
         self.pasteController = pasteController
+        self.thumbnailGenerator = thumbnailGenerator ?? { url in
+            DefaultClipboardService.makeThumbnailData(from: url)
+        }
         self.monitorFactory = monitorFactory
         startMonitoringIfAllowed()
     }
@@ -80,6 +95,79 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
         }
     }
 
+    public func imageThumbnail(for itemID: ClipboardItem.ID) async -> Result<ClipboardImageThumbnail?, AppError> {
+        if let cached = thumbnailCache.object(forKey: itemID as NSUUID) {
+            return .success(ClipboardImageThumbnail(data: cached as Data))
+        }
+        await decodingGate.acquire(for: itemID)
+        let result: Result<ClipboardImageThumbnail?, AppError>
+        if Task.isCancelled {
+            result = .failure(.cancelled)
+        } else if let cached = thumbnailCache.object(forKey: itemID as NSUUID) {
+            result = .success(ClipboardImageThumbnail(data: cached as Data))
+        } else {
+            result = await produceThumbnail(for: itemID)
+        }
+        await decodingGate.release(for: itemID)
+        return result
+    }
+
+    private func produceThumbnail(for itemID: ClipboardItem.ID) async -> Result<ClipboardImageThumbnail?, AppError> {
+        if Task.isCancelled {
+            return .failure(.cancelled)
+        }
+        do {
+            let payloads = try repository.payloads(for: itemID)
+            guard let imagePayload = payloads.first(where: { $0.format == .image }) else {
+                return .success(nil)
+            }
+            let payloadURL = try binaryStore.fileURL(for: imagePayload.storagePath)
+            if Task.isCancelled {
+                return .failure(.cancelled)
+            }
+            guard let thumbnailData = thumbnailGenerator(payloadURL) else {
+                return .failure(.dataCorrupted(detail: "clipboard-image-decode-failed"))
+            }
+            thumbnailCache.setObject(
+                thumbnailData as NSData,
+                forKey: itemID as NSUUID,
+                cost: thumbnailData.count
+            )
+            return .success(ClipboardImageThumbnail(data: thumbnailData))
+        } catch let error as AppError {
+            return .failure(error)
+        } catch {
+            return .failure(.resourceUnavailable(reason: "clipboard-image-payload-unreadable"))
+        }
+    }
+
+    private static func makeThumbnailData(from url: URL) -> Data? {
+        let sourceOptions: [CFString: Any] = [
+            kCGImageSourceShouldCache: false
+        ]
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions as CFDictionary) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: ClipboardImageThumbnail.maxPixelSize,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        let buffer = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(buffer, "public.png" as CFString, 1, nil) else {
+            return nil
+        }
+        CGImageDestinationAddImage(destination, cgImage, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            return nil
+        }
+        return buffer as Data
+    }
+
     public func setFavorite(_ isFavorite: Bool, for itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
         runCatching {
             _ = try repository.setFavorite(isFavorite, for: itemID)
@@ -87,7 +175,8 @@ public final class DefaultClipboardService: ClipboardService, @unchecked Sendabl
     }
 
     public func delete(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
-        runCatching {
+        thumbnailCache.removeObject(forKey: itemID as NSUUID)
+        return runCatching {
             _ = try repository.softDelete(itemID)
         }
     }
@@ -292,6 +381,10 @@ public final class UnavailableClipboardService: ClipboardService, @unchecked Sen
         .failure(error)
     }
 
+    public func imageThumbnail(for itemID: ClipboardItem.ID) async -> Result<ClipboardImageThumbnail?, AppError> {
+        .failure(error)
+    }
+
     public func setFavorite(_ isFavorite: Bool, for itemID: ClipboardItem.ID) async -> Result<Void, AppError> {
         .failure(error)
     }
@@ -309,5 +402,50 @@ public final class UnavailableClipboardService: ClipboardService, @unchecked Sen
         targetProcessIdentifier: pid_t?
     ) async -> Result<ClipboardPasteOutcome, AppError> {
         .failure(error)
+    }
+}
+
+/// Bounds the number of image thumbnails decoded at once, so a freshly opened
+/// list of image records cannot trigger concurrent disk reads and decode spikes.
+/// Permits are handed off to waiters in FIFO order; a cancelled waiter still
+/// resumes (then bails out cooperatively) so permits are never stranded.
+private actor ThumbnailConcurrencyGate {
+    private struct Waiter {
+        let itemID: ClipboardItem.ID
+        let continuation: CheckedContinuation<Void, Never>
+    }
+
+    private let limit: Int
+    private var available: Int
+    private var activeItemIDs: Set<ClipboardItem.ID> = []
+    private var waiters: [Waiter] = []
+
+    init(limit: Int) {
+        self.limit = max(1, limit)
+        self.available = self.limit
+    }
+
+    func acquire(for itemID: ClipboardItem.ID) async {
+        if available > 0, !activeItemIDs.contains(itemID) {
+            available -= 1
+            activeItemIDs.insert(itemID)
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(Waiter(itemID: itemID, continuation: continuation))
+        }
+    }
+
+    func release(for itemID: ClipboardItem.ID) {
+        guard activeItemIDs.remove(itemID) != nil else { return }
+        available = min(limit, available + 1)
+
+        while available > 0,
+              let nextIndex = waiters.firstIndex(where: { !activeItemIDs.contains($0.itemID) }) {
+            let next = waiters.remove(at: nextIndex)
+            available -= 1
+            activeItemIDs.insert(next.itemID)
+            next.continuation.resume()
+        }
     }
 }

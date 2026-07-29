@@ -224,11 +224,12 @@ struct ClipboardView: View {
                     message: emptyState.message
                 )
             } else {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(records) { item in
                         ClipboardHistoryRow(
                             item: item,
                             isSelected: selectedItemID == item.id,
+                            clipboardService: container.clipboardService,
                             applicationResourceCache: container.applicationResourceCache,
                             onSelect: {
                                 selectedItemID = item.id
@@ -527,6 +528,7 @@ private struct ClipboardEmptyStateView: View {
 private struct ClipboardHistoryRow: View {
     let item: ClipboardItem
     let isSelected: Bool
+    let clipboardService: any ClipboardService
     @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let onSelect: () -> Void
     let onToggleFavorite: () -> Void
@@ -534,10 +536,7 @@ private struct ClipboardHistoryRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: item.contentType.symbolName)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(OmnipoTheme.brandRed)
-                .frame(width: 24, height: 24)
+            leadingView
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(previewText)
@@ -595,6 +594,22 @@ private struct ClipboardHistoryRow: View {
         .accessibilityAction(named: "选择", onSelect)
         .accessibilityAction(named: item.isFavorite ? "取消收藏" : "收藏", onToggleFavorite)
         .accessibilityAction(named: "删除", onDelete)
+    }
+
+    @ViewBuilder
+    private var leadingView: some View {
+        if item.contentType == .image {
+            ClipboardImageThumbnailView(
+                itemID: item.id,
+                sideLength: 48,
+                clipboardService: clipboardService
+            )
+        } else {
+            Image(systemName: item.contentType.symbolName)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(OmnipoTheme.brandRed)
+                .frame(width: 24, height: 24)
+        }
     }
 
     private var previewText: String {
@@ -666,6 +681,41 @@ struct ClipboardSourceApplicationLabel: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("来源应用 \(displayName ?? bundleIdentifier)")
+    }
+}
+
+struct ClipboardImageThumbnailView: View {
+    let itemID: ClipboardItem.ID
+    let sideLength: CGFloat
+    let clipboardService: any ClipboardService
+
+    @State private var thumbnail: ClipboardImageThumbnail?
+
+    var body: some View {
+        Group {
+            if let thumbnail, let image = NSImage(data: thumbnail.data) {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(systemName: "photo")
+                    .font(.system(size: min(sideLength * 0.5, 22), weight: .semibold))
+                    .foregroundStyle(OmnipoTheme.brandRed)
+            }
+        }
+        .frame(width: sideLength, height: sideLength)
+        .background(
+            Color(nsColor: .separatorColor).opacity(0.35),
+            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .accessibilityHidden(true)
+        .task(id: itemID) {
+            thumbnail = nil
+            if case .success(let value) = await clipboardService.imageThumbnail(for: itemID) {
+                thumbnail = value
+            }
+        }
     }
 }
 

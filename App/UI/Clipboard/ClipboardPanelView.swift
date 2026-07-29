@@ -153,6 +153,7 @@ struct ClipboardPanelView: View {
                             ClipboardPanelRow(
                                 item: item,
                                 isSelected: selectedItemID == item.id,
+                                clipboardService: clipboardService,
                                 applicationResourceCache: applicationResourceCache,
                                 onSelect: { selectedItemID = item.id },
                                 onDoubleClick: {
@@ -423,6 +424,7 @@ struct ClipboardPanelView: View {
 private struct ClipboardPanelRow: View {
     let item: ClipboardItem
     let isSelected: Bool
+    let clipboardService: any ClipboardService
     @ObservedObject var applicationResourceCache: ApplicationResourceCache
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
@@ -431,10 +433,7 @@ private struct ClipboardPanelRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: item.contentType.symbolName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(OmnipoTheme.brandRed)
-                .frame(width: 22, height: 22)
+            leadingView
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(previewText)
@@ -478,6 +477,22 @@ private struct ClipboardPanelRow: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
         .onTapGesture(count: 2, perform: onDoubleClick)
+    }
+
+    @ViewBuilder
+    private var leadingView: some View {
+        if item.contentType == .image {
+            ClipboardImageThumbnailView(
+                itemID: item.id,
+                sideLength: 40,
+                clipboardService: clipboardService
+            )
+        } else {
+            Image(systemName: item.contentType.symbolName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(OmnipoTheme.brandRed)
+                .frame(width: 22, height: 22)
+        }
     }
 
     private var previewText: String {

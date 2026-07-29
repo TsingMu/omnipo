@@ -22,6 +22,7 @@ public protocol ClipboardService: AnyObject, Sendable {
     func setEnabled(_ isEnabled: Bool) async -> Result<Void, AppError>
     func acknowledgeLocalStorageNotice() async -> Result<Void, AppError>
     func records(matching query: ClipboardQuery) async -> Result<[ClipboardItem], AppError>
+    func imageThumbnail(for itemID: ClipboardItem.ID) async -> Result<ClipboardImageThumbnail?, AppError>
     func setFavorite(_ isFavorite: Bool, for itemID: ClipboardItem.ID) async -> Result<Void, AppError>
     func delete(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError>
     func copyToPasteboard(_ itemID: ClipboardItem.ID) async -> Result<Void, AppError>

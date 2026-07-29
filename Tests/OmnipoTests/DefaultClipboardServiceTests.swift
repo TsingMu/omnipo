@@ -1,3 +1,5 @@
+import CoreGraphics
+import ImageIO
 import XCTest
 @testable import Omnipo
 
@@ -289,7 +291,8 @@ final class DefaultClipboardServiceTests: XCTestCase {
             failure(from: await service.delete(itemID)),
             failure(from: await service.copyToPasteboard(itemID)),
             failure(from: await service.copyAndPaste(itemID)),
-            failure(from: await service.copyAndPaste(itemID, targetProcessIdentifier: 42))
+            failure(from: await service.copyAndPaste(itemID, targetProcessIdentifier: 42)),
+            failure(from: await service.imageThumbnail(for: itemID))
         ]
 
         XCTAssertEqual(results, Array(repeating: expectedError, count: results.count))
@@ -363,6 +366,196 @@ final class DefaultClipboardServiceTests: XCTestCase {
         await assertUnavailableFactoryResult(service, logger: logger, expectedStage: "schema")
     }
 
+    func test_imageThumbnail_returnsBoundedThumbnailForImageRecord() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let recordID = try insertImageRecord(
+            in: fixture,
+            hash: "thumbnail-valid",
+            imageData: makePNG(pixelSize: 400)
+        )
+
+        let first = await fixture.service.imageThumbnail(for: recordID)
+        let second = await fixture.service.imageThumbnail(for: recordID)
+
+        guard case .success(let firstThumbnail) = first,
+              let firstThumbnail else {
+            return XCTFail("Expected a thumbnail for a valid image record")
+        }
+        guard case .success(let secondThumbnail) = second, let secondThumbnail else {
+            return XCTFail("Expected a cached thumbnail on the second request")
+        }
+        XCTAssertEqual(firstThumbnail.data, secondThumbnail.data)
+        XCTAssertFalse(firstThumbnail.data.isEmpty)
+
+        let longestEdge = pixelLongestEdge(of: firstThumbnail.data)
+        XCTAssertLessThanOrEqual(longestEdge, ClipboardImageThumbnail.maxPixelSize)
+    }
+
+    func test_imageThumbnail_returnsNilForNonImageRecord() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let item = ClipboardItem(
+            contentHash: "plain-thumbnail",
+            contentType: .plainText,
+            textPreview: "plain"
+        )
+        let saved = try fixture.repository.insert(item)
+        let path = try fixture.binaryStore.write(Data("plain".utf8), for: saved.id, format: .plainText)
+        _ = try fixture.repository.insertPayload(ClipboardBinaryPayload(
+            recordID: saved.id,
+            format: .plainText,
+            storagePath: path,
+            fileSize: 5
+        ))
+
+        let result = await fixture.service.imageThumbnail(for: saved.id)
+
+        XCTAssertEqual(result, .success(nil))
+    }
+
+    func test_imageThumbnail_returnsNilWhenImagePayloadMissing() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let item = ClipboardItem(contentHash: "missing-payload", contentType: .image)
+        let saved = try fixture.repository.insert(item)
+
+        let result = await fixture.service.imageThumbnail(for: saved.id)
+
+        XCTAssertEqual(result, .success(nil))
+    }
+
+    func test_imageThumbnail_failsForCorruptImagePayload() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let recordID = try insertImageRecord(
+            in: fixture,
+            hash: "thumbnail-corrupt",
+            imageData: Data([0x00, 0x01, 0x02, 0x03])
+        )
+
+        let result = await fixture.service.imageThumbnail(for: recordID)
+
+        XCTAssertEqual(result, .failure(.dataCorrupted(detail: "clipboard-image-decode-failed")))
+    }
+
+    func test_imageThumbnail_concurrentRequestsCompleteWithoutDeadlock() async throws {
+        let fixture = try makeFixture(acknowledged: true, enabled: true)
+        defer { fixture.cleanup() }
+        let recordIDs = (0..<12).map { index in
+            try? insertImageRecord(
+                in: fixture,
+                hash: "thumbnail-concurrent-\(index)",
+                imageData: makePNG(pixelSize: 120)
+            )
+        }
+        let ids = try recordIDs.map { try XCTUnwrap($0) }
+
+        let results = await withTaskGroup(of: Result<ClipboardImageThumbnail?, AppError>.self) { group in
+            for id in ids {
+                group.addTask { await fixture.service.imageThumbnail(for: id) }
+            }
+            var collected: [Result<ClipboardImageThumbnail?, AppError>] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected
+        }
+
+        XCTAssertEqual(results.count, ids.count)
+        for result in results {
+            guard case .success(let thumbnail) = result, let thumbnail else {
+                return XCTFail("Expected every concurrent thumbnail request to succeed")
+            }
+            XCTAssertFalse(thumbnail.data.isEmpty)
+        }
+    }
+
+    func test_imageThumbnail_concurrentRequestsForSameRecordGenerateOnce() async throws {
+        let generationCount = LockedCounter()
+        let fixture = try makeFixtureWithThumbnailGenerator(
+            acknowledged: true,
+            enabled: true,
+            thumbnailGenerator: { url in
+                generationCount.increment()
+                Thread.sleep(forTimeInterval: 0.05)
+                return try? Data(contentsOf: url)
+            }
+        )
+        defer { fixture.cleanup() }
+        let recordID = try insertImageRecord(
+            in: fixture,
+            hash: "thumbnail-concurrent-same-record",
+            imageData: makePNG(pixelSize: 120)
+        )
+
+        let results = await withTaskGroup(of: Result<ClipboardImageThumbnail?, AppError>.self) { group in
+            for _ in 0..<12 {
+                group.addTask { await fixture.service.imageThumbnail(for: recordID) }
+            }
+            var collected: [Result<ClipboardImageThumbnail?, AppError>] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected
+        }
+
+        XCTAssertEqual(results.count, 12)
+        XCTAssertEqual(generationCount.value, 1)
+        XCTAssertTrue(results.allSatisfy {
+            guard case .success(let thumbnail) = $0 else { return false }
+            return thumbnail?.data.isEmpty == false
+        })
+    }
+
+    @discardableResult
+    private func insertImageRecord(
+        in fixture: ClipboardServiceFixture,
+        hash: String,
+        imageData: Data
+    ) throws -> ClipboardItem.ID {
+        let item = ClipboardItem(contentHash: hash, contentType: .image)
+        let saved = try fixture.repository.insert(item)
+        let path = try fixture.binaryStore.write(imageData, for: saved.id, format: .image)
+        _ = try fixture.repository.insertPayload(ClipboardBinaryPayload(
+            recordID: saved.id,
+            format: .image,
+            storagePath: path,
+            fileSize: imageData.count
+        ))
+        return saved.id
+    }
+
+    private func makePNG(pixelSize: Int) -> Data {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = CGContext(
+            data: nil,
+            width: pixelSize,
+            height: pixelSize,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        context.setFillColor(red: 1, green: 0, blue: 0, alpha: 1)
+        context.fill(CGRect(x: 0, y: 0, width: pixelSize, height: pixelSize))
+        let cgImage = context.makeImage()!
+
+        let buffer = NSMutableData()
+        let destination = CGImageDestinationCreateWithData(buffer, "public.png" as CFString, 1, nil)!
+        CGImageDestinationAddImage(destination, cgImage, nil)
+        CGImageDestinationFinalize(destination)
+        return buffer as Data
+    }
+
+    private func pixelLongestEdge(of data: Data) -> Int {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            return Int.max
+        }
+        return max(image.width, image.height)
+    }
+
     private func failure<T>(from result: Result<T, AppError>) -> AppError? {
         guard case .failure(let error) = result else { return nil }
         return error
@@ -428,6 +621,33 @@ final class DefaultClipboardServiceTests: XCTestCase {
         enabled: Bool = false,
         configureSettings: (UserDefaultsSettingsService) -> Void = { _ in }
     ) throws -> ClipboardServiceFixture {
+        try makeFixtureCore(
+            acknowledged: acknowledged,
+            enabled: enabled,
+            thumbnailGenerator: nil,
+            configureSettings: configureSettings
+        )
+    }
+
+    private func makeFixtureWithThumbnailGenerator(
+        acknowledged: Bool,
+        enabled: Bool,
+        thumbnailGenerator: @escaping @Sendable (URL) -> Data?
+    ) throws -> ClipboardServiceFixture {
+        try makeFixtureCore(
+            acknowledged: acknowledged,
+            enabled: enabled,
+            thumbnailGenerator: thumbnailGenerator,
+            configureSettings: { _ in }
+        )
+    }
+
+    private func makeFixtureCore(
+        acknowledged: Bool,
+        enabled: Bool,
+        thumbnailGenerator: (@Sendable (URL) -> Data?)?,
+        configureSettings: (UserDefaultsSettingsService) -> Void
+    ) throws -> ClipboardServiceFixture {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("omnipo-clipboard-service-\(UUID().uuidString)", isDirectory: true)
         let location = ClipboardStorageLocation(rootDirectory: root)
@@ -451,6 +671,7 @@ final class DefaultClipboardServiceTests: XCTestCase {
             repository: repository,
             binaryStore: binaryStore,
             pasteController: pasteController,
+            thumbnailGenerator: thumbnailGenerator,
             monitorFactory: { handler in
                 monitorFactory.make(handler: handler)
             }
@@ -477,6 +698,23 @@ private struct ClipboardServiceFixture {
 
     func cleanup() {
         try? FileManager.default.removeItem(at: root)
+    }
+}
+
+private final class LockedCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue = 0
+
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedValue
+    }
+
+    func increment() {
+        lock.lock()
+        storedValue += 1
+        lock.unlock()
     }
 }
 

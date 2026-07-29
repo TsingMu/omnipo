@@ -32,6 +32,13 @@ public final class BinaryContentStore: @unchecked Sendable {
         try Data(contentsOf: validatedURL(storagePath))
     }
 
+    /// 返回经过相对文件名校验的 payload URL,供基础设施层流式或按需读取。
+    ///
+    /// 该入口不绕过 `storagePath` 的路径穿越防护,也不向 UI 暴露本地路径。
+    func fileURL(for storagePath: String) throws -> URL {
+        try validatedURL(storagePath)
+    }
+
     /// 删除指定存储路径的文件。文件不存在视为成功。
     public func delete(_ storagePath: String) throws {
         let url = try validatedURL(storagePath)

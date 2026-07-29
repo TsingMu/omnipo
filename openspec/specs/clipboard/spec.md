@@ -47,7 +47,7 @@ Clipboard MUST support local history capture for text, rich text, HTML, images, 
 
 ### Requirement: Clipboard Search And History Actions
 
-Clipboard MUST allow users to search history, filter by content type, favorite records, delete records, and copy a record back to the system pasteboard.
+Clipboard MUST allow users to search history, filter by content type, favorite records, delete records, and copy a record back to the system pasteboard. When source application metadata is available, the main Clipboard page and floating panel MUST present it consistently as the first metadata item directly below the content preview.
 
 #### Scenario: User searches clipboard history
 
@@ -63,10 +63,19 @@ Clipboard MUST allow users to search history, filter by content type, favorite r
 
 #### Scenario: User views a record with source application metadata
 
-- **Given** a clipboard history item has a source application bundle identifier
+- **Given** a clipboard history item has a non-empty source application bundle identifier
 - **When** the Clipboard page or floating panel shows that item
-- **Then** the app prefers the localized Chinese application name or application display name
-- **And** the app uses the bundle identifier only when no application name can be resolved
+- **Then** the source application is the first metadata item directly below the content preview
+- **And** the source application name is preceded by its macOS application icon
+- **And** the app prefers the localized Chinese application name or application display name
+- **And** the app uses the bundle identifier and a generic application icon when application resources cannot be resolved
+
+#### Scenario: User views a record without source application metadata
+
+- **Given** a clipboard history item has no non-empty source application bundle identifier
+- **When** the Clipboard page or floating panel shows that item
+- **Then** the app does not fabricate or display a source application label
+- **And** content type and relative update time remain visible
 
 ### Requirement: Auto-Paste Permission Downgrade
 

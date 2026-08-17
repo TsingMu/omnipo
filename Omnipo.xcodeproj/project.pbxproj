@@ -125,6 +125,13 @@
 		000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034B /* DefaultAppUsageSampler.swift */; };
 		000000000000000000000272 /* AppUsageSamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034C /* AppUsageSamplerTests.swift */; };
 		000000000000000000000273 /* StatusBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034D /* StatusBarManager.swift */; };
+		000000000000000000000401 /* MenuBarNetworkRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000400 /* MenuBarNetworkRate.swift */; };
+		000000000000000000000403 /* MenuBarNetworkRateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000402 /* MenuBarNetworkRateFormatter.swift */; };
+		000000000000000000000405 /* MenuBarNetworkRateFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000404 /* MenuBarNetworkRateFormatterTests.swift */; };
+		000000000000000000000407 /* MenuBarNetworkRateMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000406 /* MenuBarNetworkRateMonitor.swift */; };
+		000000000000000000000409 /* MenuBarNetworkRateMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000408 /* MenuBarNetworkRateMonitorTests.swift */; };
+		00000000000000000000040B /* MenuBarNetworkSpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000040A /* MenuBarNetworkSpeedView.swift */; };
+		00000000000000000000040D /* MenuBarNetworkSamplingControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000040C /* MenuBarNetworkSamplingControllerTests.swift */; };
 		000000000000000000000274 /* OmnipoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034E /* OmnipoTheme.swift */; };
 		000000000000000000000275 /* ClipboardContentType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000034F /* ClipboardContentType.swift */; };
 		000000000000000000000276 /* ClipboardItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000350 /* ClipboardItem.swift */; };
@@ -316,6 +323,13 @@
 		00000000000000000000034B /* DefaultAppUsageSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAppUsageSampler.swift; sourceTree = "<group>"; };
 		00000000000000000000034C /* AppUsageSamplerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageSamplerTests.swift; sourceTree = "<group>"; };
 		00000000000000000000034D /* StatusBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarManager.swift; sourceTree = "<group>"; };
+		000000000000000000000400 /* MenuBarNetworkRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkRate.swift; sourceTree = "<group>"; };
+		000000000000000000000402 /* MenuBarNetworkRateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkRateFormatter.swift; sourceTree = "<group>"; };
+		000000000000000000000404 /* MenuBarNetworkRateFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkRateFormatterTests.swift; sourceTree = "<group>"; };
+		000000000000000000000406 /* MenuBarNetworkRateMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkRateMonitor.swift; sourceTree = "<group>"; };
+		000000000000000000000408 /* MenuBarNetworkRateMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkRateMonitorTests.swift; sourceTree = "<group>"; };
+		00000000000000000000040A /* MenuBarNetworkSpeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkSpeedView.swift; sourceTree = "<group>"; };
+		00000000000000000000040C /* MenuBarNetworkSamplingControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNetworkSamplingControllerTests.swift; sourceTree = "<group>"; };
 		00000000000000000000034E /* OmnipoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnipoTheme.swift; sourceTree = "<group>"; };
 		00000000000000000000034F /* ClipboardContentType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardContentType.swift; sourceTree = "<group>"; };
 		000000000000000000000350 /* ClipboardItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardItem.swift; sourceTree = "<group>"; };
@@ -516,6 +530,7 @@
 				00000000000000000000035E /* ClipboardCapturedContent.swift */,
 				000000000000000000000368 /* AppUninstaller.swift */,
 				0000000000000000000003E0 /* WeChatStorage.swift */,
+				000000000000000000000400 /* MenuBarNetworkRate.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -593,6 +608,9 @@
 			isa = PBXGroup;
 			children = (
 				00000000000000000000034D /* StatusBarManager.swift */,
+				000000000000000000000402 /* MenuBarNetworkRateFormatter.swift */,
+				000000000000000000000406 /* MenuBarNetworkRateMonitor.swift */,
+				00000000000000000000040A /* MenuBarNetworkSpeedView.swift */,
 			);
 			path = StatusBar;
 			sourceTree = "<group>";
@@ -752,6 +770,9 @@
 				0000000000000000000003E6 /* WeChatStorageScannerTests.swift */,
 				0000000000000000000003E8 /* DefaultWeChatStorageServiceTests.swift */,
 				0000000000000000000003EA /* WeChatManagerStoreTests.swift */,
+				000000000000000000000404 /* MenuBarNetworkRateFormatterTests.swift */,
+				000000000000000000000408 /* MenuBarNetworkRateMonitorTests.swift */,
+				00000000000000000000040C /* MenuBarNetworkSamplingControllerTests.swift */,
 			);
 			path = OmnipoTests;
 			sourceTree = "<group>";
@@ -882,6 +903,10 @@
 				000000000000000000000271 /* DefaultAppUsageSampler.swift in Sources */,
 				00000000000000000000026C /* SystemMonitorStore.swift in Sources */,
 				000000000000000000000273 /* StatusBarManager.swift in Sources */,
+				000000000000000000000401 /* MenuBarNetworkRate.swift in Sources */,
+				000000000000000000000403 /* MenuBarNetworkRateFormatter.swift in Sources */,
+				000000000000000000000407 /* MenuBarNetworkRateMonitor.swift in Sources */,
+				00000000000000000000040B /* MenuBarNetworkSpeedView.swift in Sources */,
 				00000000000000000000020A /* UninstallerView.swift in Sources */,
 				00000000000000000000020B /* PermissionAuditView.swift in Sources */,
 				00000000000000000000020C /* WeChatManagerView.swift in Sources */,
@@ -1036,6 +1061,9 @@
 				0000000000000000000002B6 /* WeChatStorageScannerTests.swift in Sources */,
 				0000000000000000000002B8 /* DefaultWeChatStorageServiceTests.swift in Sources */,
 				0000000000000000000002BA /* WeChatManagerStoreTests.swift in Sources */,
+				000000000000000000000405 /* MenuBarNetworkRateFormatterTests.swift in Sources */,
+				000000000000000000000409 /* MenuBarNetworkRateMonitorTests.swift in Sources */,
+				00000000000000000000040D /* MenuBarNetworkSamplingControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
